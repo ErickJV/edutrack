@@ -1,0 +1,58 @@
+[project]
+name = "edutrack-backend"
+version = "0.1.0"
+description = "API de autenticação do EduTrack"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+  "argon2-cffi==25.1.0",
+  "django==5.2.17",
+  "django-allauth[headless,socialaccount]==65.19.2",
+  "djangorestframework==3.18.0",
+  "drf-spectacular==0.30.0",
+  "gunicorn==23.0.0",
+  "mssql-django==1.8.0",
+]
+
+[dependency-groups]
+dev = [
+  "django-stubs==5.2.9",
+  "djangorestframework-stubs==3.16.8",
+  "mypy==1.18.2",
+  "pytest==8.4.2",
+  "pytest-django==4.11.1",
+  "ruff==0.13.2",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "edutrack.settings"
+python_files = ["test_*.py", "*_tests.py"]
+addopts = "-ra --strict-markers"
+
+[tool.uv]
+required-version = "==0.12.5"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+extend-exclude = [".venv", "**/migrations/*.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "DJ"]
+ignore = ["DJ001"]
+
+[tool.mypy]
+python_version = "3.14"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+check_untyped_defs = true
+ignore_missing_imports = true
+exclude = '(migrations|\.venv)/'
+
+[tool.django-stubs]
+django_settings_module = "edutrack.settings"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["edutrack", "apps"]

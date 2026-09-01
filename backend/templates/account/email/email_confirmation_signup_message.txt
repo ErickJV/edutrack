@@ -1,0 +1,5 @@
+{% extends "account/email/base_message.txt" %}{% load i18n %}{% block content %}Use o código abaixo para confirmar seu e-mail institucional:
+
+{{ code }}
+
+O código expira em 10 minutos. Se você não solicitou este cadastro, ignore esta mensagem.{% endblock %}

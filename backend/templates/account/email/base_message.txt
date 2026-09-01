@@ -1,0 +1,7 @@
+{% load i18n %}{% autoescape off %}Olá!
+
+{% block content %}{% endblock %}
+
+Equipe EduTrack
+Projeto acadêmico autorizado para alunos da Faculdade Impacta.
+{% endautoescape %}

@@ -1,0 +1,120 @@
+name: edutrack
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD:-EduTrack_local_2026!}
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" -b -o /dev/null
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD:-EduTrack_local_2026!}
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - >-
+        /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P "$$MSSQL_SA_PASSWORD" -C -b
+        -Q "IF DB_ID(N'edutrack') IS NULL CREATE DATABASE [edutrack]"
+    restart: "no"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ./backend
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_healthy
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-only-edutrack-secret-key-change-before-deploying}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,api}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:5173,http://localhost:8000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      DB_ENGINE: mssql
+      DB_NAME: edutrack
+      DB_USER: sa
+      DB_PASSWORD: ${DB_PASSWORD:-EduTrack_local_2026!}
+      DB_HOST: db
+      DB_PORT: 1433
+      DB_DRIVER: ODBC Driver 18 for SQL Server
+      DB_ENCRYPT: "true"
+      DB_TRUST_SERVER_CERTIFICATE: ${DB_TRUST_SERVER_CERTIFICATE:-true}
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: 1025
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-EduTrack <nao-responda@edutrack.local>}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    command: >-
+      sh -c "python manage.py migrate --noinput
+      && python manage.py seed_initial_data
+      && python manage.py runserver 0.0.0.0:8000"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8000/api/v1/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+
+  web:
+    build:
+      context: ./frontend
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      VITE_PROXY_TARGET: http://api:8000
+      VITE_API_ORIGIN: ${VITE_API_ORIGIN:-}
+      VITE_GOOGLE_ENABLED: ${VITE_GOOGLE_ENABLED:-false}
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://localhost:5173/entrar').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+volumes:
+  sqlserver_data:
+  frontend_node_modules:

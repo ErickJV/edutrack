@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend + SQL Server
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Construir imagem da API
+        run: docker compose build api
+
+      - name: Iniciar e preparar SQL Server
+        run: |
+          docker compose up --detach --wait db
+          docker compose run --rm db-init
+
+      - name: Ruff e mypy
+        run: |
+          docker compose run --rm --no-deps api ruff check apps edutrack tests manage.py
+          docker compose run --rm --no-deps api mypy .
+
+      - name: Migrações, testes e verificações Django
+        run: |
+          docker compose run --rm --no-deps api python manage.py migrate --noinput
+          docker compose run --rm --no-deps api python manage.py makemigrations --check --dry-run
+          docker compose run --rm --no-deps api pytest
+          docker compose run --rm --no-deps api python manage.py check
+          docker compose run --rm --no-deps \
+            -e DJANGO_DEBUG=false \
+            -e DJANGO_SECRET_KEY=edutrack-ci-key-with-more-than-fifty-characters-and-high-entropy-2026 \
+            api python manage.py check --deploy
+
+      - name: Logs dos serviços
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Encerrar serviços
+        if: always()
+        run: docker compose down --volumes
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Ativar pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.3.0 --activate
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test --run
+      - run: pnpm build
+
+  e2e:
+    name: E2E + acessibilidade
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Ativar pnpm e instalar o Playwright
+        working-directory: frontend
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.3.0 --activate
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+
+      - name: Subir ambiente completo
+        run: docker compose up --detach --build
+
+      - name: Aguardar aplicação
+        run: |
+          ready=false
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:5173/entrar >/dev/null \
+              && curl --fail --silent http://127.0.0.1:8000/api/v1/health >/dev/null \
+              && curl --fail --silent http://127.0.0.1:8025/readyz >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 3
+          done
+          if [ "$ready" != "true" ]; then
+            docker compose logs --no-color
+            exit 1
+          fi
+
+      - name: Executar fluxos críticos
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_EXTERNAL_SERVER: "true"
+          MAILPIT_URL: http://127.0.0.1:8025
+        run: pnpm e2e
+
+      - name: Publicar relatório do Playwright
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+
+      - name: Logs dos serviços
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Encerrar serviços
+        if: always()
+        run: docker compose down --volumes
