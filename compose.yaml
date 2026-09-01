@@ -74,6 +74,9 @@ services:
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-EduTrack <nao-responda@edutrack.local>}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      RUFF_CACHE_DIR: /tmp/edutrack-ruff-cache
+      MYPY_CACHE_DIR: /tmp/edutrack-mypy-cache
+      PYTEST_ADDOPTS: -p no:cacheprovider
     volumes:
       - ./backend:/app
     ports:
