@@ -33,7 +33,8 @@ async function waitForMessage(
   return String(body.Text || body.text || '')
 }
 
-test('cadastro, verificação, recuperação e novo login', async ({ page, request }) => {
+test('cadastro, verificação, recuperação e novo login', async ({ page, request }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-360', 'Fluxo funcional coberto uma vez; os três viewports têm validação visual própria.')
   const suffix = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
   const email = `e2e.${suffix}@aluno.impacta.edu.br`
   const oldPassword = 'Trilha-E2E-Segura-Impacta-2026!'
