@@ -61,6 +61,8 @@ test('cadastro, verificação, recuperação e novo login', async ({ page, reque
   await page.getByRole('button', { name: 'Sair' }).click()
   await expect(page).toHaveURL(/\/entrar$/)
   await page.getByRole('link', { name: 'Esqueci minha senha' }).click()
+  await expect(page).toHaveURL(/\/esqueci-senha$/)
+  await expect(page.getByRole('heading', { name: 'Esqueceu sua senha?' })).toBeVisible()
   await page.getByLabel('E-mail institucional').fill(email)
   await page.getByRole('button', { name: 'Enviar link de recuperação' }).click()
   await expect(page.getByText(/mostramos esta mensagem mesmo/)).toBeVisible()

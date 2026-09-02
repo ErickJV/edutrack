@@ -25,6 +25,7 @@ export function HomePage() {
           <Brand />
           <button
             type="button"
+            aria-label="Sair"
             onClick={() => void leave()}
             disabled={leaving}
             className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
