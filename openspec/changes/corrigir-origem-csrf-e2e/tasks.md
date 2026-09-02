@@ -14,4 +14,4 @@
 
 - [x] 3.1 Subir o Docker Compose e executar o Playwright, confirmando que cadastro, verificação, recuperação, novo login e acessibilidade passam usando `http://127.0.0.1:5173`.
 - [x] 3.2 Executar `git diff --check`, revisar que nenhuma configuração de produção foi relaxada e conferir todos os critérios da proposta.
-- [ ] 3.3 Criar commit, publicar a branch e confirmar que os três jobs do GitHub Actions terminam com sucesso.
+- [x] 3.3 Criar commit, publicar a branch e confirmar que os três jobs do GitHub Actions terminam com sucesso.
