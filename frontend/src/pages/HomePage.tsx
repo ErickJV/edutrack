@@ -119,10 +119,10 @@ export function HomePage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             {summaryLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <article key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                  <div className="h-4 w-28 animate-pulse rounded-full bg-slate-200" />
-                  <div className="mt-4 h-9 w-20 animate-pulse rounded-full bg-slate-200" />
-                  <div className="mt-3 h-3 w-36 animate-pulse rounded-full bg-slate-200" />
+                <article key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
+                  <div className="h-4 w-28 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="mt-4 h-9 w-20 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="mt-3 h-3 w-36 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
                 </article>
               ))
             ) : (
@@ -171,7 +171,7 @@ export function HomePage() {
           </div>
 
           {activeSubjects.length === 0 ? (
-            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
+            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
               Nenhuma disciplina ativa encontrada para exibir o gráfico.
             </p>
           ) : (
@@ -219,15 +219,15 @@ export function HomePage() {
           {summaryLoading ? (
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {Array.from({ length: 2 }).map((_, index) => (
-                <article key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                  <div className="h-4 w-24 animate-pulse rounded-full bg-slate-200" />
-                  <div className="mt-4 h-6 w-48 animate-pulse rounded-full bg-slate-200" />
-                  <div className="mt-3 h-3 w-32 animate-pulse rounded-full bg-slate-200" />
+                <article key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
+                  <div className="h-4 w-24 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="mt-4 h-6 w-48 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="mt-3 h-3 w-32 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
                 </article>
               ))}
             </div>
           ) : summary && summary.upcoming_tasks.length === 0 ? (
-            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
+            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
               Nenhuma entrega urgente encontrada no momento.
             </p>
           ) : (
