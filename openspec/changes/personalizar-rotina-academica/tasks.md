@@ -41,9 +41,9 @@
 
 ## 6. Aparência
 
-- [ ] 6.1 Implementar tokens e preferência Claro/Escuro/Sistema persistente com inicialização compatível com CSP; testar recarga, sistema, armazenamento bloqueado e preferência inválida.
-- [ ] 6.2 Aplicar tokens a páginas públicas/autenticadas, modais, formulários e estados; verificar visualmente os dois temas e contraste dos componentes e textos, registrando evidências.
-- [ ] 6.3 Integrar seletor acessível à navegação pública/autenticada; testar teclado, rótulo/estado anunciado e manutenção da preferência após logout.
+- [x] 6.1 Implementar tokens e preferência Claro/Escuro/Sistema persistente com inicialização compatível com CSP; testar recarga, sistema, armazenamento bloqueado e preferência inválida.
+- [x] 6.2 Aplicar tokens a páginas públicas/autenticadas, modais, formulários e estados; verificar visualmente os dois temas e contraste dos componentes e textos, registrando evidências.
+- [x] 6.3 Integrar seletor acessível à navegação pública/autenticada; testar teclado, rótulo/estado anunciado e manutenção da preferência após logout.
 
 ## 7. Documentação e validação integrada
 

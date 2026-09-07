@@ -137,18 +137,18 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-form-title"
-        className="relative flex flex-col w-full max-w-2xl max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-950/30"
+        className="relative flex flex-col w-full max-w-2xl max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-950/30 dark:bg-slate-900 dark:border dark:border-slate-800"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="shrink-0 flex items-start justify-between border-b border-slate-200 p-5 sm:px-6 sm:py-5 bg-white z-10">
+        <header className="shrink-0 flex items-start justify-between border-b border-slate-200 p-5 sm:px-6 sm:py-5 bg-white z-10 dark:border-slate-800 dark:bg-slate-900">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">Gestão de tarefas</p>
-            <h2 id="task-form-title" className="mt-1 text-2xl font-black tracking-tight text-slate-950">{title}</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-400">Gestão de tarefas</p>
+            <h2 id="task-form-title" className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-slate-50">{title}</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid size-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            className="grid size-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 dark:focus-visible:outline-indigo-400"
             aria-label="Fechar modal"
           >
             <X size={18} aria-hidden="true" />
@@ -183,12 +183,12 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
             />
 
             <label className="block">
-              <span className="mb-2 block text-sm font-bold text-slate-800">Descrição</span>
+              <span className="mb-2 block text-sm font-bold text-slate-800 dark:text-slate-200">Descrição</span>
               <textarea
                 value={values.description}
                 onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
                 rows={4}
-                className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-950/50"
                 placeholder="Detalhe o objetivo ou instruções da tarefa"
               />
             </label>
@@ -234,11 +234,11 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-slate-200 bg-slate-50/80 backdrop-blur-xs px-5 py-4 sm:px-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <div className="shrink-0 border-t border-slate-200 bg-slate-50/80 backdrop-blur-xs px-5 py-4 sm:px-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end dark:border-slate-800 dark:bg-slate-900/90">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 px-5 text-base font-bold text-slate-700 transition hover:bg-slate-100"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 px-5 text-base font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Cancelar
             </button>

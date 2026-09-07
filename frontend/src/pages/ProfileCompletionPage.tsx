@@ -45,8 +45,8 @@ export function ProfileCompletionPage() {
   return (
     <AuthShell eyebrow="Personalize seu acesso" title="Complete seu perfil" description="Precisamos dessas informações uma única vez para preparar o EduTrack para sua graduação.">
       <form className="space-y-5" onSubmit={submit}>
-        <div className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-900">
-          <GraduationCap size={23} className="shrink-0 text-indigo-600" aria-hidden="true" />
+        <div className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-900 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-200">
+          <GraduationCap size={23} className="shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
           <p>Você entrou como <strong>{user?.email}</strong></p>
         </div>
         {error ? <Alert>{error}</Alert> : null}
@@ -55,12 +55,12 @@ export function ProfileCompletionPage() {
           <option value="">Selecione uma opção</option>
           {offerings.map((offering) => <option key={offering.id} value={offering.id}>{offering.label}</option>)}
         </Select>
-        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700">
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
           <input type="checkbox" checked={acceptLegal} onChange={(event) => setAcceptLegal(event.target.checked)} className="mt-1 size-4.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-          <span>Li e aceito os <Link to="/termos" target="_blank" className="font-bold text-indigo-600 hover:underline">Termos de Uso</Link> e a <Link to="/privacidade" target="_blank" className="font-bold text-indigo-600 hover:underline">Política de Privacidade</Link>.</span>
+          <span>Li e aceito os <Link to="/termos" target="_blank" className="font-bold text-indigo-600 hover:underline dark:text-indigo-400">Termos de Uso</Link> e a <Link to="/privacidade" target="_blank" className="font-bold text-indigo-600 hover:underline dark:text-indigo-400">Política de Privacidade</Link>.</span>
         </label>
         <PrimaryButton type="submit" loading={loading}>Concluir perfil</PrimaryButton>
-        <button type="button" onClick={() => void signOut()} className="min-h-11 w-full text-sm font-bold text-slate-500 hover:text-rose-600">Sair desta conta</button>
+        <button type="button" onClick={() => void signOut()} className="min-h-11 w-full text-sm font-bold text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400">Sair desta conta</button>
       </form>
     </AuthShell>
   )
