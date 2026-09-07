@@ -61,20 +61,21 @@ Estado baseado em inspeção dos artefatos e trechos de código atuais; “exist
 | G10 | IA opcional para organizar tópicos das anotações | Nota original preservada, consentimento por ação e revisão das sugestões antes de substituir texto. |
 | G11 | Chat entre colegas de turma | Exige conceito de turma/membros, convite, privacidade, bloqueio e moderação; não inferir turma pelo curso e não tornar registros pessoais públicos. |
 | G12 | Modo escuro | Já coberto por `personalizar-rotina-academica`; evitar proposta duplicada. |
-| G13 | Notas, AP1/AP2 e outras avaliações | O anexo não especifica fórmulas, pesos ou aprovação. Registrar interesse; não inventar regras institucionais. Provas nomeadas AP1/AP2 podem existir no calendário sem módulo de notas. |
+| G13 | Notas, AP1/AP2 e outras avaliações | Promovido a proposta `acompanhar-boletim-configuravel` após quadro do portal fornecido e autorização de regras configuráveis. Pesos Com/Sem PAI, mínimo 6 e frequência 75% viram sugestões editáveis; MAP/SUB/bônus não são presumidos. Ainda não implementado. |
 
 ## Ordem de execução e roadmap
 
 1. Aplicar a personalização já proposta: horas, professores, semestre, aulas, frequência, calendário e tema.
 2. Completar cobertura do professor: busca/data, distribuição de tempo, indicadores separados, insights explicáveis e relatório PDF.
-3. Caderno por disciplina e materiais privados, incluindo vínculo com aula; decidir quando incluir escrita manual.
-4. Assistente opcional sobre materiais, geração revisada de questões/flashcards e método de estudo inicial.
-5. Colaboração/chat, Git externo e novos públicos em mudanças próprias.
+3. Implementar boletim configurável solicitado depois: notas, regras pessoais, TF por origem manual/calendário e situação estimada. Depende tecnicamente da personalização; mantém a prioridade anterior dos requisitos do professor.
+4. Caderno por disciplina e materiais privados, incluindo vínculo com aula; decidir quando incluir escrita manual.
+5. Assistente opcional sobre materiais, geração revisada de questões/flashcards e método de estudo inicial.
+6. Colaboração/chat, Git externo e novos públicos em mudanças próprias.
 
 ## Lacunas a resolver
 
-- Escopo imediato escolhido: requisitos do professor. Caderno, uploads, IA generativa, métodos, chat e notas permanecem no roadmap, sem tarefas de implementação nesta proposta.
-- Se houver notas nesta entrega: obter regra de cálculo real ou autorizar expressamente um registro flexível sem cálculo institucional.
+- Escopo de `completar-requisitos-academicos`: requisitos do professor. Caderno, uploads, IA generativa, métodos e chat continuam no roadmap; notas ganharam proposta separada após esclarecimento posterior.
+- Regras de notas: usuário autorizou configuração enquanto não conhece cálculo fixo; futura regra confirmada atualiza política sem apagar notas. Não afirmar que as opções atuais reproduzem um regulamento oficial.
 - Se houver IA generativa: definir provedor/custos e quais ações o assistente pode propor/executar; nenhuma credencial ou envio de PDF é necessário para esta fase de planejamento.
 - A proposta adota 1.000 contas com dados e 50 usuários simultâneos como perfil inicial de teste documentado; não afirma equivalência a 1.000 simultâneos nem aceite formal do professor.
 
