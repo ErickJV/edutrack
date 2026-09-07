@@ -1,6 +1,23 @@
-import type { AuthResponse, AuthUser, CourseOffering, ProfilePayload } from './types'
+import type {
+  AcademicSubject,
+  AcademicTask,
+  AcademicTaskPayload,
+  AcademicTaskStatus,
+  AuthResponse,
+  AuthUser,
+  CourseOffering,
+  DashboardSummary,
+  ProfilePayload,
+  StudentSubject,
+} from './types'
 
 const API_ORIGIN = (import.meta.env.VITE_API_ORIGIN || '').replace(/\/$/, '')
+
+type ErrorWithParams = {
+  message: string
+  code: string
+  param?: string
+}
 
 export class ApiError extends Error {
   status: number
@@ -21,21 +38,33 @@ function csrfToken(): string {
   return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : ''
 }
 
-function errorFrom(body: any, status: number): ApiError {
+function errorFrom(body: unknown, status: number): ApiError {
   const fieldErrors: Record<string, string> = {}
-  if (Array.isArray(body?.errors)) {
-    for (const error of body.errors) {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return new ApiError('Não foi possível concluir a solicitação.', status)
+  }
+
+  const payload = body as { errors?: unknown }
+  const errors = payload.errors
+  if (Array.isArray(errors)) {
+    for (const error of errors as ErrorWithParams[]) {
       if (error.param) fieldErrors[error.param] = error.message
     }
-    const first = body.errors[0]?.message
-    return new ApiError(first || 'Não foi possível concluir a solicitação.', status, fieldErrors)
+    const firstMessage = (errors[0] as ErrorWithParams | undefined)?.message
+    return new ApiError(firstMessage || 'Não foi possível concluir a solicitação.', status, fieldErrors)
   }
-  if (body?.errors && typeof body.errors === 'object') {
-    for (const [key, value] of Object.entries(body.errors)) {
-      fieldErrors[key] = Array.isArray(value) ? String(value[0]) : String(value)
+
+  if (typeof errors === 'object' && errors !== null && !Array.isArray(errors)) {
+    for (const [key, value] of Object.entries(errors as Record<string, unknown>)) {
+      if (Array.isArray(value)) {
+        fieldErrors[key] = String(value[0] ?? '')
+      } else {
+        fieldErrors[key] = String(value)
+      }
     }
     return new ApiError(Object.values(fieldErrors)[0] || 'Confira os dados informados.', status, fieldErrors)
   }
+
   return new ApiError('Não foi possível concluir a solicitação.', status)
 }
 
@@ -133,6 +162,49 @@ export async function listCourseOfferings(): Promise<CourseOffering[]> {
 
 export async function completeProfile(payload: ProfilePayload): Promise<AuthUser> {
   return request<AuthUser>('/api/v1/profile', { method: 'PUT', body: JSON.stringify(payload) })
+}
+
+export async function listCurriculum(): Promise<AcademicSubject[]> {
+  return request<AcademicSubject[]>('/api/v1/curriculum')
+}
+
+export async function listStudentSubjects(): Promise<StudentSubject[]> {
+  return request<StudentSubject[]>('/api/v1/student-subjects')
+}
+
+export async function saveStudentSubjects(payload: { semester_period?: string; subject_ids: string[] }): Promise<StudentSubject[]> {
+  return request<StudentSubject[]>('/api/v1/student-subjects', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, [201])
+}
+
+export async function listAcademicTasks(params: { student_subject?: string; status?: AcademicTaskStatus } = {}): Promise<AcademicTask[]> {
+  const search = new URLSearchParams()
+  if (params.student_subject) search.set('student_subject', params.student_subject)
+  if (params.status) search.set('status', params.status)
+  const suffix = search.toString() ? `?${search.toString()}` : ''
+  return request<AcademicTask[]>(`/api/v1/tasks${suffix}`)
+}
+
+export async function createAcademicTask(payload: AcademicTaskPayload): Promise<AcademicTask> {
+  return request<AcademicTask>('/api/v1/tasks', { method: 'POST', body: JSON.stringify(payload) }, [201])
+}
+
+export async function updateAcademicTask(id: string, payload: Partial<AcademicTaskPayload>): Promise<AcademicTask> {
+  return request<AcademicTask>(`/api/v1/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+}
+
+export async function deleteAcademicTask(id: string): Promise<void> {
+  await request(`/api/v1/tasks/${id}`, { method: 'DELETE' }, [204])
+}
+
+export async function toggleAcademicTaskComplete(id: string): Promise<AcademicTask> {
+  return request<AcademicTask>(`/api/v1/tasks/${id}/toggle-complete`, { method: 'POST' })
+}
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  return request<DashboardSummary>('/api/v1/dashboard/summary')
 }
 
 export function googleLoginAction(): string {

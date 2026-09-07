@@ -35,3 +35,65 @@ export type ProfilePayload = {
   course_offering_id: string
   accept_legal: boolean
 }
+
+export type AcademicSubject = {
+  id: string
+  course: string
+  course_name: string
+  name: string
+  code: string
+  semester: number
+  workload_hours: number
+  description: string
+  active: boolean
+}
+
+export type StudentSubject = {
+  id: string
+  subject: AcademicSubject
+  professor_name: string
+  status: 'active' | 'completed' | 'dropped'
+  semester_period: string
+  progress_percent: number
+  created_at: string
+  updated_at: string
+}
+
+export type AcademicTaskStatus = 'pending' | 'in_progress' | 'completed'
+
+export type AcademicTask = {
+  id: string
+  student_subject: string
+  subject_id: string
+  subject_name: string
+  subject_semester: number
+  title: string
+  description: string
+  due_date: string | null
+  status: AcademicTaskStatus
+  estimated_minutes: number
+  actual_minutes: number
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type AcademicTaskPayload = {
+  student_subject: string
+  title: string
+  description?: string
+  due_date?: string | null
+  status?: AcademicTaskStatus
+  estimated_minutes?: number
+  actual_minutes?: number
+}
+
+export type DashboardSummary = {
+  subjects_count: number
+  pending_tasks_count: number
+  completed_tasks_count: number
+  planned_minutes_total: number
+  actual_minutes_total: number
+  weighted_progress_percent: number
+  upcoming_tasks: AcademicTask[]
+}

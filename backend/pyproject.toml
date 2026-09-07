@@ -40,6 +40,9 @@ extend-exclude = [".venv", "**/migrations/*.py"]
 select = ["E", "F", "I", "UP", "B", "DJ"]
 ignore = ["DJ001"]
 
+[tool.ruff.lint.per-file-ignores]
+"apps/academic/official_curricula.py" = ["E501"]
+
 [tool.mypy]
 python_version = "3.14"
 plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]

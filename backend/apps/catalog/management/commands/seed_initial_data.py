@@ -7,4 +7,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         call_command("migrate", interactive=False)
+        try:
+            call_command("sync_impacta_curriculum")
+        except Exception:
+            self.stdout.write(
+                "Sincronização online da grade ignorada (usando dados oficiais da migração)."
+            )
         self.stdout.write(self.style.SUCCESS("Dados iniciais disponíveis."))
