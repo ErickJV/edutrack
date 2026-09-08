@@ -57,15 +57,14 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+        with:
+          version: 11.3.0
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
-      - name: Ativar pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@11.3.0 --activate
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
@@ -79,17 +78,18 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+        with:
+          version: 11.3.0
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 
-      - name: Ativar pnpm e instalar o Playwright
+      - name: Instalar dependências e o Playwright
         working-directory: frontend
         run: |
-          corepack enable
-          corepack prepare pnpm@11.3.0 --activate
           pnpm install --frozen-lockfile
           pnpm exec playwright install --with-deps chromium
 

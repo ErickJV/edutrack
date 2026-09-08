@@ -1,6 +1,7 @@
 import { CheckCircle2, GraduationCap, ShieldCheck, Sparkles } from 'lucide-react'
 
 import { Brand } from './Brand'
+import { ThemeToggle } from './ThemeToggle'
 
 export function AuthShell({
   title,
@@ -14,7 +15,7 @@ export function AuthShell({
   children: React.ReactNode
 }) {
   return (
-    <main className="min-h-dvh bg-slate-50 lg:grid lg:grid-cols-[minmax(380px,0.92fr)_minmax(560px,1.08fr)]">
+    <main className="min-h-dvh bg-slate-50 dark:bg-slate-950 lg:grid lg:grid-cols-[minmax(380px,0.92fr)_minmax(560px,1.08fr)]">
       <aside className="relative hidden overflow-hidden bg-indigo-700 px-10 py-12 text-white lg:flex lg:flex-col lg:justify-between xl:px-16">
         <div className="absolute -right-28 top-20 size-96 rounded-full bg-cyan-400/15 blur-3xl" />
         <div className="absolute -bottom-20 -left-16 size-80 rounded-full bg-violet-400/20 blur-3xl" />
@@ -41,12 +42,15 @@ export function AuthShell({
       </aside>
 
       <section className="flex min-h-dvh flex-col px-5 pb-8 pt-6 sm:px-8 lg:px-14 lg:py-12 xl:px-24">
-        <div className="mb-10 lg:hidden"><Brand /></div>
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div className="lg:hidden"><Brand /></div>
+          <div className="ml-auto"><ThemeToggle /></div>
+        </div>
         <div className="mx-auto flex w-full max-w-[520px] flex-1 flex-col justify-center py-4">
           <header className="mb-8">
-            <p className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-indigo-600">{eyebrow}</p>
-            <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">{title}</h1>
-            <p className="mt-3 max-w-lg text-base leading-7 text-slate-600">{description}</p>
+            <p className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-400">{eyebrow}</p>
+            <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-slate-50 sm:text-4xl">{title}</h1>
+            <p className="mt-3 max-w-lg text-base leading-7 text-slate-600 dark:text-slate-300">{description}</p>
           </header>
           {children}
         </div>
