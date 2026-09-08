@@ -26,6 +26,8 @@ def test_security_configuration_matches_mvp_contract():
     assert settings.SESSION_COOKIE_SAMESITE == "Lax"
     assert settings.SESSION_COOKIE_AGE == 60 * 60 * 24 * 14
     assert settings.SOCIALACCOUNT_STORE_TOKENS is False
+    assert "http://localhost:5173" in settings.CSRF_TRUSTED_ORIGINS
+    assert "http://127.0.0.1:5173" in settings.CSRF_TRUSTED_ORIGINS
     assert google["SCOPE"] == ["openid", "email", "profile"]
     assert google["OAUTH_PKCE_ENABLED"] is True
 
