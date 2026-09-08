@@ -1,7 +1,7 @@
 import pytest
 from django.test import Client
 
-from apps.academic.models import Subject
+from apps.academic.models import StudentSubject, Subject
 from apps.accounts.models import User
 
 pytestmark = pytest.mark.django_db
@@ -93,6 +93,39 @@ def test_student_subjects_rejects_subject_from_other_course(client: Client, offe
         },
         content_type="application/json",
     )
-
     assert response.status_code == 400
     assert "matriz do seu curso" in response.json()["errors"]["subject_ids"][0].lower()
+
+
+def test_student_subject_patch_professor_and_workload(client: Client, offering):
+    user = User.objects.create_user(
+        email="patch@aluno.impacta.edu.br",
+        full_name="Aluno Patch",
+        course_offering=offering,
+    )
+    client.force_login(user)
+    subject = Subject.objects.filter(course=offering.course, active=True).first()
+    enrollment = StudentSubject.objects.create(
+        user=user,
+        subject=subject,
+        semester_period="2026/1",
+    )
+
+    response = client.patch(
+        f"/api/v1/student-subjects/{enrollment.id}",
+        data={"professor_name": "Prof. Alan Turing", "custom_workload_hours": 90},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["professor_name"] == "Prof. Alan Turing"
+    assert data["custom_workload_hours"] == 90
+    assert data["effective_workload_hours"] == 90
+
+    # Test invalid workload bounds
+    bad = client.patch(
+        f"/api/v1/student-subjects/{enrollment.id}",
+        data={"custom_workload_hours": 0},
+        content_type="application/json",
+    )
+    assert bad.status_code == 400

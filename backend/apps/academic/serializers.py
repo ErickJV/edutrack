@@ -27,6 +27,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 class StudentSubjectSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer(read_only=True)
     progress_percent = serializers.IntegerField(read_only=True)
+    effective_workload_hours = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = StudentSubject
@@ -34,14 +35,37 @@ class StudentSubjectSerializer(serializers.ModelSerializer):
             "id",
             "subject",
             "professor_name",
+            "custom_workload_hours",
+            "effective_workload_hours",
             "status",
             "semester_period",
             "progress_percent",
             "created_at",
             "updated_at",
         )
-        read_only_fields = fields
+        read_only_fields = (
+            "id",
+            "subject",
+            "status",
+            "semester_period",
+            "progress_percent",
+            "effective_workload_hours",
+            "created_at",
+            "updated_at",
+        )
 
+
+class StudentSubjectUpdateSerializer(serializers.ModelSerializer):
+    custom_workload_hours = serializers.IntegerField(
+        required=False, allow_null=True, min_value=1, max_value=2000
+    )
+    professor_name = serializers.CharField(
+        required=False, allow_blank=True, max_length=120, trim_whitespace=True
+    )
+
+    class Meta:
+        model = StudentSubject
+        fields = ("id", "professor_name", "custom_workload_hours")
 
 class StudentSubjectSelectionSerializer(serializers.Serializer):
     semester_period = serializers.CharField(required=False, allow_blank=True)

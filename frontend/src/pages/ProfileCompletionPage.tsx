@@ -7,7 +7,7 @@ import type { CourseOffering } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { AuthShell } from '../components/AuthShell'
 import { Alert } from '../components/Feedback'
-import { Input, PrimaryButton, Select } from '../components/FormControls'
+import { Input, PasswordInput, PrimaryButton, Select } from '../components/FormControls'
 
 export function ProfileCompletionPage() {
   const { user, setUser, signOut } = useAuth()
@@ -15,9 +15,13 @@ export function ProfileCompletionPage() {
   const [name, setName] = useState(user?.full_name || '')
   const [offeringId, setOfferingId] = useState('')
   const [acceptLegal, setAcceptLegal] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmation, setConfirmation] = useState('')
   const [offerings, setOfferings] = useState<CourseOffering[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const needsPassword = !user?.has_usable_password
 
   useEffect(() => {
     listCourseOfferings().then(setOfferings).catch(() => setError('Não foi possível carregar as graduações.'))
@@ -29,10 +33,25 @@ export function ProfileCompletionPage() {
       setError('Preencha seu nome, escolha a graduação e aceite os documentos para continuar.')
       return
     }
+    if (needsPassword) {
+      if (password.length < 12) {
+        setError('A senha deve ter no mínimo 12 caracteres.')
+        return
+      }
+      if (password !== confirmation) {
+        setError('As senhas não coincidem.')
+        return
+      }
+    }
     setLoading(true)
     setError('')
     try {
-      const profile = await completeProfile({ full_name: name.trim(), course_offering_id: offeringId, accept_legal: acceptLegal })
+      const profile = await completeProfile({
+        full_name: name.trim(),
+        course_offering_id: offeringId,
+        accept_legal: acceptLegal,
+        password: needsPassword ? password : undefined,
+      })
       setUser(profile)
       navigate('/home', { replace: true })
     } catch (reason) {
@@ -55,6 +74,29 @@ export function ProfileCompletionPage() {
           <option value="">Selecione uma opção</option>
           {offerings.map((offering) => <option key={offering.id} value={offering.id}>{offering.label}</option>)}
         </Select>
+        {needsPassword ? (
+          <div className="grid gap-5 sm:grid-cols-2">
+            <PasswordInput
+              label="Crie uma senha de acesso"
+              name="password"
+              autoComplete="new-password"
+              placeholder="Mínimo 12 caracteres"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              hint="Permite entrar no EduTrack sem depender exclusivamente do Google."
+              required
+            />
+            <PasswordInput
+              label="Confirme sua senha"
+              name="confirmation"
+              autoComplete="new-password"
+              placeholder="Repita a senha"
+              value={confirmation}
+              onChange={(event) => setConfirmation(event.target.value)}
+              required
+            />
+          </div>
+        ) : null}
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
           <input type="checkbox" checked={acceptLegal} onChange={(event) => setAcceptLegal(event.target.checked)} className="mt-1 size-4.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
           <span>Li e aceito os <Link to="/termos" target="_blank" className="font-bold text-indigo-600 hover:underline dark:text-indigo-400">Termos de Uso</Link> e a <Link to="/privacidade" target="_blank" className="font-bold text-indigo-600 hover:underline dark:text-indigo-400">Política de Privacidade</Link>.</span>

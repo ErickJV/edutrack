@@ -38,6 +38,26 @@ def test_profile_completion_records_legal_acceptances(client: Client, offering):
     assert LegalAcceptance.objects.filter(user=user).count() == 2
 
 
+def test_profile_completion_with_password(client: Client, offering):
+    user = User.objects.create_user(email="social.novo@aluno.impacta.edu.br")
+    assert not user.has_usable_password()
+    client.force_login(user)
+
+    response = client.put(
+        "/api/v1/profile",
+        data={
+            "full_name": "Aluno Social Novo",
+            "course_offering_id": str(offering.id),
+            "accept_legal": True,
+            "password": "Senha-Forte-OAuth-2026!",
+        },
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    user.refresh_from_db()
+    assert user.has_usable_password()
+    assert user.check_password("Senha-Forte-OAuth-2026!")
+
 def test_profile_completion_rejects_inactive_offering(client: Client, offering):
     user = User.objects.create_user(email="oauth2@aluno.impacta.edu.br")
     client.force_login(user)

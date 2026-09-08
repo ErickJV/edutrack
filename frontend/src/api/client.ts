@@ -179,6 +179,16 @@ export async function saveStudentSubjects(payload: { semester_period?: string; s
   }, [201])
 }
 
+export async function updateStudentSubject(
+  id: string,
+  payload: { professor_name?: string; custom_workload_hours?: number | null },
+): Promise<StudentSubject> {
+  return request<StudentSubject>(`/api/v1/student-subjects/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
 export async function listAcademicTasks(params: { student_subject?: string; status?: AcademicTaskStatus } = {}): Promise<AcademicTask[]> {
   const search = new URLSearchParams()
   if (params.student_subject) search.set('student_subject', params.student_subject)

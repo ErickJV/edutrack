@@ -50,6 +50,7 @@ class StudentSubject(models.Model):
         related_name="enrollments",
     )
     professor_name = models.CharField(max_length=120, blank=True)
+    custom_workload_hours = models.PositiveIntegerField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     semester_period = models.CharField(max_length=20, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -65,6 +66,9 @@ class StudentSubject(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user.email} - {self.subject.name}"
+    @property
+    def effective_workload_hours(self) -> int:
+        return self.custom_workload_hours if self.custom_workload_hours is not None else self.subject.workload_hours
 
     @property
     def progress_percent(self) -> int:

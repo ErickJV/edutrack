@@ -7,6 +7,7 @@ from .views import (
     CurriculumListView,
     DashboardSummaryView,
     StudentSubjectListCreateView,
+    StudentSubjectDetailView,
 )
 
 urlpatterns = [
@@ -15,6 +16,11 @@ urlpatterns = [
         "student-subjects",
         StudentSubjectListCreateView.as_view(),
         name="student-subject-list-create",
+    ),
+    path(
+        "student-subjects/<uuid:pk>",
+        StudentSubjectDetailView.as_view(),
+        name="student-subject-detail",
     ),
     path("tasks", AcademicTaskListCreateView.as_view(), name="academic-task-list-create"),
     path("tasks/<uuid:pk>", AcademicTaskDetailView.as_view(), name="academic-task-detail"),

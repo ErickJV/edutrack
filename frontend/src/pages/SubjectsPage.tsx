@@ -6,6 +6,7 @@ import type { StudentSubject } from '../api/types'
 import { Brand } from '../components/Brand'
 import { AppNavigation } from '../components/AppNavigation'
 import { SemesterSelectionModal } from '../components/SemesterSelectionModal'
+import { SubjectEditModal } from '../components/SubjectEditModal'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { Alert, PageLoader } from '../components/Feedback'
 function toSemesterLabel(semester: number): string {
@@ -17,7 +18,7 @@ export function SubjectsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-
+  const [editingSubject, setEditingSubject] = useState<StudentSubject | null>(null)
   useEffect(() => {
     let alive = true
     async function load() {
@@ -43,9 +44,8 @@ export function SubjectsPage() {
     if (activeSubjects.length === 0) return 0
     return Math.round(activeSubjects.reduce((sum, item) => sum + item.progress_percent, 0) / activeSubjects.length)
   }, [activeSubjects])
-
   const totalHours = useMemo(
-    () => activeSubjects.reduce((sum, item) => sum + item.subject.workload_hours, 0),
+    () => activeSubjects.reduce((sum, item) => sum + (item.custom_workload_hours ?? item.subject.workload_hours), 0),
     [activeSubjects],
   )
   if (loading) return <PageLoader />
@@ -145,9 +145,19 @@ export function SubjectsPage() {
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{toSemesterLabel(item.subject.semester)}</p>
                       <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950 dark:text-slate-50">{item.subject.name}</h3>
                     </div>
-                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                      {item.progress_percent}%
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        {item.progress_percent}%
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setEditingSubject(item)}
+                        className="inline-flex min-h-9 items-center rounded-lg border border-slate-200 px-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                        title="Editar professor e carga horária"
+                      >
+                        Editar
+                      </button>
+                    </div>
                   </div>
                   <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true">
                     <div className="h-full rounded-full bg-indigo-600 dark:bg-indigo-500" style={{ width: `${item.progress_percent}%` }} />
@@ -155,7 +165,7 @@ export function SubjectsPage() {
                   <dl className="mt-4 grid gap-3 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
                     <div>
                       <dt className="font-semibold text-slate-500 dark:text-slate-400">Carga horária</dt>
-                      <dd className="mt-1 font-bold text-slate-950 dark:text-slate-50">{item.subject.workload_hours}h</dd>
+                      <dd className="mt-1 font-bold text-slate-950 dark:text-slate-50">{item.custom_workload_hours != null ? `${item.custom_workload_hours}h (declarada)` : `${item.subject.workload_hours}h`}</dd>
                     </div>
                     <div>
                       <dt className="font-semibold text-slate-500 dark:text-slate-400">Professor</dt>
@@ -176,6 +186,14 @@ export function SubjectsPage() {
         onSaved={(subjects) => {
           setActiveSubjects(subjects)
           setModalOpen(false)
+        }}
+      />
+      <SubjectEditModal
+        open={Boolean(editingSubject)}
+        enrollment={editingSubject}
+        onClose={() => setEditingSubject(null)}
+        onSaved={(updated) => {
+          setActiveSubjects((current) => current.map((i) => (i.id === updated.id ? updated : i)))
         }}
       />
     </main>

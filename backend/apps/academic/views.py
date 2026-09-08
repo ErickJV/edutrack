@@ -16,6 +16,7 @@ from .serializers import (
     DashboardSummarySerializer,
     StudentSubjectSelectionSerializer,
     StudentSubjectSerializer,
+    StudentSubjectUpdateSerializer,
     SubjectSerializer,
 )
 
@@ -79,6 +80,26 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
         return Response(output.data, status=201)
 
 
+class StudentSubjectDetailView(generics.RetrieveUpdateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return StudentSubject.objects.select_related("subject", "subject__course").filter(user=user)
+
+    def get_serializer_class(self):
+        if self.request.method in ("PUT", "PATCH"):
+            return StudentSubjectUpdateSerializer
+        return StudentSubjectSerializer
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", True)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        output = StudentSubjectSerializer(instance)
+        return Response(output.data)
 class AcademicTaskMixin:
     def get_base_queryset(self: Any):
         user = cast(User, self.request.user)
@@ -188,11 +209,11 @@ class DashboardSummaryView(AcademicTaskMixin, generics.GenericAPIView):
         total_actual = sum(task.actual_minutes for task in tasks)
         weighted_progress = 0
         if student_subjects:
-            total_hours = sum(subject.subject.workload_hours for subject in student_subjects)
+            total_hours = sum(subject.effective_workload_hours for subject in student_subjects)
             if total_hours:
                 weighted_progress = round(
                     sum(
-                        subject.progress_percent * subject.subject.workload_hours
+                        subject.progress_percent * subject.effective_workload_hours
                         for subject in student_subjects
                     )
                     / total_hours
