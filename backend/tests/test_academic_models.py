@@ -49,6 +49,18 @@ def test_student_subject_enrollment_and_uniqueness(student_user, sample_subject)
         )
 
 
+def test_student_subject_workload_hours_custom_and_effective(student_user, sample_subject):
+    enrollment = StudentSubject.objects.create(
+        user=student_user,
+        subject=sample_subject,
+    )
+    assert enrollment.custom_workload_hours is None
+    assert enrollment.effective_workload_hours == sample_subject.workload_hours
+
+    enrollment.custom_workload_hours = 120
+    enrollment.save(update_fields=("custom_workload_hours",))
+    enrollment.refresh_from_db()
+    assert enrollment.effective_workload_hours == 120
 def test_academic_task_lifecycle_and_progress_calculation(student_user, sample_subject):
     enrollment = StudentSubject.objects.create(
         user=student_user,

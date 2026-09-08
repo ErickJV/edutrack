@@ -71,11 +71,13 @@ class StudentSubjectSelectionSerializer(serializers.Serializer):
     semester_period = serializers.CharField(required=False, allow_blank=True)
     subject_ids = serializers.ListField(
         child=serializers.UUIDField(),
-        allow_empty=False,
-        min_length=1,
+        allow_empty=True,
     )
 
     def validate_subject_ids(self, value):
+        if not value:
+            self._subjects = {}
+            return value
         request = self.context["request"]
         user = request.user
         course = getattr(user.course_offering, "course", None)
@@ -92,17 +94,45 @@ class StudentSubjectSelectionSerializer(serializers.Serializer):
         request = self.context["request"]
         user = request.user
         semester_period = self.validated_data.get("semester_period", "")
-        StudentSubject.objects.filter(user=user).delete()
-        enrollments = [
-            StudentSubject.objects.create(
-                user=user,
-                subject=self._subjects[subject_id],
-                semester_period=semester_period,
-                status=StudentSubject.Status.ACTIVE,
-            )
-            for subject_id in self.validated_data["subject_ids"]
-        ]
-        return enrollments
+        selected_ids = set(self.validated_data.get("subject_ids", []))
+
+        existing_enrollments = {
+            enrollment.subject_id: enrollment
+            for enrollment in StudentSubject.objects.filter(user=user)
+        }
+
+        # 1. Arquivar desmarcadas (DROPPED), preservando histórico e tarefas
+        for subj_id, enrollment in existing_enrollments.items():
+            if subj_id not in selected_ids and enrollment.status == StudentSubject.Status.ACTIVE:
+                enrollment.status = StudentSubject.Status.DROPPED
+                enrollment.save(update_fields=("status", "updated_at"))
+
+        # 2. Reativar existentes ou criar novas
+        result = []
+        for subj_id in self.validated_data.get("subject_ids", []):
+            if subj_id in existing_enrollments:
+                enrollment = existing_enrollments[subj_id]
+                update_fields = []
+                if enrollment.status != StudentSubject.Status.ACTIVE:
+                    enrollment.status = StudentSubject.Status.ACTIVE
+                    update_fields.append("status")
+                if semester_period and enrollment.semester_period != semester_period:
+                    enrollment.semester_period = semester_period
+                    update_fields.append("semester_period")
+                if update_fields:
+                    update_fields.append("updated_at")
+                    enrollment.save(update_fields=update_fields)
+                result.append(enrollment)
+            else:
+                enrollment = StudentSubject.objects.create(
+                    user=user,
+                    subject=self._subjects[subj_id],
+                    semester_period=semester_period,
+                    status=StudentSubject.Status.ACTIVE,
+                )
+                result.append(enrollment)
+
+        return result
 
 
 class AcademicTaskSerializer(serializers.ModelSerializer):

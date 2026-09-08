@@ -1,7 +1,7 @@
 import pytest
 from django.test import Client
 
-from apps.academic.models import StudentSubject, Subject
+from apps.academic.models import AcademicTask, StudentSubject, Subject
 from apps.accounts.models import User
 
 pytestmark = pytest.mark.django_db
@@ -129,3 +129,99 @@ def test_student_subject_patch_professor_and_workload(client: Client, offering):
         content_type="application/json",
     )
     assert bad.status_code == 400
+
+    # Partial update: omit professor_name, should preserve it
+    res_partial = client.patch(
+        f"/api/v1/student-subjects/{enrollment.id}",
+        data={"custom_workload_hours": 120},
+        content_type="application/json",
+    )
+    assert res_partial.status_code == 200
+    assert res_partial.json()["professor_name"] == "Prof. Alan Turing"
+    assert res_partial.json()["custom_workload_hours"] == 120
+
+    # Clearing custom_workload_hours (set to None) restores subject's original workload
+    res_clear = client.patch(
+        f"/api/v1/student-subjects/{enrollment.id}",
+        data={"custom_workload_hours": None},
+        content_type="application/json",
+    )
+    assert res_clear.status_code == 200
+    assert res_clear.json()["custom_workload_hours"] is None
+    assert res_clear.json()["effective_workload_hours"] == subject.workload_hours
+
+    # Verifies catalog Subject was NOT modified
+    subject.refresh_from_db()
+    assert subject.workload_hours == 80
+
+    # Rejection of other user's enrollment (HTTP 404)
+    other_user = User.objects.create_user(email="outro.aluno@aluno.impacta.edu.br", course_offering=offering)
+    client.force_login(other_user)
+    res_404 = client.patch(
+        f"/api/v1/student-subjects/{enrollment.id}",
+        data={"professor_name": "Invasor"},
+        content_type="application/json",
+    )
+    assert res_404.status_code == 404
+
+def test_student_subject_reconciliation_preserves_data_and_tasks(client: Client, offering):
+    user = User.objects.create_user(
+        email="reconcile@aluno.impacta.edu.br",
+        full_name="Aluno Reconcile",
+        course_offering=offering,
+    )
+    client.force_login(user)
+    subjects = list(Subject.objects.filter(course=offering.course, active=True)[:2])
+
+    # 1. Seleciona duas matérias
+    res1 = client.post(
+        "/api/v1/student-subjects",
+        data={"semester_period": "2026/1", "subject_ids": [str(s.id) for s in subjects]},
+        content_type="application/json",
+    )
+    assert res1.status_code == 201
+    enrollment1_id = res1.json()[0]["id"]
+    enrollment2_id = res1.json()[1]["id"]
+
+    # Cria tarefa na matéria 1
+    task = AcademicTask.objects.create(
+        user=user,
+        student_subject_id=enrollment1_id,
+        title="Tarefa Importante",
+    )
+
+    # 2. Desmarca matéria 1 (mantém apenas matéria 2)
+    res2 = client.post(
+        "/api/v1/student-subjects",
+        data={"semester_period": "2026/1", "subject_ids": [str(subjects[1].id)]},
+        content_type="application/json",
+    )
+    assert res2.status_code == 201
+    assert len(res2.json()) == 1
+    assert res2.json()[0]["id"] == enrollment2_id
+
+    # Matéria 1 foi arquivada (DROPPED), tarefa continua intacta
+    enr1 = StudentSubject.objects.get(id=enrollment1_id)
+    assert enr1.status == StudentSubject.Status.DROPPED
+    task.refresh_from_db()
+    assert task.student_subject_id == enr1.id
+
+    # 3. Reativa matéria 1
+    res3 = client.post(
+        "/api/v1/student-subjects",
+        data={"semester_period": "2026/1", "subject_ids": [str(s.id) for s in subjects]},
+        content_type="application/json",
+    )
+    assert res3.status_code == 201
+    assert len(res3.json()) == 2
+    # IDs foram preservados exatamente
+    assert {e["id"] for e in res3.json()} == {enrollment1_id, enrollment2_id}
+
+    # 4. Seleção vazia arquiva tudo sem erro
+    res4 = client.post(
+        "/api/v1/student-subjects",
+        data={"semester_period": "2026/1", "subject_ids": []},
+        content_type="application/json",
+    )
+    assert res4.status_code == 201
+    assert len(res4.json()) == 0

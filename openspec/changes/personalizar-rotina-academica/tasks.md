@@ -1,16 +1,16 @@
 ## 1. Base de especificações e preservação
 
 - [ ] 1.1 Conferir os requisitos modificados contra a mudança acadêmica anterior e sincronizar sua base em `openspec/specs` com o workflow de sync, sem arquivar; verificar nomes dos requisitos e validação estrita das capacidades.
-- [ ] 1.2 Adicionar seleção/arquivamento independente do status acadêmico e reconciliar matrículas transacionalmente; testar ids e tarefas preservados em seleção repetida, vazia e reativação.
+- [x] 1.2 Adicionar seleção/arquivamento independente do status acadêmico e reconciliar matrículas transacionalmente; testar ids e tarefas preservados em seleção repetida, vazia e reativação.
 - [ ] 1.3 Expor histórico pessoal de matrículas e manter tarefas anteriores acessíveis, rejeitando criação em vínculo arquivado; testar isolamento, 404 para ids alheios e ausência de exclusão em cascata.
 
 ## 2. Carga horária e professores
 
-- [ ] 2.1 Criar campos de carga pessoal e procedência/valor legado do catálogo; testar migração com horas ausentes/presumidas, restrição 1–2000 e reversão em banco de testes.
+- [x] 2.1 Criar campos de carga pessoal e procedência/valor legado do catálogo; testar migração com horas ausentes/presumidas, restrição 1–2000 e reversão em banco de testes.
 - [ ] 2.2 Remover sincronização online do seed/startup e fallback de 80h da importação manual; testar seed sem rede, idempotência, horas desconhecidas nulas e preservação de cargas pessoais.
 - [ ] 2.3 Criar professor privado e vínculo opcional na matrícula, migrando textos existentes por aluno; testar homônimos, nomes vazios e preservação do texto legado.
 - [ ] 2.4 Implementar APIs de professores com arquivamento e OpenAPI; testar criação/edição/leitura, campos inválidos, CSRF, propriedade e preservação de vínculos.
-- [ ] 2.5 Implementar edição parcial da matrícula para carga/professor e atualizar contratos; testar limpeza de valores, campos omitidos e rejeição de referência alheia sem modificar catálogo.
+- [x] 2.5 Implementar edição parcial da matrícula para carga/professor e atualizar contratos; testar limpeza de valores, campos omitidos e rejeição de referência alheia sem modificar catálogo.
 - [ ] 2.6 Criar página de professores e editor de disciplina com cadastro inline; verificar formulário, nome acessível, dados preservados após erro e atualização dos cartões em testes de frontend.
 
 ## 3. Semestre e aulas

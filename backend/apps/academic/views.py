@@ -54,11 +54,17 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied(
                 "Complete seu perfil acadêmico antes de selecionar matérias ativas."
             )
-        return (
+        queryset = (
             StudentSubject.objects.select_related("subject", "subject__course")
             .filter(user=user)
             .order_by("subject__semester", "subject__name")
         )
+        status_param = self.request.query_params.get("status")
+        if status_param == "all":
+            return queryset
+        if status_param in StudentSubject.Status.values:
+            return queryset.filter(status=status_param)
+        return queryset.filter(status=StudentSubject.Status.ACTIVE)
 
     def get_serializer_class(self):
         if self.request.method == "POST":
