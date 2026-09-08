@@ -33,7 +33,8 @@ async function waitForMessage(
   return String(body.Text || body.text || '')
 }
 
-test('cadastro, verificação, recuperação e novo login', async ({ page, request }) => {
+test('cadastro, verificação, recuperação e novo login', async ({ page, request }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-360', 'Fluxo funcional coberto uma vez; os três viewports têm validação visual própria.')
   const suffix = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
   const email = `e2e.${suffix}@aluno.impacta.edu.br`
   const oldPassword = 'Trilha-E2E-Segura-Impacta-2026!'
@@ -43,8 +44,8 @@ test('cadastro, verificação, recuperação e novo login', async ({ page, reque
   await page.getByLabel('Nome completo').fill('Aluno E2E Impacta')
   await page.getByLabel('E-mail institucional').fill(email)
   await page.getByLabel('Graduação e modalidade').selectOption({ index: 1 })
-  await page.getByLabel('Senha', { exact: true }).fill(oldPassword)
-  await page.getByLabel('Confirme a senha').fill(oldPassword)
+  await page.locator('input[name="password"]').fill(oldPassword)
+  await page.locator('input[name="confirmation"]').fill(oldPassword)
   await page.getByRole('checkbox').check()
   await page.getByRole('button', { name: 'Criar minha conta' }).click()
 
@@ -60,6 +61,8 @@ test('cadastro, verificação, recuperação e novo login', async ({ page, reque
   await page.getByRole('button', { name: 'Sair' }).click()
   await expect(page).toHaveURL(/\/entrar$/)
   await page.getByRole('link', { name: 'Esqueci minha senha' }).click()
+  await expect(page).toHaveURL(/\/esqueci-senha$/)
+  await expect(page.getByRole('heading', { name: 'Esqueceu sua senha?' })).toBeVisible()
   await page.getByLabel('E-mail institucional').fill(email)
   await page.getByRole('button', { name: 'Enviar link de recuperação' }).click()
   await expect(page.getByText(/mostramos esta mensagem mesmo/)).toBeVisible()
@@ -68,14 +71,14 @@ test('cadastro, verificação, recuperação e novo login', async ({ page, reque
   const resetPath = resetEmail.match(/http:\/\/localhost:5173(\/redefinir-senha\/[^\s]+)/)?.[1]
   expect(resetPath).toBeTruthy()
   await page.goto(resetPath!)
-  await page.getByLabel('Nova senha', { exact: true }).fill(newPassword)
-  await page.getByLabel('Confirme a nova senha').fill(newPassword)
+  await page.locator('input[name="password"]').fill(newPassword)
+  await page.locator('input[name="confirmation"]').fill(newPassword)
   await page.getByRole('button', { name: 'Salvar nova senha' }).click()
   await expect(page.getByRole('heading', { name: 'Senha atualizada' })).toBeVisible()
 
   await page.getByRole('link', { name: 'Entrar com a nova senha' }).click()
   await page.getByLabel('E-mail institucional').fill(email)
-  await page.getByLabel('Senha').fill(newPassword)
+  await page.locator('input[name="password"]').fill(newPassword)
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await expect(page).toHaveURL(/\/home$/)
 })

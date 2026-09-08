@@ -95,14 +95,14 @@ export function SignupPage() {
           <PasswordInput label="Confirme a senha" name="confirmation" autoComplete="new-password" placeholder="Repita a senha" value={form.confirmation} onChange={(event) => update('confirmation', event.target.value)} error={fieldErrors.confirmation} required />
         </div>
         <div>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700">
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
             <input type="checkbox" checked={form.acceptLegal} onChange={(event) => update('acceptLegal', event.target.checked)} className="mt-1 size-4.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-            <span>Li e aceito os <Link to="/termos" target="_blank" className="font-bold text-indigo-600 hover:underline">Termos de Uso</Link> e a <Link to="/privacidade" target="_blank" className="font-bold text-indigo-600 hover:underline">Política de Privacidade</Link>.</span>
+            <span>Li e aceito os <Link to="/termos" target="_blank" className="font-bold text-indigo-600 hover:underline dark:text-indigo-400">Termos de Uso</Link> e a <Link to="/privacidade" target="_blank" className="font-bold text-indigo-600 hover:underline dark:text-indigo-400">Política de Privacidade</Link>.</span>
           </label>
-          {fieldErrors.acceptLegal ? <p className="mt-1.5 text-sm font-medium text-rose-600">{fieldErrors.acceptLegal}</p> : null}
+          {fieldErrors.acceptLegal ? <p className="mt-1.5 text-sm font-medium text-rose-600 dark:text-rose-400">{fieldErrors.acceptLegal}</p> : null}
         </div>
         <PrimaryButton type="submit" loading={loading}>Criar minha conta</PrimaryButton>
-        <p className="text-center text-sm text-slate-600">Já tem uma conta? <Link to="/entrar" className="font-extrabold text-indigo-600 hover:underline">Entrar</Link></p>
+        <p className="text-center text-sm text-slate-600 dark:text-slate-400">Já tem uma conta? <Link to="/entrar" className="font-extrabold text-indigo-600 hover:underline dark:text-indigo-400">Entrar</Link></p>
       </form>
     </AuthShell>
   )
