@@ -52,16 +52,16 @@ export function LoginPage() {
           <Input label="E-mail institucional" name="email" type="email" autoComplete="email" placeholder="seu.nome@aluno.impacta.edu.br" value={email} onChange={(event) => setEmail(event.target.value)} required />
           <PasswordInput label="Senha" name="password" autoComplete="current-password" placeholder="Digite sua senha" value={password} onChange={(event) => setPassword(event.target.value)} required />
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm font-semibold text-slate-700">
+            <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
               <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} className="size-4.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
               Lembrar por 14 dias
             </label>
-            <Link to="/esqueci-senha" className="min-h-11 py-3 text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline">Esqueci minha senha</Link>
+            <Link to="/esqueci-senha" className="min-h-11 py-3 text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300">Esqueci minha senha</Link>
           </div>
           <PrimaryButton loading={loading} type="submit">Entrar</PrimaryButton>
         </form>
-        <p className="pt-2 text-center text-sm text-slate-600">
-          Ainda não tem conta? <Link to="/cadastro" className="font-extrabold text-indigo-600 hover:underline">Cadastre-se</Link>
+        <p className="pt-2 text-center text-sm text-slate-600 dark:text-slate-400">
+          Ainda não tem conta? <Link to="/cadastro" className="font-extrabold text-indigo-600 hover:underline dark:text-indigo-400">Cadastre-se</Link>
         </p>
       </div>
     </AuthShell>
