@@ -6,6 +6,7 @@ import { HomePage } from './pages/HomePage'
 import { LegalPage } from './pages/LegalPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { ProfessorsPage } from './pages/ProfessorsPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { ProfileCompletionPage } from './pages/ProfileCompletionPage'
 import { SubjectsPage } from './pages/SubjectsPage'
@@ -30,6 +31,7 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/home" element={<HomePage />} />
         <Route path="/disciplinas" element={<SubjectsPage />} />
+        <Route path="/professores" element={<ProfessorsPage />} />
         <Route path="/tarefas" element={<TasksPage />} />
       </Route>
       <Route path="/termos" element={<LegalPage kind="terms" />} />

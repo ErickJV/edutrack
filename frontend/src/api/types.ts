@@ -34,6 +34,7 @@ export type ProfilePayload = {
   full_name: string
   course_offering_id: string
   accept_legal: boolean
+  password?: string
 }
 
 export type AcademicSubject = {
@@ -48,17 +49,27 @@ export type AcademicSubject = {
   active: boolean
 }
 
+export type Professor = {
+  id: string
+  name: string
+  active: boolean
+  created_at: string
+}
+
 export type StudentSubject = {
   id: string
   subject: AcademicSubject
+  professor?: Professor | null
   professor_name: string
+  display_professor_name?: string
+  custom_workload_hours?: number | null
+  effective_workload_hours?: number
   status: 'active' | 'completed' | 'dropped'
   semester_period: string
   progress_percent: number
   created_at: string
   updated_at: string
 }
-
 export type AcademicTaskStatus = 'pending' | 'in_progress' | 'completed'
 
 export type AcademicTask = {

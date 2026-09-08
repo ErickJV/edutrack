@@ -8,14 +8,18 @@ from rest_framework.response import Response
 
 from apps.accounts.models import User
 
-from .models import AcademicTask, StudentSubject, Subject
+from .models import AcademicEvent, AcademicTask, AcademicTerm, Professor, StudentSubject, Subject
 from .permissions import IsAuthenticatedOr401
 from .serializers import (
+    AcademicEventSerializer,
     AcademicTaskSerializer,
     AcademicTaskWriteSerializer,
+    AcademicTermSerializer,
     DashboardSummarySerializer,
+    ProfessorSerializer,
     StudentSubjectSelectionSerializer,
     StudentSubjectSerializer,
+    StudentSubjectUpdateSerializer,
     SubjectSerializer,
 )
 
@@ -42,6 +46,32 @@ class CurriculumListView(generics.ListAPIView):
             .order_by("semester", "name")
         )
 
+class ProfessorListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = ProfessorSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        include_archived = self.request.query_params.get("include_archived") == "true"
+        queryset = Professor.objects.filter(user=user)
+        if not include_archived:
+            queryset = queryset.filter(active=True)
+        return queryset.order_by("name")
+
+
+class ProfessorDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = ProfessorSerializer
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return Professor.objects.filter(user=user)
+
+    def perform_destroy(self, instance):
+        instance.active = False
+        instance.save(update_fields=("active", "updated_at"))
+
 
 class StudentSubjectListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticatedOr401,)
@@ -53,11 +83,17 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied(
                 "Complete seu perfil acadêmico antes de selecionar matérias ativas."
             )
-        return (
+        queryset = (
             StudentSubject.objects.select_related("subject", "subject__course")
             .filter(user=user)
             .order_by("subject__semester", "subject__name")
         )
+        status_param = self.request.query_params.get("status")
+        if status_param == "all":
+            return queryset
+        if status_param in StudentSubject.Status.values:
+            return queryset.filter(status=status_param)
+        return queryset.filter(status=StudentSubject.Status.ACTIVE)
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -79,6 +115,26 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
         return Response(output.data, status=201)
 
 
+class StudentSubjectDetailView(generics.RetrieveUpdateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return StudentSubject.objects.select_related("subject", "subject__course").filter(user=user)
+
+    def get_serializer_class(self):
+        if self.request.method in ("PUT", "PATCH"):
+            return StudentSubjectUpdateSerializer
+        return StudentSubjectSerializer
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", True)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        output = StudentSubjectSerializer(instance)
+        return Response(output.data)
 class AcademicTaskMixin:
     def get_base_queryset(self: Any):
         user = cast(User, self.request.user)
@@ -188,11 +244,11 @@ class DashboardSummaryView(AcademicTaskMixin, generics.GenericAPIView):
         total_actual = sum(task.actual_minutes for task in tasks)
         weighted_progress = 0
         if student_subjects:
-            total_hours = sum(subject.subject.workload_hours for subject in student_subjects)
+            total_hours = sum(subject.effective_workload_hours for subject in student_subjects)
             if total_hours:
                 weighted_progress = round(
                     sum(
-                        subject.progress_percent * subject.subject.workload_hours
+                        subject.progress_percent * subject.effective_workload_hours
                         for subject in student_subjects
                     )
                     / total_hours
@@ -210,3 +266,58 @@ class DashboardSummaryView(AcademicTaskMixin, generics.GenericAPIView):
             }
         )
         return Response(serializer.data)
+
+
+class AcademicTermListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicTermSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return AcademicTerm.objects.filter(user=user).order_by("-start_date", "name")
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class AcademicTermDetailView(generics.RetrieveUpdateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicTermSerializer
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return AcademicTerm.objects.filter(user=user)
+
+
+class AcademicEventListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicEventSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        queryset = AcademicEvent.objects.select_related(
+            "student_subject", "student_subject__subject"
+        ).filter(user=user)
+        kind = self.request.query_params.get("kind")
+        if kind:
+            queryset = queryset.filter(kind=kind)
+        student_subject_id = self.request.query_params.get("student_subject_id")
+        if student_subject_id:
+            queryset = queryset.filter(student_subject_id=UUID(student_subject_id))
+        return queryset.order_by("starts_at", "title")
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class AcademicEventDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicEventSerializer
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return AcademicEvent.objects.select_related(
+            "student_subject", "student_subject__subject"
+        ).filter(user=user)

@@ -93,6 +93,56 @@ def test_tasks_rejects_student_subject_from_other_user(client: Client, offering)
     assert "não pertence" in response.json()["errors"]["student_subject"][0].lower()
 
 
+def test_tasks_rejects_creation_on_archived_student_subject_and_preserves_previous_tasks(
+    client: Client, offering
+):
+    user = User.objects.create_user(
+        email="archived.tasks@aluno.impacta.edu.br",
+        full_name="Aluno Archived",
+        course_offering=offering,
+    )
+    client.force_login(user)
+    subject = Subject.objects.filter(course=offering.course, active=True).first()
+    enrollment = StudentSubject.objects.create(
+        user=user,
+        subject=subject,
+        status=StudentSubject.Status.ACTIVE,
+    )
+
+    # 1. Tarefa criada enquanto ativa
+    task = AcademicTask.objects.create(
+        user=user,
+        student_subject=enrollment,
+        title="Tarefa Antiga",
+    )
+
+    # 2. Arquiva o vínculo
+    enrollment.status = StudentSubject.Status.DROPPED
+    enrollment.save(update_fields=("status",))
+
+    # 3. Tentativa de criar nova tarefa em vínculo arquivado é rejeitada (400)
+    response = client.post(
+        "/api/v1/tasks",
+        data={
+            "student_subject": str(enrollment.id),
+            "title": "Nova Tarefa Inválida",
+        },
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+    assert "arquivada" in response.json()["errors"]["student_subject"][0].lower()
+
+    # 4. Tarefa anterior permanece acessível na listagem
+    listing = client.get("/api/v1/tasks")
+    assert listing.status_code == 200
+    assert any(t["id"] == str(task.id) for t in listing.json())
+
+    # 5. E acessível por filtro de disciplina
+    filtered = client.get(f"/api/v1/tasks?student_subject={enrollment.id}")
+    assert filtered.status_code == 200
+    assert len(filtered.json()) == 1
+    assert filtered.json()[0]["id"] == str(task.id)
+
 def test_tasks_filter_by_subject(client: Client, offering):
     user = User.objects.create_user(
         email="filtro@aluno.impacta.edu.br",

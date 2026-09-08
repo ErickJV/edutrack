@@ -8,6 +8,7 @@ import { AppNavigation } from '../components/AppNavigation'
 import { Alert, PageLoader } from '../components/Feedback'
 import { Select } from '../components/FormControls'
 import { TaskFormModal } from '../components/TaskFormModal'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 const STATUS_LABELS: Record<'all' | AcademicTaskStatus, string> = {
   all: 'Todos',
@@ -28,11 +29,11 @@ function formatDate(value: string | null): string {
 function statusBadgeClass(status: AcademicTaskStatus): string {
   switch (status) {
     case 'completed':
-      return 'bg-emerald-100 text-emerald-700'
+      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300'
     case 'in_progress':
-      return 'bg-cyan-100 text-cyan-700'
+      return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/70 dark:text-cyan-300'
     default:
-      return 'bg-amber-100 text-amber-700'
+      return 'bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300'
   }
 }
 function statusDescription(status: AcademicTaskStatus): string {
@@ -235,21 +236,22 @@ export function TasksPage() {
   if (loading) return <PageLoader />
 
   return (
-    <main className="min-h-dvh bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+    <main className="min-h-dvh bg-slate-50 dark:bg-slate-950">
+      <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
           <div className="flex items-center justify-between gap-4">
             <Brand />
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <button
                 type="button"
                 onClick={openCreate}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
               >
                 <span className="hidden sm:inline">Nova tarefa</span>
                 <span className="sm:hidden">Nova</span>
               </button>
-              <span className="hidden min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-600 sm:inline-flex">
+              <span className="hidden min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-600 sm:inline-flex dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
                 <ListTodo size={18} aria-hidden="true" />
                 Gestão de tarefas
               </span>
@@ -277,21 +279,21 @@ export function TasksPage() {
         {error ? <div className="mt-6"><Alert>{error}</Alert></div> : null}
 
         <section className="mt-6 grid gap-4 sm:grid-cols-3">
-          <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-slate-500">Tarefas filtradas</p>
-            <p className="mt-2 text-3xl font-black text-slate-950">{totalTasks}</p>
+          <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas filtradas</p>
+            <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{totalTasks}</p>
           </article>
-          <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-slate-500">Pendentes</p>
-            <p className="mt-2 text-3xl font-black text-slate-950">{pendingTasks}</p>
+          <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Pendentes</p>
+            <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{pendingTasks}</p>
           </article>
-          <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-slate-500">Concluídas</p>
-            <p className="mt-2 text-3xl font-black text-slate-950">{completedTasks}</p>
+          <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Concluídas</p>
+            <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{completedTasks}</p>
           </article>
         </section>
 
-        <section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900">
           <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <Select label="Filtrar por disciplina" value={subjectFilter} onChange={(event) => setSubjectFilter(event.target.value)}>
               <option value="all">Todas as disciplinas</option>
@@ -313,14 +315,14 @@ export function TasksPage() {
             </Select>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-500">
-            <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">
+          <div className="mt-6 flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+            <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
               <Clock3 size={14} aria-hidden="true" /> Ordem por prazo e título
             </span>
             {subjectFilter !== 'all' || statusFilter !== 'all' ? (
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-indigo-700 transition hover:bg-indigo-100"
+                className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-indigo-700 transition hover:bg-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
                 onClick={() => {
                   setSubjectFilter('all')
                   setStatusFilter('all')
@@ -334,18 +336,18 @@ export function TasksPage() {
           {toggleError ? <div className="mt-4"><Alert>{toggleError}</Alert></div> : null}
           {studyError ? <div className="mt-4"><Alert>{studyError}</Alert></div> : null}
           {tasks.length === 0 ? (
-            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-              <LoaderCircle className="mx-auto text-slate-400" size={28} aria-hidden="true" />
-              <p className="mt-4 text-lg font-black text-slate-950">Ainda não há tarefas cadastradas</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center dark:border-slate-700 dark:bg-slate-900/60">
+              <LoaderCircle className="mx-auto text-slate-400 dark:text-slate-500" size={28} aria-hidden="true" />
+              <p className="mt-4 text-lg font-black text-slate-950 dark:text-slate-50">Ainda não há tarefas cadastradas</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Quando você criar tarefas para suas disciplinas, elas aparecerão organizadas por status nesta tela.
               </p>
             </div>
           ) : filteredTasks.length === 0 ? (
-            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-              <LoaderCircle className="mx-auto text-slate-400" size={28} aria-hidden="true" />
-              <p className="mt-4 text-lg font-black text-slate-950">Nenhuma tarefa corresponde aos filtros</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center dark:border-slate-700 dark:bg-slate-900/60">
+              <LoaderCircle className="mx-auto text-slate-400 dark:text-slate-500" size={28} aria-hidden="true" />
+              <p className="mt-4 text-lg font-black text-slate-950 dark:text-slate-50">Nenhuma tarefa corresponde aos filtros</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Ajuste a disciplina ou o status selecionado para visualizar outra combinação de resultados.
               </p>
             </div>
@@ -355,11 +357,11 @@ export function TasksPage() {
                 const group = groupedTasks[status]
                 if (statusFilter !== 'all' && statusFilter !== status) return null
                 return (
-                  <section key={status} className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                  <section key={status} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/50">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{STATUS_LABELS[status]}</p>
-                        <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950">{statusDescription(status)}</h2>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{STATUS_LABELS[status]}</p>
+                        <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950 dark:text-slate-50">{statusDescription(status)}</h2>
                       </div>
                       <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusBadgeClass(status)}`}>{group.length}</span>
                     </div>
@@ -369,7 +371,7 @@ export function TasksPage() {
                     ) : (
                       <div className="mt-4 grid gap-4 lg:grid-cols-2">
                         {group.map((task) => (
-                          <article key={task.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                          <article key={task.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex items-start gap-3">
                                 <input
@@ -378,13 +380,13 @@ export function TasksPage() {
                                   disabled={togglingTaskId === task.id}
                                   onChange={() => void toggleTask(task)}
                                   aria-label={task.status === 'completed' ? 'Desmarcar tarefa concluída' : 'Marcar tarefa concluída'}
-                                  className="mt-1 size-5 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                  className="mt-1 size-5 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-800"
                                 />
                                 <div>
-                                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
                                     {task.subject_name} · {task.subject_semester}º semestre
                                   </p>
-                                  <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">{task.title}</h3>
+                                  <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950 dark:text-slate-50">{task.title}</h3>
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-2">
@@ -392,55 +394,54 @@ export function TasksPage() {
                                 <button
                                   type="button"
                                   onClick={() => openEdit(task)}
-                                  className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                  className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-indigo-400 dark:hover:bg-slate-800 dark:focus-visible:outline-indigo-400"
                                 >
                                   Editar
                                 </button>
                               </div>
                             </div>
 
-                            {task.description ? <p className="mt-3 text-sm leading-6 text-slate-600">{task.description}</p> : null}
+                            {task.description ? <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{task.description}</p> : null}
 
-                            <dl className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                            <dl className="mt-4 grid gap-3 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
                               <div>
-                                <dt className="font-semibold text-slate-500">Prazo</dt>
-                                <dd className="mt-1 font-bold text-slate-950">{formatDate(task.due_date)}</dd>
+                                <dt className="font-semibold text-slate-500 dark:text-slate-400">Prazo</dt>
+                                <dd className="mt-1 font-bold text-slate-950 dark:text-slate-50">{formatDate(task.due_date)}</dd>
                               </div>
                               <div>
-                                <dt className="font-semibold text-slate-500">Estimativa</dt>
-                                <dd className="mt-1 font-bold text-slate-950">{task.estimated_minutes} min</dd>
+                                <dt className="font-semibold text-slate-500 dark:text-slate-400">Estimativa</dt>
+                                <dd className="mt-1 font-bold text-slate-950 dark:text-slate-50">{task.estimated_minutes} min</dd>
                               </div>
                               <div>
-                                <dt className="font-semibold text-slate-500">Tempo realizado</dt>
-                                <dd className="mt-1 font-bold text-slate-950">{task.actual_minutes} min</dd>
+                                <dt className="font-semibold text-slate-500 dark:text-slate-400">Tempo realizado</dt>
+                                <dd className="mt-1 font-bold text-slate-950 dark:text-slate-50">{task.actual_minutes} min</dd>
                               </div>
                               <div>
-                                <dt className="font-semibold text-slate-500">Situação</dt>
-                                <dd className="mt-1 font-bold text-slate-950">{statusDescription(task.status)}</dd>
+                                <dt className="font-semibold text-slate-500 dark:text-slate-400">Situação</dt>
+                                <dd className="mt-1 font-bold text-slate-950 dark:text-slate-50">{statusDescription(task.status)}</dd>
                               </div>
                             </dl>
 
-                            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
                               <div className="flex items-start justify-between gap-3">
                                 <div>
-                                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Estudo em tempo real</p>
-                                  <p className="mt-1 text-sm font-bold text-slate-950">
+                                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Estudo em tempo real</p>
+                                  <p className="mt-1 text-sm font-bold text-slate-950 dark:text-slate-50">
                                     {studySessions[task.id]?.running ? `Sessão ativa · ${formatStudyTime(studySessions[task.id].elapsedSeconds)}` : 'Sessão pausada'}
                                   </p>
-                                  <p className="mt-1 text-sm text-slate-600">
+                                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                                     Minutos acumulados: {task.actual_minutes + Math.floor((studySessions[task.id]?.elapsedSeconds ?? 0) / 60)} min
                                   </p>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() => (studySessions[task.id]?.running ? void stopStudy(task) : startStudy(task))}
-                                  className="inline-flex min-h-10 items-center rounded-lg bg-indigo-600 px-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                  className="inline-flex min-h-10 items-center rounded-lg bg-indigo-600 px-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
                                 >
                                   {studySessions[task.id]?.running ? 'Pausar' : 'Iniciar estudo'}
                                 </button>
                               </div>
                             </div>
-
                           </article>
                         ))}
                       </div>

@@ -17,8 +17,8 @@ describe('AppNavigation', () => {
 
     const homeLink = screen.getByRole('link', { name: 'Home' })
     const subjectsLink = screen.getByRole('link', { name: 'Disciplinas' })
+    const professorsLink = screen.getByRole('link', { name: 'Professores' })
     const tasksLink = screen.getByRole('link', { name: 'Tarefas' })
-
     expect(subjectsLink).toHaveAttribute('aria-current', 'page')
 
     await user.tab()
@@ -26,6 +26,9 @@ describe('AppNavigation', () => {
 
     await user.tab()
     expect(subjectsLink).toHaveFocus()
+
+    await user.tab()
+    expect(professorsLink).toHaveFocus()
 
     await user.tab()
     expect(tasksLink).toHaveFocus()
