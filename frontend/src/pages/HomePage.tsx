@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpenCheck, Clock3, GraduationCap, LogOut, Sparkles } from 'lucide-react'
+import { BookOpenCheck, Clock3, GraduationCap, LogOut, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { getDashboardSummary, listStudentSubjects } from '../api/client'
@@ -254,53 +254,31 @@ export function HomePage() {
           )}
         </section>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[0.78fr_1.22fr]">
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900" aria-labelledby="academic-profile">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.14em] text-indigo-600 dark:text-indigo-400">Seu perfil</p>
-                <h2 id="academic-profile" className="mt-2 text-xl font-black text-slate-950 dark:text-slate-50">Informações acadêmicas</h2>
-              </div>
-              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-indigo-50 text-indigo-600">
-                <GraduationCap size={24} aria-hidden="true" />
-              </span>
-            </div>
-            <dl className="mt-7 space-y-5">
-              <div>
-                <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Graduação</dt>
-                <dd className="mt-1 font-bold leading-6 text-slate-900 dark:text-slate-100">{user?.course_offering?.course_name}</dd>
-              </div>
-              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-5">
-                <div>
-                  <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Modalidade</dt>
-                  <dd className="mt-1 font-bold text-slate-900 dark:text-slate-100">{user?.course_offering?.modality_label}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Vínculo</dt>
-                  <dd className="mt-1 font-bold text-emerald-700 dark:text-emerald-400">Verificado</dd>
-                </div>
-              </div>
-            </dl>
-          </section>
-
-          <section className="flex min-h-72 flex-col justify-between rounded-3xl border border-cyan-100 bg-gradient-to-br from-white to-cyan-50 p-6 shadow-sm sm:p-8 dark:border-cyan-900/30 dark:from-slate-900 dark:to-cyan-950/20" aria-labelledby="coming-soon">
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900" aria-labelledby="academic-profile">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <span className="grid size-12 place-items-center rounded-2xl bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300">
-                <Clock3 size={24} aria-hidden="true" />
-              </span>
-              <p className="mt-7 text-sm font-bold uppercase tracking-[0.14em] text-cyan-700 dark:text-cyan-400">Próximos passos</p>
-              <h2 id="coming-soon" className="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl dark:text-slate-50">Recursos de organização em breve</h2>
-              <p className="mt-3 max-w-xl leading-7 text-slate-600 dark:text-slate-300">
-                Planejamento de tarefas, calendário acadêmico e acompanhamento de disciplinas chegarão nas próximas versões do EduTrack.
-              </p>
+              <p className="text-sm font-bold uppercase tracking-[0.14em] text-indigo-600 dark:text-indigo-400">Seu perfil</p>
+              <h2 id="academic-profile" className="mt-2 text-xl font-black text-slate-950 dark:text-slate-50">Informações acadêmicas</h2>
             </div>
-            <div className="mt-8 flex items-center gap-3 text-sm font-bold text-slate-500">
-              <BookOpenCheck size={19} className="text-indigo-600" aria-hidden="true" />
-              MVP de acesso concluído
-              <ArrowRight size={17} className="ml-auto text-slate-400" aria-hidden="true" />
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+              <GraduationCap size={24} aria-hidden="true" />
+            </span>
+          </div>
+          <dl className="mt-7 grid gap-6 sm:grid-cols-3 sm:gap-8">
+            <div>
+              <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Graduação</dt>
+              <dd className="mt-1 font-bold leading-6 text-slate-900 dark:text-slate-100">{user?.course_offering?.course_name}</dd>
             </div>
-          </section>
-        </div>
+            <div>
+              <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Modalidade</dt>
+              <dd className="mt-1 font-bold text-slate-900 dark:text-slate-100">{user?.course_offering?.modality_label}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Vínculo</dt>
+              <dd className="mt-1 font-bold text-emerald-700 dark:text-emerald-400">Verificado</dd>
+            </div>
+          </dl>
+        </section>
       </div>
     </main>
   )

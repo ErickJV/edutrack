@@ -88,5 +88,8 @@ describe('HomePage', () => {
     expect(screen.getByRole('progressbar', { name: /banco de dados i: 75% concluído/i })).toBeInTheDocument()
     expect(screen.getByText('Entrega de revisões')).toBeInTheDocument()
     expect(screen.getByText('Menos de 48h')).toBeInTheDocument()
+    expect(screen.getByText('Informações acadêmicas')).toBeInTheDocument()
+    expect(screen.getByText('Análise e Desenvolvimento de Sistemas')).toBeInTheDocument()
+    expect(screen.queryByText('Próximos passos')).not.toBeInTheDocument()
   })
 })
