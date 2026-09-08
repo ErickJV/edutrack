@@ -8,11 +8,13 @@ from rest_framework.response import Response
 
 from apps.accounts.models import User
 
-from .models import AcademicTask, Professor, StudentSubject, Subject
+from .models import AcademicEvent, AcademicTask, AcademicTerm, Professor, StudentSubject, Subject
 from .permissions import IsAuthenticatedOr401
 from .serializers import (
+    AcademicEventSerializer,
     AcademicTaskSerializer,
     AcademicTaskWriteSerializer,
+    AcademicTermSerializer,
     DashboardSummarySerializer,
     ProfessorSerializer,
     StudentSubjectSelectionSerializer,
@@ -264,3 +266,58 @@ class DashboardSummaryView(AcademicTaskMixin, generics.GenericAPIView):
             }
         )
         return Response(serializer.data)
+
+
+class AcademicTermListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicTermSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return AcademicTerm.objects.filter(user=user).order_by("-start_date", "name")
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class AcademicTermDetailView(generics.RetrieveUpdateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicTermSerializer
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return AcademicTerm.objects.filter(user=user)
+
+
+class AcademicEventListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicEventSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        queryset = AcademicEvent.objects.select_related(
+            "student_subject", "student_subject__subject"
+        ).filter(user=user)
+        kind = self.request.query_params.get("kind")
+        if kind:
+            queryset = queryset.filter(kind=kind)
+        student_subject_id = self.request.query_params.get("student_subject_id")
+        if student_subject_id:
+            queryset = queryset.filter(student_subject_id=UUID(student_subject_id))
+        return queryset.order_by("starts_at", "title")
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class AcademicEventDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicEventSerializer
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return AcademicEvent.objects.select_related(
+            "student_subject", "student_subject__subject"
+        ).filter(user=user)

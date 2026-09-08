@@ -31,6 +31,29 @@ class Subject(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.workload_hours}h) - {self.course.name}"
 
+class AcademicTerm(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="academic_terms",
+    )
+    name = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    timezone = models.CharField(max_length=64, default="America/Sao_Paulo")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-start_date", "name")
+        verbose_name = "semestre letivo"
+        verbose_name_plural = "semestres letivos"
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.start_date} a {self.end_date})"
+
+
 class Professor(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -78,6 +101,13 @@ class StudentSubject(models.Model):
     )
     professor_name = models.CharField(max_length=120, blank=True)
     custom_workload_hours = models.PositiveIntegerField(null=True, blank=True)
+    term = models.ForeignKey(
+        AcademicTerm,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="enrollments",
+    )
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     semester_period = models.CharField(max_length=20, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -111,6 +141,119 @@ class StudentSubject(models.Model):
             return 0
         completed = self.tasks.filter(status=AcademicTask.Status.COMPLETED).count()
         return round((completed / total) * 100)
+class ClassSchedule(models.Model):
+    class Weekday(models.IntegerChoices):
+        MONDAY = 0, "Segunda-feira"
+        TUESDAY = 1, "Terça-feira"
+        WEDNESDAY = 2, "Quarta-feira"
+        THURSDAY = 3, "Quinta-feira"
+        FRIDAY = 4, "Sexta-feira"
+        SATURDAY = 5, "Sábado"
+        SUNDAY = 6, "Domingo"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="class_schedules",
+    )
+    student_subject = models.ForeignKey(
+        StudentSubject,
+        on_delete=models.CASCADE,
+        related_name="schedules",
+    )
+    weekday = models.PositiveSmallIntegerField(choices=Weekday.choices)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    room = models.CharField(max_length=80, blank=True)
+    valid_from = models.DateField(null=True, blank=True)
+    valid_until = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("weekday", "start_time")
+        verbose_name = "horário de aula"
+        verbose_name_plural = "horários de aula"
+
+    def __str__(self) -> str:
+        return f"{self.get_weekday_display()} {self.start_time}-{self.end_time} ({self.student_subject.subject.name})"
+
+
+class ClassOccurrence(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    student_subject = models.ForeignKey(
+        StudentSubject,
+        on_delete=models.CASCADE,
+        related_name="occurrences",
+    )
+    schedule = models.ForeignKey(
+        ClassSchedule,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="occurrences",
+    )
+    replaces = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="replacement_occurrences",
+    )
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+    room = models.CharField(max_length=80, blank=True)
+    cancelled = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("starts_at",)
+        verbose_name = "ocorrência de aula"
+        verbose_name_plural = "ocorrências de aula"
+
+    def __str__(self) -> str:
+        status = " (Cancelada)" if self.cancelled else ""
+        return f"{self.student_subject.subject.name} - {self.starts_at}{status}"
+
+
+class AcademicEvent(models.Model):
+    class Kind(models.TextChoices):
+        EXAM = "exam", "Prova"
+        ASSIGNMENT = "assignment", "Entrega"
+        OTHER = "other", "Outro"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="academic_events",
+    )
+    student_subject = models.ForeignKey(
+        StudentSubject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="events",
+    )
+    title = models.CharField(max_length=200)
+    kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.OTHER)
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField(null=True, blank=True)
+    all_day = models.BooleanField(default=False)
+    room = models.CharField(max_length=80, blank=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("starts_at", "title")
+        verbose_name = "evento acadêmico"
+        verbose_name_plural = "eventos acadêmicos"
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.get_kind_display()})"
 
 
 class AcademicTask(models.Model):
