@@ -7,8 +7,8 @@ export function Brand({ light = false }: { light?: boolean }) {
       <span className={`grid size-11 place-items-center rounded-2xl shadow-lg ${light ? 'bg-white text-indigo-700' : 'bg-indigo-600 text-white'}`}>
         <BookOpenCheck aria-hidden="true" size={24} strokeWidth={2.2} />
       </span>
-      <span className={`text-xl font-extrabold tracking-tight ${light ? 'text-white' : 'text-slate-950'}`}>
-        Edu<span className={light ? 'text-cyan-300' : 'text-indigo-600'}>Track</span>
+      <span className={`text-xl font-extrabold tracking-tight ${light ? 'text-white' : 'text-slate-950 dark:text-slate-50'}`}>
+        Edu<span className={light ? 'text-cyan-300' : 'text-indigo-600 dark:text-indigo-400'}>Track</span>
       </span>
     </Link>
   )

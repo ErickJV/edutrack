@@ -3,6 +3,16 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+for _env_candidate in (BASE_DIR.parent / ".env", BASE_DIR / ".env"):
+    if _env_candidate.is_file():
+        with open(_env_candidate, encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    os.environ.setdefault(_k.strip(), _v.strip())
+        break
+
 
 def env_bool(name: str, default: bool = False) -> bool:
     return os.getenv(name, str(default)).lower() in {"1", "true", "yes", "on"}
@@ -18,7 +28,8 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
-        "DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost:5173,http://localhost:8000"
+        "DJANGO_CSRF_TRUSTED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000",
     ).split(",")
     if origin.strip()
 ]
@@ -44,6 +55,7 @@ INSTALLED_APPS = [
     "apps.catalog.apps.CatalogConfig",
     "apps.accounts.apps.AccountsConfig",
     "apps.legal.apps.LegalConfig",
+    "apps.academic.apps.AcademicConfig",
 ]
 
 MIDDLEWARE = [
@@ -179,7 +191,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
+    "DEFAULT_AUTHENTICATION_CLASSES": ["apps.accounts.authentication.BrowserSessionAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.accounts.exceptions.api_exception_handler",
@@ -224,9 +236,11 @@ CSRF_HEADER_NAME = "HTTP_X_CSRFTOKEN"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
