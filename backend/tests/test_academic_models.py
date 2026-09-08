@@ -113,3 +113,21 @@ def test_cascade_deletion_of_tasks(student_user, sample_subject):
     assert AcademicTask.objects.filter(id=task.id).exists()
     enrollment.delete()
     assert not AcademicTask.objects.filter(id=task.id).exists()
+
+
+def test_seed_initial_data_offline_and_preserves_custom_workload(student_user, sample_subject):
+    from django.core.management import call_command
+
+    enrollment = StudentSubject.objects.create(
+        user=student_user,
+        subject=sample_subject,
+        custom_workload_hours=140,
+    )
+
+    # Executa seed_initial_data offline duas vezes para validar idempotência
+    call_command("seed_initial_data")
+    call_command("seed_initial_data")
+
+    enrollment.refresh_from_db()
+    assert enrollment.custom_workload_hours == 140
+    assert enrollment.effective_workload_hours == 140

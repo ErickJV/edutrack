@@ -209,6 +209,10 @@ class AcademicTaskWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "A disciplina selecionada não pertence ao estudante autenticado."
             )
+        if value.status != StudentSubject.Status.ACTIVE:
+            raise serializers.ValidationError(
+                "Não é possível vincular tarefas a uma disciplina arquivada."
+            )
         return value
 
     def create(self, validated_data):
