@@ -1,13 +1,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { X } from 'lucide-react'
+import { Plus, UserCheck, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { updateStudentSubject } from '../api/client'
-import type { StudentSubject } from '../api/types'
+import { createProfessor, listProfessors, updateStudentSubject } from '../api/client'
+import type { Professor, StudentSubject } from '../api/types'
 import { Alert } from './Feedback'
-import { Input, PrimaryButton } from './FormControls'
+import { Input, PrimaryButton, Select } from './FormControls'
 
 type SubjectEditModalProps = {
   open: boolean
@@ -17,22 +17,45 @@ type SubjectEditModalProps = {
 }
 
 export function SubjectEditModal({ open, enrollment, onClose, onSaved }: SubjectEditModalProps) {
-  const [professorName, setProfessorName] = useState('')
+  const [professors, setProfessors] = useState<Professor[]>([])
+  const [selectedProfId, setSelectedProfId] = useState<string>('')
+  const [customProfName, setCustomProfName] = useState('')
+  const [isCreatingNew, setIsCreatingNew] = useState(false)
+  const [newProfName, setNewProfName] = useState('')
   const [workloadHours, setWorkloadHours] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!enrollment) return
-    setProfessorName(enrollment.professor_name || '')
+    if (!enrollment || !open) return
+    listProfessors()
+      .then((profs) => {
+        setProfessors(profs)
+        if (enrollment.professor?.id) {
+          setSelectedProfId(enrollment.professor.id)
+        } else if (enrollment.professor_name) {
+          const match = profs.find((p) => p.name.toLowerCase() === enrollment.professor_name.toLowerCase())
+          if (match) {
+            setSelectedProfId(match.id)
+          } else {
+            setSelectedProfId('__custom__')
+            setCustomProfName(enrollment.professor_name)
+          }
+        } else {
+          setSelectedProfId('')
+        }
+      })
+      .catch(() => {})
+
     setWorkloadHours(
       enrollment.custom_workload_hours != null
         ? String(enrollment.custom_workload_hours)
         : String(enrollment.subject.workload_hours),
     )
+    setIsCreatingNew(false)
+    setNewProfName('')
     setError('')
   }, [enrollment, open])
-
   if (!open || !enrollment) return null
 
   async function submit(event: FormEvent) {
@@ -46,8 +69,25 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
     setSaving(true)
     setError('')
     try {
+      let finalProfId: string | null = null
+      let finalProfName = ''
+
+      if (isCreatingNew && newProfName.trim()) {
+        const created = await createProfessor({ name: newProfName.trim() })
+        finalProfId = created.id
+        finalProfName = created.name
+      } else if (selectedProfId === '__custom__') {
+        finalProfId = null
+        finalProfName = customProfName.trim()
+      } else if (selectedProfId) {
+        finalProfId = selectedProfId
+        const match = professors.find((p) => p.id === selectedProfId)
+        finalProfName = match ? match.name : ''
+      }
+
       const updated = await updateStudentSubject(enrollment!.id, {
-        professor_name: professorName.trim(),
+        professor_id: finalProfId,
+        professor_name: finalProfName,
         custom_workload_hours: hours,
       })
       onSaved(updated)
@@ -101,14 +141,66 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
               </p>
             </div>
 
-            <Input
-              label="Nome do professor"
-              name="professor"
-              placeholder="Ex.: Prof. Carlos Santos"
-              value={professorName}
-              onChange={(e) => setProfessorName(e.target.value)}
-              hint="Opcional. Ajuda a identificar o responsável pelas aulas."
-            />
+            {!isCreatingNew ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Professor responsável</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingNew(true)}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+                  >
+                    <Plus size={14} aria-hidden="true" /> Cadastrar novo
+                  </button>
+                </div>
+                <Select
+                  label=""
+                  name="professor_select"
+                  value={selectedProfId}
+                  onChange={(e) => setSelectedProfId(e.target.value)}
+                >
+                  <option value="">Não definido</option>
+                  {professors.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                  <option value="__custom__">Outro (digitar nome)</option>
+                </Select>
+                {selectedProfId === '__custom__' ? (
+                  <Input
+                    label="Nome do professor"
+                    name="custom_professor"
+                    placeholder="Ex.: Prof. Carlos Santos"
+                    value={customProfName}
+                    onChange={(e) => setCustomProfName(e.target.value)}
+                  />
+                ) : null}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3.5 dark:border-indigo-900/50 dark:bg-indigo-950/30 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-extrabold uppercase tracking-wide text-indigo-700 dark:text-indigo-400">
+                    Novo professor
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingNew(false)}
+                    className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                  >
+                    Cancelar cadastro inline
+                  </button>
+                </div>
+                <Input
+                  label="Nome do novo professor"
+                  name="new_professor_name"
+                  placeholder="Ex.: Prof. Alan Turing"
+                  value={newProfName}
+                  onChange={(e) => setNewProfName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            )}
 
             <Input
               label="Carga horária declarada (horas)"

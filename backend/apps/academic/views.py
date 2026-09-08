@@ -8,12 +8,13 @@ from rest_framework.response import Response
 
 from apps.accounts.models import User
 
-from .models import AcademicTask, StudentSubject, Subject
+from .models import AcademicTask, Professor, StudentSubject, Subject
 from .permissions import IsAuthenticatedOr401
 from .serializers import (
     AcademicTaskSerializer,
     AcademicTaskWriteSerializer,
     DashboardSummarySerializer,
+    ProfessorSerializer,
     StudentSubjectSelectionSerializer,
     StudentSubjectSerializer,
     StudentSubjectUpdateSerializer,
@@ -42,6 +43,32 @@ class CurriculumListView(generics.ListAPIView):
             .filter(course=course_offering.course, active=True)
             .order_by("semester", "name")
         )
+
+class ProfessorListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = ProfessorSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        include_archived = self.request.query_params.get("include_archived") == "true"
+        queryset = Professor.objects.filter(user=user)
+        if not include_archived:
+            queryset = queryset.filter(active=True)
+        return queryset.order_by("name")
+
+
+class ProfessorDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = ProfessorSerializer
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return Professor.objects.filter(user=user)
+
+    def perform_destroy(self, instance):
+        instance.active = False
+        instance.save(update_fields=("active", "updated_at"))
 
 
 class StudentSubjectListCreateView(generics.ListCreateAPIView):

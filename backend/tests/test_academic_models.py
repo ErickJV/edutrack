@@ -2,7 +2,7 @@ import pytest
 from django.db import IntegrityError
 from django.utils import timezone
 
-from apps.academic.models import AcademicTask, StudentSubject, Subject
+from apps.academic.models import AcademicTask, Professor, StudentSubject, Subject
 from apps.accounts.models import User
 
 pytestmark = pytest.mark.django_db
@@ -131,3 +131,28 @@ def test_seed_initial_data_offline_and_preserves_custom_workload(student_user, s
     enrollment.refresh_from_db()
     assert enrollment.custom_workload_hours == 140
     assert enrollment.effective_workload_hours == 140
+
+
+def test_professor_model_isolation_homonyms_and_legacy_display(student_user, sample_subject, offering):
+    other_user = User.objects.create_user(email="outro.prof@aluno.impacta.edu.br", course_offering=offering)
+
+    # 1. Homônimos permitidos entre alunos distintos
+    prof1 = Professor.objects.create(user=student_user, name="Carlos Silva")
+    prof2 = Professor.objects.create(user=other_user, name="Carlos Silva")
+    assert prof1.id != prof2.id
+    assert Professor.objects.filter(user=student_user).count() == 1
+    assert Professor.objects.filter(user=other_user).count() == 1
+
+    # 2. Vínculo e display_professor_name
+    enrollment = StudentSubject.objects.create(
+        user=student_user,
+        subject=sample_subject,
+        professor=prof1,
+        professor_name="Prof. Legado Antigo",
+    )
+    assert enrollment.display_professor_name == "Carlos Silva"
+
+    # Se desvincular, preserva o texto legado
+    enrollment.professor = None
+    enrollment.save(update_fields=("professor",))
+    assert enrollment.display_professor_name == "Prof. Legado Antigo"

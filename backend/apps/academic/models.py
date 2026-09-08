@@ -31,6 +31,26 @@ class Subject(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.workload_hours}h) - {self.course.name}"
 
+class Professor(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="professors",
+    )
+    name = models.CharField(max_length=120)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("name",)
+        verbose_name = "professor"
+        verbose_name_plural = "professores"
+
+    def __str__(self) -> str:
+        return self.name
+
 
 class StudentSubject(models.Model):
     class Status(models.TextChoices):
@@ -47,6 +67,13 @@ class StudentSubject(models.Model):
     subject = models.ForeignKey(
         Subject,
         on_delete=models.PROTECT,
+        related_name="enrollments",
+    )
+    professor = models.ForeignKey(
+        Professor,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
         related_name="enrollments",
     )
     professor_name = models.CharField(max_length=120, blank=True)
@@ -66,6 +93,13 @@ class StudentSubject(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user.email} - {self.subject.name}"
+
+    @property
+    def display_professor_name(self) -> str:
+        if self.professor:
+            return self.professor.name
+        return self.professor_name
+
     @property
     def effective_workload_hours(self) -> int:
         return self.custom_workload_hours if self.custom_workload_hours is not None else self.subject.workload_hours

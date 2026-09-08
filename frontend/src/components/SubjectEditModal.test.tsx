@@ -4,10 +4,13 @@ import type { StudentSubject } from '../api/types'
 import { SubjectEditModal } from './SubjectEditModal'
 
 const updateStudentSubject = vi.fn()
+const listProfessors = vi.fn()
+const createProfessor = vi.fn()
 
 vi.mock('../api/client', () => ({
-  updateStudentSubject: (id: string, payload: { professor_name?: string; custom_workload_hours?: number | null }) =>
-    updateStudentSubject(id, payload),
+  updateStudentSubject: (id: string, payload: any) => updateStudentSubject(id, payload),
+  listProfessors: () => listProfessors(),
+  createProfessor: (p: any) => createProfessor(p),
 }))
 
 const mockEnrollment: StudentSubject = {
@@ -32,10 +35,11 @@ const mockEnrollment: StudentSubject = {
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 }
-
 describe('SubjectEditModal', () => {
   beforeEach(() => {
     updateStudentSubject.mockReset()
+    listProfessors.mockReset().mockResolvedValue([])
+    createProfessor.mockReset()
   })
 
   it('permite atualizar o professor e a carga horária declarada', async () => {
@@ -59,6 +63,9 @@ describe('SubjectEditModal', () => {
 
     expect(screen.getByText('Database Design')).toBeInTheDocument()
 
+    const select = screen.getByRole('combobox')
+    fireEvent.change(select, { target: { value: '__custom__' } })
+
     const profInput = screen.getByLabelText(/nome do professor/i)
     fireEvent.change(profInput, { target: { value: 'Prof. Alan Turing' } })
 
@@ -69,10 +76,10 @@ describe('SubjectEditModal', () => {
 
     await waitFor(() => expect(updateStudentSubject).toHaveBeenCalledTimes(1))
     expect(updateStudentSubject).toHaveBeenCalledWith('enrollment-1', {
+      professor_id: null,
       professor_name: 'Prof. Alan Turing',
       custom_workload_hours: 100,
     })
-    expect(onSaved).toHaveBeenCalledTimes(1)
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 

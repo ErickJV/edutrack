@@ -2,7 +2,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import AcademicTask, StudentSubject, Subject
+from .models import AcademicTask, Professor, StudentSubject, Subject
 
 
 class SubjectSerializer(serializers.ModelSerializer):
@@ -24,8 +24,23 @@ class SubjectSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class ProfessorSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(min_length=1, max_length=120, trim_whitespace=True)
+
+    class Meta:
+        model = Professor
+        fields = ("id", "name", "active", "created_at")
+        read_only_fields = ("id", "active", "created_at")
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        return Professor.objects.create(user=user, **validated_data)
+
+
 class StudentSubjectSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer(read_only=True)
+    professor = ProfessorSerializer(read_only=True)
+    display_professor_name = serializers.CharField(read_only=True)
     progress_percent = serializers.IntegerField(read_only=True)
     effective_workload_hours = serializers.IntegerField(read_only=True)
 
@@ -34,7 +49,9 @@ class StudentSubjectSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "subject",
+            "professor",
             "professor_name",
+            "display_professor_name",
             "custom_workload_hours",
             "effective_workload_hours",
             "status",
@@ -46,6 +63,8 @@ class StudentSubjectSerializer(serializers.ModelSerializer):
         read_only_fields = (
             "id",
             "subject",
+            "professor",
+            "display_professor_name",
             "status",
             "semester_period",
             "progress_percent",
@@ -62,10 +81,28 @@ class StudentSubjectUpdateSerializer(serializers.ModelSerializer):
     professor_name = serializers.CharField(
         required=False, allow_blank=True, max_length=120, trim_whitespace=True
     )
+    professor_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = StudentSubject
-        fields = ("id", "professor_name", "custom_workload_hours")
+        fields = ("id", "professor_name", "custom_workload_hours", "professor_id")
+
+    def validate_professor_id(self, value):
+        if value is None:
+            return None
+        user = self.context["request"].user
+        try:
+            return Professor.objects.get(id=value, user=user)
+        except Professor.DoesNotExist as exc:
+            raise serializers.ValidationError("Professor não encontrado.") from exc
+
+    def update(self, instance, validated_data):
+        if "professor_id" in validated_data:
+            prof = validated_data.pop("professor_id")
+            instance.professor = prof
+            if prof:
+                instance.professor_name = prof.name
+        return super().update(instance, validated_data)
 
 class StudentSubjectSelectionSerializer(serializers.Serializer):
     semester_period = serializers.CharField(required=False, allow_blank=True)

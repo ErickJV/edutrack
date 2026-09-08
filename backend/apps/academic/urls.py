@@ -6,11 +6,15 @@ from .views import (
     AcademicTaskToggleCompleteView,
     CurriculumListView,
     DashboardSummaryView,
+    ProfessorDetailView,
+    ProfessorListCreateView,
     StudentSubjectListCreateView,
     StudentSubjectDetailView,
 )
 
 urlpatterns = [
+    path("professors", ProfessorListCreateView.as_view(), name="professor-list-create"),
+    path("professors/<uuid:pk>", ProfessorDetailView.as_view(), name="professor-detail"),
     path("curriculum", CurriculumListView.as_view(), name="curriculum-list"),
     path(
         "student-subjects",

@@ -7,6 +7,7 @@ import type {
   AuthUser,
   CourseOffering,
   DashboardSummary,
+  Professor,
   ProfilePayload,
   StudentSubject,
 } from './types'
@@ -181,12 +182,29 @@ export async function saveStudentSubjects(payload: { semester_period?: string; s
 
 export async function updateStudentSubject(
   id: string,
-  payload: { professor_name?: string; custom_workload_hours?: number | null },
+  payload: { professor_name?: string; custom_workload_hours?: number | null; professor_id?: string | null },
 ): Promise<StudentSubject> {
   return request<StudentSubject>(`/api/v1/student-subjects/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
+}
+
+export async function listProfessors(includeArchived = false): Promise<Professor[]> {
+  const query = includeArchived ? '?include_archived=true' : ''
+  return request<Professor[]>(`/api/v1/professors${query}`)
+}
+
+export async function createProfessor(payload: { name: string }): Promise<Professor> {
+  return request<Professor>('/api/v1/professors', { method: 'POST', body: JSON.stringify(payload) }, [201])
+}
+
+export async function updateProfessor(id: string, payload: { name: string }): Promise<Professor> {
+  return request<Professor>(`/api/v1/professors/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+}
+
+export async function deleteProfessor(id: string): Promise<void> {
+  await request(`/api/v1/professors/${id}`, { method: 'DELETE' }, [204])
 }
 
 export async function listAcademicTasks(params: { student_subject?: string; status?: AcademicTaskStatus } = {}): Promise<AcademicTask[]> {

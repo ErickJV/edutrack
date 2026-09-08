@@ -8,10 +8,10 @@
 
 - [x] 2.1 Criar campos de carga pessoal e procedência/valor legado do catálogo; testar migração com horas ausentes/presumidas, restrição 1–2000 e reversão em banco de testes.
 - [x] 2.2 Remover sincronização online do seed/startup e fallback de 80h da importação manual; testar seed sem rede, idempotência, horas desconhecidas nulas e preservação de cargas pessoais.
-- [ ] 2.3 Criar professor privado e vínculo opcional na matrícula, migrando textos existentes por aluno; testar homônimos, nomes vazios e preservação do texto legado.
-- [ ] 2.4 Implementar APIs de professores com arquivamento e OpenAPI; testar criação/edição/leitura, campos inválidos, CSRF, propriedade e preservação de vínculos.
+- [x] 2.3 Criar professor privado e vínculo opcional na matrícula, migrando textos existentes por aluno; testar homônimos, nomes vazios e preservação do texto legado.
+- [x] 2.4 Implementar APIs de professores com arquivamento e OpenAPI; testar criação/edição/leitura, campos inválidos, CSRF, propriedade e preservação de vínculos.
 - [x] 2.5 Implementar edição parcial da matrícula para carga/professor e atualizar contratos; testar limpeza de valores, campos omitidos e rejeição de referência alheia sem modificar catálogo.
-- [ ] 2.6 Criar página de professores e editor de disciplina com cadastro inline; verificar formulário, nome acessível, dados preservados após erro e atualização dos cartões em testes de frontend.
+- [x] 2.6 Criar página de professores e editor de disciplina com cadastro inline; verificar formulário, nome acessível, dados preservados após erro e atualização dos cartões em testes de frontend.
 
 ## 3. Semestre e aulas
 
