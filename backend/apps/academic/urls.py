@@ -12,15 +12,31 @@ from .views import (
     DashboardSummaryView,
     ProfessorDetailView,
     ProfessorListCreateView,
-    StudentSubjectListCreateView,
     StudentSubjectDetailView,
+    StudentSubjectListCreateView,
 )
 
 urlpatterns = [
-    path("academic-terms", AcademicTermListCreateView.as_view(), name="academic-term-list-create"),
-    path("academic-terms/<uuid:pk>", AcademicTermDetailView.as_view(), name="academic-term-detail"),
-    path("academic-events", AcademicEventListCreateView.as_view(), name="academic-event-list-create"),
-    path("academic-events/<uuid:pk>", AcademicEventDetailView.as_view(), name="academic-event-detail"),
+    path(
+        "academic-terms",
+        AcademicTermListCreateView.as_view(),
+        name="academic-term-list-create",
+    ),
+    path(
+        "academic-terms/<uuid:pk>",
+        AcademicTermDetailView.as_view(),
+        name="academic-term-detail",
+    ),
+    path(
+        "academic-events",
+        AcademicEventListCreateView.as_view(),
+        name="academic-event-list-create",
+    ),
+    path(
+        "academic-events/<uuid:pk>",
+        AcademicEventDetailView.as_view(),
+        name="academic-event-detail",
+    ),
     path("professors", ProfessorListCreateView.as_view(), name="professor-list-create"),
     path("professors/<uuid:pk>", ProfessorDetailView.as_view(), name="professor-detail"),
     path("curriculum", CurriculumListView.as_view(), name="curriculum-list"),

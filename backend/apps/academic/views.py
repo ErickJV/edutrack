@@ -46,6 +46,7 @@ class CurriculumListView(generics.ListAPIView):
             .order_by("semester", "name")
         )
 
+
 class ProfessorListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticatedOr401,)
     serializer_class = ProfessorSerializer
@@ -135,6 +136,8 @@ class StudentSubjectDetailView(generics.RetrieveUpdateAPIView):
         self.perform_update(serializer)
         output = StudentSubjectSerializer(instance)
         return Response(output.data)
+
+
 class AcademicTaskMixin:
     def get_base_queryset(self: Any):
         user = cast(User, self.request.user)

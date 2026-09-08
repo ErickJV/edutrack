@@ -1,5 +1,6 @@
-import pytest
 from uuid import UUID
+
+import pytest
 from django.test import Client
 
 from apps.academic.models import AcademicTask, StudentSubject, Subject
@@ -106,6 +107,7 @@ def test_student_subject_patch_professor_and_workload(client: Client, offering):
     )
     client.force_login(user)
     subject = Subject.objects.filter(course=offering.course, active=True).first()
+    assert subject is not None
     enrollment = StudentSubject.objects.create(
         user=user,
         subject=subject,
@@ -156,7 +158,9 @@ def test_student_subject_patch_professor_and_workload(client: Client, offering):
     assert subject.workload_hours == 80
 
     # Rejection of other user's enrollment (HTTP 404)
-    other_user = User.objects.create_user(email="outro.aluno@aluno.impacta.edu.br", course_offering=offering)
+    other_user = User.objects.create_user(
+        email="outro.aluno@aluno.impacta.edu.br", course_offering=offering
+    )
     client.force_login(other_user)
     res_404 = client.patch(
         f"/api/v1/student-subjects/{enrollment.id}",
@@ -164,6 +168,7 @@ def test_student_subject_patch_professor_and_workload(client: Client, offering):
         content_type="application/json",
     )
     assert res_404.status_code == 404
+
 
 def test_student_subject_reconciliation_preserves_data_and_tasks(client: Client, offering):
     user = User.objects.create_user(
@@ -273,6 +278,7 @@ def test_professors_api_crud_and_isolation(client: Client, offering):
 
     # 5. Vincula professor à disciplina via PATCH student-subjects
     subject = Subject.objects.filter(course=offering.course, active=True).first()
+    assert subject is not None
     enrollment = StudentSubject.objects.create(user=user, subject=subject)
     res_link = client.patch(
         f"/api/v1/student-subjects/{enrollment.id}",
@@ -297,10 +303,19 @@ def test_professors_api_crud_and_isolation(client: Client, offering):
     assert enrollment.display_professor_name == "Profª Ada Lovelace, PhD"
 
     # 7. Isolamento: outro aluno recebe 404 ao tentar acessar ou editar esse professor
-    other = User.objects.create_user(email="outro.prof.api@aluno.impacta.edu.br", course_offering=offering)
+    other = User.objects.create_user(
+        email="outro.prof.api@aluno.impacta.edu.br", course_offering=offering
+    )
     client.force_login(other)
     assert client.get(f"/api/v1/professors/{prof_id}").status_code == 404
-    assert client.patch(f"/api/v1/professors/{prof_id}", data={"name": "Hacked"}, content_type="application/json").status_code == 404
+    assert (
+        client.patch(
+            f"/api/v1/professors/{prof_id}",
+            data={"name": "Hacked"},
+            content_type="application/json",
+        ).status_code
+        == 404
+    )
     assert client.delete(f"/api/v1/professors/{prof_id}").status_code == 404
 
 
@@ -366,6 +381,7 @@ def test_academic_terms_api_crud_and_validations(client: Client, offering):
 
     # 6. Vínculo do semestre na matrícula do aluno
     subject = Subject.objects.filter(course=offering.course, active=True).first()
+    assert subject is not None
     enrollment = StudentSubject.objects.create(user=user, subject=subject)
     res_link = client.patch(
         f"/api/v1/student-subjects/{enrollment.id}",
@@ -376,7 +392,9 @@ def test_academic_terms_api_crud_and_validations(client: Client, offering):
     assert res_link.json()["term"]["id"] == term_id
 
     # 7. Isolamento de usuário (404)
-    other = User.objects.create_user(email="other.term@aluno.impacta.edu.br", course_offering=offering)
+    other = User.objects.create_user(
+        email="other.term@aluno.impacta.edu.br", course_offering=offering
+    )
     client.force_login(other)
     assert client.get(f"/api/v1/academic-terms/{term_id}").status_code == 404
 
@@ -389,6 +407,7 @@ def test_academic_events_api_crud_and_isolation(client: Client, offering):
     )
     client.force_login(user)
     subject = Subject.objects.filter(course=offering.course, active=True).first()
+    assert subject is not None
     enrollment = StudentSubject.objects.create(user=user, subject=subject)
 
     # 1. Cria prova com sucesso (201)
@@ -438,7 +457,9 @@ def test_academic_events_api_crud_and_isolation(client: Client, offering):
     assert res_del.status_code == 204
 
     # 6. Isolamento: tentativa de vincular disciplina de outro aluno é 400
-    other = User.objects.create_user(email="other.event@aluno.impacta.edu.br", course_offering=offering)
+    other = User.objects.create_user(
+        email="other.event@aluno.impacta.edu.br", course_offering=offering
+    )
     client.force_login(other)
     res_hacker = client.post(
         "/api/v1/academic-events",
