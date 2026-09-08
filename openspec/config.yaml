@@ -1,0 +1,62 @@
+schema: spec-driven
+
+context: |
+  O EduTrack é uma plataforma acadêmica mobile-first para alunos da Faculdade
+  Impacta. O MVP implementado cobre autenticação, perfil acadêmico e Home
+  protegida. O projeto é acadêmico, não oficial e ainda não pode ser publicado.
+
+  Monorepo: backend Django/DRF/django-allauth em Python 3.14 e frontend React
+  19/TypeScript 7/Vite 8/Tailwind 4. SQL Server 2022 é o banco principal;
+  Docker Compose também executa Mailpit. uv e pnpm gerenciam dependências.
+
+  Autenticação: e-mail deve terminar exatamente em @aluno.impacta.edu.br;
+  verificação usa código de seis dígitos por 10 minutos e três tentativas;
+  recuperação é resistente à enumeração; Google OIDC exige e-mail verificado,
+  domínio validado no backend e não persiste tokens. Sessões usam cookies
+  HttpOnly/SameSite=Lax, CSRF e opção de 14 dias. Senhas usam Argon2id e mínimo
+  de 12 caracteres. Consentimentos legais são versionados, sem IP/user-agent.
+
+  A API allauth está em /_allauth/browser/v1. APIs próprias usam /api/v1/.
+  A UI deve funcionar desde 360 px, ser navegável por teclado, não ter overflow,
+  manter foco visível e alvos de toque de no mínimo 44 px.
+
+  Fora do escopo atual: disciplinas, grades, tarefas, calendário, notas,
+  integração com portal acadêmico, MFA, edição completa de perfil e publicação.
+  Trate a inclusão desses itens como mudança explícita de produto.
+
+  Leia AGENTS.md e README.md antes de propor ou aplicar mudanças. Preserve as
+  versões fixadas, contratos existentes, dados iniciais idempotentes e textos
+  jurídicos marcados como provisórios.
+
+rules:
+  proposal:
+    - Escreva em português e identifique claramente motivação, resultado esperado e não objetivos.
+    - Descreva impacto em backend, frontend, banco, segurança e operação; marque cada área não afetada.
+    - Declare riscos de privacidade, autenticação, autorização e enumeração de contas quando aplicáveis.
+    - Não amplie implicitamente o escopo além do pedido.
+  specs:
+    - Expresse requisitos normativos e inclua cenários verificáveis de sucesso, erro e acesso indevido.
+    - Para APIs, especifique método, rota, autenticação, entrada, saída e erros relevantes.
+    - Para UI, inclua estados de carregamento, vazio, erro, responsividade e acessibilidade.
+    - Para dados, descreva migração, integridade, compatibilidade e estratégia de reversão.
+  design:
+    - Registre decisões, alternativas consideradas e consequências de segurança e manutenção.
+    - Reutilize django-allauth e os padrões existentes antes de criar autenticação personalizada.
+    - Evite dependências novas sem justificar necessidade e compatibilidade com versões fixadas.
+  tasks:
+    - Organize tarefas em ordem executável e mantenha cada item pequeno e verificável.
+    - Inclua testes, migrações, documentação e atualização de contratos junto à implementação correspondente.
+    - Termine com validação integrada e conferência dos critérios de aceite.
+
+operations:
+  apply:
+    guidance:
+      - Leia os artefatos da mudança, AGENTS.md e os arquivos afetados antes de editar.
+      - Preserve alterações do usuário e não atualize dependências ou lockfiles incidentalmente.
+      - Execute testes proporcionais ao risco; autenticação exige cenários negativos e E2E relevante.
+      - Atualize artefatos OpenSpec se a implementação exigir uma decisão diferente da planejada.
+  archive:
+    guidance:
+      - Arquive somente quando todas as tarefas e critérios de aceite estiverem concluídos.
+      - Confirme que especificações foram sincronizadas e que testes/documentação refletem o resultado.
+      - Registre verificações executadas, limitações conhecidas e eventuais pré-requisitos operacionais.
