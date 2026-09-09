@@ -265,6 +265,7 @@ class AcademicTaskSerializer(serializers.ModelSerializer):
 class DashboardSummarySerializer(serializers.Serializer):
     subjects_count = serializers.IntegerField()
     pending_tasks_count = serializers.IntegerField()
+    overdue_tasks_count = serializers.IntegerField()
     completed_tasks_count = serializers.IntegerField()
     planned_minutes_total = serializers.IntegerField()
     actual_minutes_total = serializers.IntegerField()

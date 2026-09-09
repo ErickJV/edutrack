@@ -33,6 +33,7 @@ describe('HomePage', () => {
     getDashboardSummary.mockResolvedValue({
       subjects_count: 5,
       pending_tasks_count: 7,
+      overdue_tasks_count: 2,
       completed_tasks_count: 12,
       planned_minutes_total: 480,
       actual_minutes_total: 315,
@@ -77,9 +78,11 @@ describe('HomePage', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByText('Métricas ativas da sua rotina')).toBeInTheDocument()
+    expect(await screen.findByText('Itens urgentes das próximas 48 horas')).toBeInTheDocument()
+    expect(screen.getByText('Métricas ativas da sua rotina')).toBeInTheDocument()
     expect(screen.getByText('Disciplinas ativas')).toBeInTheDocument()
     expect(screen.getByText('Tarefas pendentes')).toBeInTheDocument()
+    expect(screen.getByText('Tarefas vencidas')).toBeInTheDocument()
     expect(screen.getByText('Tarefas concluídas')).toBeInTheDocument()
     expect(screen.getByText('68%')).toBeInTheDocument()
     expect(screen.getByText('315 min')).toBeInTheDocument()
@@ -90,6 +93,7 @@ describe('HomePage', () => {
     expect(screen.getByText('Menos de 48h')).toBeInTheDocument()
     expect(screen.getByText('Informações acadêmicas')).toBeInTheDocument()
     expect(screen.getByText('Análise e Desenvolvimento de Sistemas')).toBeInTheDocument()
+    expect(screen.queryByText('Seu espaço acadêmico')).not.toBeInTheDocument()
     expect(screen.queryByText('Próximos passos')).not.toBeInTheDocument()
   })
 })

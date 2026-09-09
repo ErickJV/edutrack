@@ -1,4 +1,4 @@
-import { BookOpenCheck, Clock3, GraduationCap, LogOut, Sparkles } from 'lucide-react'
+import { BookOpenCheck, Clock3, GraduationCap, LogOut } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { getDashboardSummary, listStudentSubjects } from '../api/client'
@@ -87,20 +87,58 @@ export function HomePage() {
       </header>
 
       <div className="mx-auto max-w-6xl px-5 py-9 sm:px-8 sm:py-14">
-        <section className="relative overflow-hidden rounded-[2rem] bg-indigo-700 px-6 py-9 text-white shadow-2xl shadow-indigo-950/15 sm:px-10 sm:py-12 lg:px-14">
-          <div className="absolute -right-24 -top-28 size-80 rounded-full bg-cyan-300/20 blur-3xl" />
-          <div className="absolute -bottom-32 left-1/3 size-72 rounded-full bg-violet-400/20 blur-3xl" />
-          <div className="relative max-w-3xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-sm font-bold text-indigo-50">
-              <Sparkles size={16} className="text-cyan-300" aria-hidden="true" /> Seu espaço acadêmico
-            </span>
-            <h1 className="mt-6 text-3xl font-black leading-tight tracking-tight sm:text-5xl">
-              Olá, {firstName}. <span className="text-cyan-300">Tudo pronto por aqui.</span>
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-indigo-100 sm:text-lg">
-              Sua conta está segura e vinculada à sua graduação. Aqui você acompanha as métricas principais, o progresso da turma e a rotina de estudos.
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900" aria-labelledby="upcoming-tasks">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="grid size-11 place-items-center rounded-2xl bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+                <Clock3 size={22} aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-400">Próximas entregas</p>
+                <h1 id="upcoming-tasks" className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-slate-50">Itens urgentes das próximas 48 horas</h1>
+              </div>
+            </div>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              Olá, <span className="font-bold text-slate-900 dark:text-slate-100">{firstName}</span>.
             </p>
           </div>
+
+          {summaryLoading ? (
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <article key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
+                  <div className="h-4 w-24 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="mt-4 h-6 w-48 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="mt-3 h-3 w-32 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                </article>
+              ))}
+            </div>
+          ) : summary && summary.upcoming_tasks.length === 0 ? (
+            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
+              Nenhuma entrega urgente encontrada no momento.
+            </p>
+          ) : (
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {(summary?.upcoming_tasks ?? []).map((task) => {
+                const due = formatDueLabel(task.due_date)
+                return (
+                  <article key={task.id} className={`rounded-3xl border p-5 shadow-sm ${due.urgent ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{task.subject_name}</p>
+                        <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-slate-50">{task.title}</h3>
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${due.urgent ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300'}`}>
+                        {due.urgent ? 'Menos de 48h' : 'Próxima'}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{due.label}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-500 dark:text-slate-400">{task.subject_semester}º semestre · {task.estimated_minutes} min estimados</p>
+                  </article>
+                )
+              })}
+            </div>
+          )}
         </section>
 
         {summaryError ? <div className="mt-6"><Alert>{summaryError}</Alert></div> : null}
@@ -116,9 +154,9 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {summaryLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: 6 }).map((_, index) => (
                 <article key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
                   <div className="h-4 w-28 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
                   <div className="mt-4 h-9 w-20 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
@@ -136,6 +174,11 @@ export function HomePage() {
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas pendentes</p>
                   <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{summary?.pending_tasks_count ?? 0}</p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Próximas entregas e revisões em aberto.</p>
+                </article>
+                <article className={`rounded-3xl border p-5 shadow-sm ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60'}`}>
+                  <p className={`text-sm font-semibold ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-slate-500 dark:text-slate-400'}`}>Tarefas vencidas</p>
+                  <p className={`mt-2 text-3xl font-black ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-slate-950 dark:text-slate-50'}`}>{summary?.overdue_tasks_count ?? 0}</p>
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Itens com prazo expirado não concluídos.</p>
                 </article>
                 <article className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas concluídas</p>
@@ -201,55 +244,6 @@ export function HomePage() {
                   </p>
                 </article>
               ))}
-            </div>
-          )}
-        </section>
-
-        <section className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900" aria-labelledby="upcoming-tasks">
-          <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-2xl bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
-              <Clock3 size={22} aria-hidden="true" />
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-400">Próximas entregas</p>
-              <h2 id="upcoming-tasks" className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-slate-50">Itens urgentes das próximas 48 horas</h2>
-            </div>
-          </div>
-
-          {summaryLoading ? (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {Array.from({ length: 2 }).map((_, index) => (
-                <article key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
-                  <div className="h-4 w-24 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="mt-4 h-6 w-48 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="mt-3 h-3 w-32 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
-                </article>
-              ))}
-            </div>
-          ) : summary && summary.upcoming_tasks.length === 0 ? (
-            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
-              Nenhuma entrega urgente encontrada no momento.
-            </p>
-          ) : (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {(summary?.upcoming_tasks ?? []).map((task) => {
-                const due = formatDueLabel(task.due_date)
-                return (
-                  <article key={task.id} className={`rounded-3xl border p-5 shadow-sm ${due.urgent ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60'}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{task.subject_name}</p>
-                        <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-slate-50">{task.title}</h3>
-                      </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${due.urgent ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300'}`}>
-                        {due.urgent ? 'Menos de 48h' : 'Próxima'}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{due.label}</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-500 dark:text-slate-400">{task.subject_semester}º semestre · {task.estimated_minutes} min estimados</p>
-                  </article>
-                )
-              })}
             </div>
           )}
         </section>

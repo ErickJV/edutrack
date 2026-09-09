@@ -219,8 +219,61 @@ def test_dashboard_summary_reports_progress_and_upcoming_tasks(client: Client, o
     payload = response.json()
     assert payload["subjects_count"] == 2
     assert payload["pending_tasks_count"] == 2
+    assert payload["overdue_tasks_count"] == 0
     assert payload["completed_tasks_count"] == 1
     assert payload["planned_minutes_total"] == 270
     assert payload["actual_minutes_total"] == 165
     assert payload["weighted_progress_percent"] > 0
     assert len(payload["upcoming_tasks"]) == 3
+
+
+def test_dashboard_summary_with_overdue_and_completed_tasks(
+    client: Client, offering
+) -> None:
+    user = User.objects.create_user(
+        email="overdue@aluno.impacta.edu.br",
+        full_name="Aluno Overdue",
+        course_offering=offering,
+    )
+    student_subject = create_enrollment(user, offering)
+    client.force_login(user)
+
+    # Tarefa vencida e não concluída (deve contar em overdue)
+    AcademicTask.objects.create(
+        user=user,
+        student_subject=student_subject,
+        title="Vencida Pendente",
+        due_date=timezone.now() - timedelta(days=1),
+        estimated_minutes=30,
+        actual_minutes=0,
+        status=AcademicTask.Status.PENDING,
+    )
+    # Tarefa com data no passado, mas já concluída (não deve contar em overdue)
+    AcademicTask.objects.create(
+        user=user,
+        student_subject=student_subject,
+        title="Vencida Concluída",
+        due_date=timezone.now() - timedelta(days=2),
+        estimated_minutes=45,
+        actual_minutes=40,
+        status=AcademicTask.Status.COMPLETED,
+        completed_at=timezone.now() - timedelta(days=1),
+    )
+    # Tarefa futura (não deve contar em overdue)
+    AcademicTask.objects.create(
+        user=user,
+        student_subject=student_subject,
+        title="Futura",
+        due_date=timezone.now() + timedelta(days=2),
+        estimated_minutes=60,
+        actual_minutes=0,
+        status=AcademicTask.Status.PENDING,
+    )
+
+    response = client.get("/api/v1/dashboard/summary")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["pending_tasks_count"] == 2
+    assert payload["overdue_tasks_count"] == 1
+    assert payload["completed_tasks_count"] == 1
+

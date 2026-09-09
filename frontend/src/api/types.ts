@@ -102,6 +102,7 @@ export type AcademicTaskPayload = {
 export type DashboardSummary = {
   subjects_count: number
   pending_tasks_count: number
+  overdue_tasks_count: number
   completed_tasks_count: number
   planned_minutes_total: number
   actual_minutes_total: number

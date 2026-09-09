@@ -237,8 +237,12 @@ class DashboardSummaryView(AcademicTaskMixin, generics.GenericAPIView):
             .filter(user=user)
             .order_by("subject__semester", "subject__name")
         )
+        now = timezone.now()
         tasks = list(self.get_base_queryset())
         pending_tasks = [task for task in tasks if task.status != AcademicTask.Status.COMPLETED]
+        overdue_tasks = [
+            task for task in pending_tasks if task.due_date is not None and task.due_date < now
+        ]
         completed_tasks = [task for task in tasks if task.status == AcademicTask.Status.COMPLETED]
         total_planned = sum(task.estimated_minutes for task in tasks)
         total_actual = sum(task.actual_minutes for task in tasks)
@@ -258,6 +262,7 @@ class DashboardSummaryView(AcademicTaskMixin, generics.GenericAPIView):
             {
                 "subjects_count": len(student_subjects),
                 "pending_tasks_count": len(pending_tasks),
+                "overdue_tasks_count": len(overdue_tasks),
                 "completed_tasks_count": len(completed_tasks),
                 "planned_minutes_total": total_planned,
                 "actual_minutes_total": total_actual,
