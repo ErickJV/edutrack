@@ -23,6 +23,7 @@ class SubjectSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
+
 class AcademicTermSerializer(serializers.ModelSerializer):
     name = serializers.CharField(min_length=1, max_length=100, trim_whitespace=True)
     timezone = serializers.CharField(required=False, default="America/Sao_Paulo", max_length=64)
@@ -77,6 +78,8 @@ class ProfessorSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context["request"].user
         return Professor.objects.create(user=user, **validated_data)
+
+
 class StudentSubjectSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer(read_only=True)
     professor = ProfessorSerializer(read_only=True)
@@ -158,6 +161,8 @@ class StudentSubjectUpdateSerializer(serializers.ModelSerializer):
         if "term_id" in validated_data:
             instance.term = validated_data.pop("term_id")
         return super().update(instance, validated_data)
+
+
 class StudentSubjectSelectionSerializer(serializers.Serializer):
     semester_period = serializers.CharField(required=False, allow_blank=True)
     subject_ids = serializers.ListField(

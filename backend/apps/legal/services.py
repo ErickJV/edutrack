@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 
 from .models import LegalAcceptance, LegalDocument
@@ -18,12 +20,12 @@ def record_current_acceptances(user=None, *, user_id=None) -> None:
 
 
 def has_current_acceptances(user) -> bool:
-    current: dict[str, object] = {}
+    current: dict[str, uuid.UUID] = {}
     for document in active_legal_documents():
         current.setdefault(document.kind, document.id)
     accepted = set(
-        LegalAcceptance.objects.filter(user=user, document_id__in=current.values()).values_list(
-            "document_id", flat=True
-        )
+        LegalAcceptance.objects.filter(
+            user=user, document_id__in=list(current.values())
+        ).values_list("document_id", flat=True)
     )
     return bool(current) and accepted == set(current.values())

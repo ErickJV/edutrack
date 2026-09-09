@@ -31,6 +31,7 @@ class Subject(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.workload_hours}h) - {self.course.name}"
 
+
 class AcademicTerm(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -132,7 +133,9 @@ class StudentSubject(models.Model):
 
     @property
     def effective_workload_hours(self) -> int:
-        return self.custom_workload_hours if self.custom_workload_hours is not None else self.subject.workload_hours
+        if self.custom_workload_hours is not None:
+            return self.custom_workload_hours
+        return self.subject.workload_hours
 
     @property
     def progress_percent(self) -> int:
@@ -141,6 +144,8 @@ class StudentSubject(models.Model):
             return 0
         completed = self.tasks.filter(status=AcademicTask.Status.COMPLETED).count()
         return round((completed / total) * 100)
+
+
 class ClassSchedule(models.Model):
     class Weekday(models.IntegerChoices):
         MONDAY = 0, "Segunda-feira"
@@ -177,7 +182,8 @@ class ClassSchedule(models.Model):
         verbose_name_plural = "horários de aula"
 
     def __str__(self) -> str:
-        return f"{self.get_weekday_display()} {self.start_time}-{self.end_time} ({self.student_subject.subject.name})"
+        subject_name = self.student_subject.subject.name
+        return f"{self.get_weekday_display()} {self.start_time}-{self.end_time} ({subject_name})"
 
 
 class ClassOccurrence(models.Model):

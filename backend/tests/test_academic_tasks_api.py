@@ -103,6 +103,7 @@ def test_tasks_rejects_creation_on_archived_student_subject_and_preserves_previo
     )
     client.force_login(user)
     subject = Subject.objects.filter(course=offering.course, active=True).first()
+    assert subject is not None
     enrollment = StudentSubject.objects.create(
         user=user,
         subject=subject,
@@ -142,6 +143,7 @@ def test_tasks_rejects_creation_on_archived_student_subject_and_preserves_previo
     assert filtered.status_code == 200
     assert len(filtered.json()) == 1
     assert filtered.json()[0]["id"] == str(task.id)
+
 
 def test_tasks_filter_by_subject(client: Client, offering):
     user = User.objects.create_user(

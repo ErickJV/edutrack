@@ -61,6 +61,8 @@ def test_student_subject_workload_hours_custom_and_effective(student_user, sampl
     enrollment.save(update_fields=("custom_workload_hours",))
     enrollment.refresh_from_db()
     assert enrollment.effective_workload_hours == 120
+
+
 def test_academic_task_lifecycle_and_progress_calculation(student_user, sample_subject):
     enrollment = StudentSubject.objects.create(
         user=student_user,
@@ -133,8 +135,12 @@ def test_seed_initial_data_offline_and_preserves_custom_workload(student_user, s
     assert enrollment.effective_workload_hours == 140
 
 
-def test_professor_model_isolation_homonyms_and_legacy_display(student_user, sample_subject, offering):
-    other_user = User.objects.create_user(email="outro.prof@aluno.impacta.edu.br", course_offering=offering)
+def test_professor_model_isolation_homonyms_and_legacy_display(
+    student_user, sample_subject, offering
+):
+    other_user = User.objects.create_user(
+        email="outro.prof@aluno.impacta.edu.br", course_offering=offering
+    )
 
     # 1. Homônimos permitidos entre alunos distintos
     prof1 = Professor.objects.create(user=student_user, name="Carlos Silva")

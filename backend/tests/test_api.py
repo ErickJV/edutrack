@@ -58,6 +58,7 @@ def test_profile_completion_with_password(client: Client, offering):
     assert user.has_usable_password()
     assert user.check_password("Senha-Forte-OAuth-2026!")
 
+
 def test_profile_completion_rejects_inactive_offering(client: Client, offering):
     user = User.objects.create_user(email="oauth2@aluno.impacta.edu.br")
     client.force_login(user)
