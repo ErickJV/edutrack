@@ -3,10 +3,10 @@ FROM node:22-bookworm-slim
 ENV PNPM_HOME=/pnpm
 ENV PATH="${PNPM_HOME}:${PATH}"
 
-RUN corepack enable && corepack prepare pnpm@11.3.0 --activate || npm install -g pnpm@11.3.0
+RUN npm install -g pnpm@11.3.0
 
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml .npmrc* ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
