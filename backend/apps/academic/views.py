@@ -8,7 +8,16 @@ from rest_framework.response import Response
 
 from apps.accounts.models import User
 
-from .models import AcademicEvent, AcademicTask, AcademicTerm, Professor, StudentSubject, Subject
+from .models import (
+    AcademicEvent,
+    AcademicTask,
+    AcademicTerm,
+    Professor,
+    StudentSubject,
+    StudyFolder,
+    StudyNote,
+    Subject,
+)
 from .permissions import IsAuthenticatedOr401
 from .serializers import (
     AcademicEventSerializer,
@@ -20,6 +29,8 @@ from .serializers import (
     StudentSubjectSelectionSerializer,
     StudentSubjectSerializer,
     StudentSubjectUpdateSerializer,
+    StudyFolderSerializer,
+    StudyNoteSerializer,
     SubjectSerializer,
 )
 
@@ -329,3 +340,70 @@ class AcademicEventDetailView(generics.RetrieveUpdateDestroyAPIView):
         return AcademicEvent.objects.select_related(
             "student_subject", "student_subject__subject"
         ).filter(user=user)
+
+
+class StudyFolderListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = StudyFolderSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return StudyFolder.objects.filter(user=user).order_by("name")
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class StudyFolderDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = StudyFolderSerializer
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return StudyFolder.objects.filter(user=user)
+
+
+class StudyNoteListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = StudyNoteSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        queryset = StudyNote.objects.select_related(
+            "folder", "student_subject", "student_subject__subject", "task"
+        ).filter(user=user)
+
+        folder_id = self.request.query_params.get("folder")
+        if folder_id:
+            queryset = queryset.filter(folder_id=UUID(folder_id))
+
+        student_subject_id = self.request.query_params.get("student_subject")
+        if student_subject_id:
+            queryset = queryset.filter(student_subject_id=UUID(student_subject_id))
+
+        task_id = self.request.query_params.get("task")
+        if task_id:
+            queryset = queryset.filter(task_id=UUID(task_id))
+
+        search = self.request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(title__icontains=search)
+
+        return queryset.order_by("-updated_at")
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class StudyNoteDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = StudyNoteSerializer
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return StudyNote.objects.select_related(
+            "folder", "student_subject", "student_subject__subject", "task"
+        ).filter(user=user)
+

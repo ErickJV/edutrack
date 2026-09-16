@@ -296,3 +296,69 @@ class AcademicTask(models.Model):
 
     def __str__(self) -> str:
         return f"{self.title} ({self.get_status_display()})"
+
+
+class StudyFolder(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="study_folders",
+    )
+    name = models.CharField(max_length=100)
+    color = models.CharField(max_length=30, default="indigo")
+    icon = models.CharField(max_length=50, default="folder")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("name",)
+        verbose_name = "pasta de estudo"
+        verbose_name_plural = "pastas de estudo"
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class StudyNote(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="study_notes",
+    )
+    folder = models.ForeignKey(
+        StudyFolder,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="notes",
+    )
+    student_subject = models.ForeignKey(
+        StudentSubject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="study_notes",
+    )
+    task = models.ForeignKey(
+        AcademicTask,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="study_notes",
+    )
+    title = models.CharField(max_length=200, default="Sem título")
+    content = models.TextField(blank=True, default="")
+    methodology = models.CharField(max_length=50, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-updated_at",)
+        verbose_name = "anotação de estudo"
+        verbose_name_plural = "anotações de estudo"
+
+    def __str__(self) -> str:
+        return self.title
+

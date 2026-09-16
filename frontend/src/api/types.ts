@@ -109,3 +109,60 @@ export type DashboardSummary = {
   weighted_progress_percent: number
   upcoming_tasks: AcademicTask[]
 }
+
+export type StudyFolder = {
+  id: string
+  name: string
+  color: string
+  icon: string
+  notes_count: number
+  created_at: string
+  updated_at: string
+}
+
+export type StudyFolderPayload = {
+  name: string
+  color?: string
+  icon?: string
+}
+
+export type StudyNote = {
+  id: string
+  folder: string | null
+  folder_name?: string
+  student_subject: string | null
+  subject_name?: string
+  task: string | null
+  task_title?: string
+  title: string
+  content: string
+  methodology: string
+  created_at: string
+  updated_at: string
+}
+
+export type StudyNotePayload = {
+  folder?: string | null
+  student_subject?: string | null
+  task?: string | null
+  title?: string
+  content?: string
+  methodology?: string
+}
+
+export type PomodoroMode = 'focus' | 'short_break' | 'long_break'
+
+export type PomodoroSettings = {
+  focusMinutes: number
+  shortBreakMinutes: number
+  longBreakMinutes: number
+  longBreakInterval: number
+  soundEnabled: boolean
+}
+
+export type StudyMethodologyKey =
+  | 'feynman'
+  | 'spaced_repetition'
+  | 'mind_map'
+  | 'elaborative_interrogation'
+

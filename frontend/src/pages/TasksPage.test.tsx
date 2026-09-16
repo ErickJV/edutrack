@@ -13,18 +13,16 @@ declare global {
   }
 }
 
-const { listAcademicTasks, listStudentSubjects, toggleAcademicTaskComplete, updateAcademicTask } = vi.hoisted(() => ({
+const { listAcademicTasks, listStudentSubjects, toggleAcademicTaskComplete } = vi.hoisted(() => ({
   listAcademicTasks: vi.fn(),
   listStudentSubjects: vi.fn(),
   toggleAcademicTaskComplete: vi.fn(),
-  updateAcademicTask: vi.fn(),
 }))
 
 vi.mock('../api/client', () => ({
   listAcademicTasks,
   listStudentSubjects,
   toggleAcademicTaskComplete,
-  updateAcademicTask,
 }))
 
 describe('TasksPage', () => {
@@ -32,7 +30,6 @@ describe('TasksPage', () => {
     listAcademicTasks.mockReset()
     listStudentSubjects.mockReset()
     toggleAcademicTaskComplete.mockReset()
-    updateAcademicTask.mockReset()
   })
 
   it('filters tasks by discipline and status', async () => {
@@ -173,31 +170,9 @@ describe('TasksPage', () => {
     await waitFor(() => expect(screen.getByRole('checkbox', { name: /desmarcar tarefa concluída/i })).toBeChecked())
   })
 
-  it('tracks study time and persists minutes on pause', async () => {
-    vi.useFakeTimers()
-    try {
-      listAcademicTasks.mockResolvedValue([
-        {
-          id: '1',
-          student_subject: 'ss-1',
-          subject_id: 'subject-1',
-          subject_name: 'Algoritmos I',
-          subject_semester: 1,
-          title: 'Lista 1',
-          description: '',
-          due_date: null,
-          status: 'pending',
-          estimated_minutes: 60,
-          actual_minutes: 0,
-          completed_at: null,
-          created_at: '2027-01-01T00:00:00Z',
-          updated_at: '2027-01-01T00:00:00Z',
-        },
-      ])
-      listStudentSubjects.mockResolvedValue([
-        { id: 'ss-1', subject: { id: 'subject-1', name: 'Algoritmos I', semester: 1 } },
-      ])
-      updateAcademicTask.mockResolvedValue({
+  it('renders link to study session for a task', async () => {
+    listAcademicTasks.mockResolvedValue([
+      {
         id: '1',
         student_subject: 'ss-1',
         subject_id: 'subject-1',
@@ -208,40 +183,29 @@ describe('TasksPage', () => {
         due_date: null,
         status: 'pending',
         estimated_minutes: 60,
-        actual_minutes: 1,
+        actual_minutes: 0,
         completed_at: null,
         created_at: '2027-01-01T00:00:00Z',
-        updated_at: '2027-01-01T00:10:01Z',
-      })
+        updated_at: '2027-01-01T00:00:00Z',
+      },
+    ])
+    listStudentSubjects.mockResolvedValue([
+      { id: 'ss-1', subject: { id: 'subject-1', name: 'Algoritmos I', semester: 1 } },
+    ])
 
-      render(
-        <MemoryRouter>
-          <TasksPage />
-        </MemoryRouter>,
-      )
+    render(
+      <MemoryRouter>
+        <TasksPage />
+      </MemoryRouter>,
+    )
 
-      await act(async () => {
-        await Promise.resolve()
-      })
+    await act(async () => {
+      await Promise.resolve()
+    })
 
-      fireEvent.click(screen.getByRole('button', { name: /iniciar estudo/i }))
-      expect(screen.getByText('Sessão ativa · 00:00:00')).toBeInTheDocument()
-
-      await act(async () => {
-        vi.advanceTimersByTime(61000)
-      })
-      expect(screen.getByText('Sessão ativa · 00:01:01')).toBeInTheDocument()
-
-      fireEvent.click(screen.getByRole('button', { name: /pausar/i }))
-      expect(updateAcademicTask).toHaveBeenCalledWith('1', expect.objectContaining({ actual_minutes: 1 }))
-
-      await act(async () => {
-        await Promise.resolve()
-      })
-      expect(screen.getByText('Sessão pausada')).toBeInTheDocument()
-    } finally {
-      vi.useRealTimers()
-    }
+    const studyLink = screen.getByRole('link', { name: /iniciar estudo/i })
+    expect(studyLink).toBeInTheDocument()
+    expect(studyLink).toHaveAttribute('href', '/estudo?taskId=1')
   })
 
 

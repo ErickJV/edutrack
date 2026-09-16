@@ -14,6 +14,10 @@ from .views import (
     ProfessorListCreateView,
     StudentSubjectDetailView,
     StudentSubjectListCreateView,
+    StudyFolderDetailView,
+    StudyFolderListCreateView,
+    StudyNoteDetailView,
+    StudyNoteListCreateView,
 )
 
 urlpatterns = [
@@ -58,4 +62,25 @@ urlpatterns = [
         name="academic-task-toggle-complete",
     ),
     path("dashboard/summary", DashboardSummaryView.as_view(), name="dashboard-summary"),
+    path(
+        "study-folders",
+        StudyFolderListCreateView.as_view(),
+        name="study-folder-list-create",
+    ),
+    path(
+        "study-folders/<uuid:pk>",
+        StudyFolderDetailView.as_view(),
+        name="study-folder-detail",
+    ),
+    path(
+        "study-notes",
+        StudyNoteListCreateView.as_view(),
+        name="study-note-list-create",
+    ),
+    path(
+        "study-notes/<uuid:pk>",
+        StudyNoteDetailView.as_view(),
+        name="study-note-detail",
+    ),
 ]
+

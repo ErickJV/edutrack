@@ -2,7 +2,16 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import AcademicEvent, AcademicTask, AcademicTerm, Professor, StudentSubject, Subject
+from .models import (
+    AcademicEvent,
+    AcademicTask,
+    AcademicTerm,
+    Professor,
+    StudentSubject,
+    StudyFolder,
+    StudyNote,
+    Subject,
+)
 
 
 class SubjectSerializer(serializers.ModelSerializer):
@@ -387,3 +396,98 @@ class AcademicEventSerializer(serializers.ModelSerializer):
         if "student_subject_id" in validated_data:
             instance.student_subject = validated_data.pop("student_subject_id")
         return super().update(instance, validated_data)
+
+
+class StudyFolderSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(min_length=1, max_length=100, trim_whitespace=True)
+    color = serializers.CharField(required=False, default="indigo", max_length=30)
+    icon = serializers.CharField(required=False, default="folder", max_length=50)
+    notes_count = serializers.IntegerField(source="notes.count", read_only=True)
+
+    class Meta:
+        model = StudyFolder
+        fields = (
+            "id",
+            "name",
+            "color",
+            "icon",
+            "notes_count",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "notes_count", "created_at", "updated_at")
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        return StudyFolder.objects.create(user=user, **validated_data)
+
+
+class StudyNoteSerializer(serializers.ModelSerializer):
+    folder = serializers.PrimaryKeyRelatedField(
+        queryset=StudyFolder.objects.all(), required=False, allow_null=True
+    )
+    folder_name = serializers.CharField(source="folder.name", read_only=True)
+    student_subject = serializers.PrimaryKeyRelatedField(
+        queryset=StudentSubject.objects.all(), required=False, allow_null=True
+    )
+    subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
+    task = serializers.PrimaryKeyRelatedField(
+        queryset=AcademicTask.objects.all(), required=False, allow_null=True
+    )
+    task_title = serializers.CharField(source="task.title", read_only=True)
+    title = serializers.CharField(
+        required=False, default="Sem título", allow_blank=True, max_length=200
+    )
+    content = serializers.CharField(required=False, default="", allow_blank=True)
+    methodology = serializers.CharField(required=False, default="", allow_blank=True, max_length=50)
+
+    class Meta:
+        model = StudyNote
+        fields = (
+            "id",
+            "folder",
+            "folder_name",
+            "student_subject",
+            "subject_name",
+            "task",
+            "task_title",
+            "title",
+            "content",
+            "methodology",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "folder_name",
+            "subject_name",
+            "task_title",
+            "created_at",
+            "updated_at",
+        )
+
+    def validate_folder(self, value):
+        if value is not None:
+            user = self.context["request"].user
+            if value.user_id != user.id:
+                raise serializers.ValidationError("A pasta informada não pertence ao usuário.")
+        return value
+
+    def validate_student_subject(self, value):
+        if value is not None:
+            user = self.context["request"].user
+            if value.user_id != user.id:
+                raise serializers.ValidationError("A disciplina informada não pertence ao usuário.")
+        return value
+
+    def validate_task(self, value):
+        if value is not None:
+            user = self.context["request"].user
+            if value.user_id != user.id:
+                raise serializers.ValidationError("A tarefa informada não pertence ao usuário.")
+        return value
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+

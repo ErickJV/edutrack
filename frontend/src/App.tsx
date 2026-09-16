@@ -11,6 +11,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { ProfileCompletionPage } from './pages/ProfileCompletionPage'
 import { SubjectsPage } from './pages/SubjectsPage'
 import { TasksPage } from './pages/TasksPage'
+import { StudySessionPage } from './pages/StudySessionPage'
 import { SignupPage } from './pages/SignupPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
 
@@ -33,6 +34,8 @@ export function App() {
         <Route path="/disciplinas" element={<SubjectsPage />} />
         <Route path="/professores" element={<ProfessorsPage />} />
         <Route path="/tarefas" element={<TasksPage />} />
+        <Route path="/estudo" element={<StudySessionPage />} />
+        <Route path="/estudo/:taskId" element={<StudySessionPage />} />
       </Route>
       <Route path="/termos" element={<LegalPage kind="terms" />} />
       <Route path="/privacidade" element={<LegalPage kind="privacy" />} />

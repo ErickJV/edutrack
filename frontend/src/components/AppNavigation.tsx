@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { to: '/disciplinas', label: 'Disciplinas' },
   { to: '/professores', label: 'Professores' },
   { to: '/tarefas', label: 'Tarefas' },
+  { to: '/estudo', label: 'Estudo' },
 ] as const
 
 export function AppNavigation() {

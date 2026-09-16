@@ -10,6 +10,10 @@ import type {
   Professor,
   ProfilePayload,
   StudentSubject,
+  StudyFolder,
+  StudyFolderPayload,
+  StudyNote,
+  StudyNotePayload,
 } from './types'
 
 const API_ORIGIN = (import.meta.env.VITE_API_ORIGIN || '').replace(/\/$/, '')
@@ -242,3 +246,59 @@ export function googleLoginAction(): string {
 export function getCsrfToken(): string {
   return csrfToken()
 }
+
+export async function listStudyFolders(): Promise<StudyFolder[]> {
+  return request<StudyFolder[]>('/api/v1/study-folders')
+}
+
+export async function createStudyFolder(payload: StudyFolderPayload): Promise<StudyFolder> {
+  return request<StudyFolder>('/api/v1/study-folders', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, [201])
+}
+
+export async function updateStudyFolder(id: string, payload: Partial<StudyFolderPayload>): Promise<StudyFolder> {
+  return request<StudyFolder>(`/api/v1/study-folders/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteStudyFolder(id: string): Promise<void> {
+  await request(`/api/v1/study-folders/${id}`, { method: 'DELETE' }, [204])
+}
+
+export async function listStudyNotes(params: {
+  folder?: string
+  student_subject?: string
+  task?: string
+  search?: string
+} = {}): Promise<StudyNote[]> {
+  const search = new URLSearchParams()
+  if (params.folder) search.set('folder', params.folder)
+  if (params.student_subject) search.set('student_subject', params.student_subject)
+  if (params.task) search.set('task', params.task)
+  if (params.search) search.set('search', params.search)
+  const suffix = search.toString() ? `?${search.toString()}` : ''
+  return request<StudyNote[]>(`/api/v1/study-notes${suffix}`)
+}
+
+export async function createStudyNote(payload: StudyNotePayload): Promise<StudyNote> {
+  return request<StudyNote>('/api/v1/study-notes', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, [201])
+}
+
+export async function updateStudyNote(id: string, payload: Partial<StudyNotePayload>): Promise<StudyNote> {
+  return request<StudyNote>(`/api/v1/study-notes/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteStudyNote(id: string): Promise<void> {
+  await request(`/api/v1/study-notes/${id}`, { method: 'DELETE' }, [204])
+}
+

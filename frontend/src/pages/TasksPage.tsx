@@ -1,7 +1,8 @@
 import { BookOpen, CheckCircle2, Clock3, FilterX, ListTodo, LoaderCircle, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 
-import { listAcademicTasks, listStudentSubjects, toggleAcademicTaskComplete, updateAcademicTask } from '../api/client'
+import { listAcademicTasks, listStudentSubjects, toggleAcademicTaskComplete } from '../api/client'
 import type { AcademicTask, AcademicTaskStatus, StudentSubject } from '../api/types'
 import { Brand } from '../components/Brand'
 import { AppNavigation } from '../components/AppNavigation'
@@ -47,13 +48,6 @@ function statusDescription(status: AcademicTaskStatus): string {
   }
 }
 
-function formatStudyTime(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-}
-
 function sortTasks(left: AcademicTask, right: AcademicTask): number {
   const leftDue = left.due_date ? new Date(left.due_date).getTime() : Number.POSITIVE_INFINITY
   const rightDue = right.due_date ? new Date(right.due_date).getTime() : Number.POSITIVE_INFINITY
@@ -72,8 +66,6 @@ export function TasksPage() {
   const [editingTask, setEditingTask] = useState<AcademicTask | null>(null)
   const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null)
   const [toggleError, setToggleError] = useState('')
-  const [studySessions, setStudySessions] = useState<Record<string, { running: boolean; elapsedSeconds: number }>>({})
-  const [studyError, setStudyError] = useState('')
 
   useEffect(() => {
     let alive = true
@@ -96,23 +88,6 @@ export function TasksPage() {
       alive = false
     }
   }, [])
-  useEffect(() => {
-    if (!Object.values(studySessions).some((session) => session.running)) return
-    const timer = window.setInterval(() => {
-      setStudySessions((current) => {
-        let changed = false
-        const next = { ...current }
-        for (const [taskId, session] of Object.entries(current)) {
-          if (!session.running) continue
-          next[taskId] = { ...session, elapsedSeconds: session.elapsedSeconds + 1 }
-          changed = true
-        }
-        return changed ? next : current
-      })
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [studySessions])
-
 
   const subjectOptions = useMemo(
     () =>
@@ -182,53 +157,6 @@ export function TasksPage() {
       setTasks((current) => current.map((item) => (item.id === task.id ? task : item)).sort(sortTasks))
     } finally {
       setTogglingTaskId(null)
-    }
-  }
-
-  function startStudy(task: AcademicTask) {
-    setStudyError('')
-    setStudySessions((current) => ({
-      ...current,
-      [task.id]: current[task.id] ? { ...current[task.id], running: true } : { running: true, elapsedSeconds: 0 },
-    }))
-  }
-
-  async function stopStudy(task: AcademicTask) {
-    const session = studySessions[task.id]
-    if (!session) return
-
-    const addedMinutes = Math.floor(session.elapsedSeconds / 60)
-    const nextActualMinutes = task.actual_minutes + addedMinutes
-    const optimisticTask: AcademicTask = { ...task, actual_minutes: nextActualMinutes }
-
-    setStudyError('')
-    setStudySessions((current) => ({
-      ...current,
-      [task.id]: { ...current[task.id], running: false },
-    }))
-    setTasks((current) => current.map((item) => (item.id === task.id ? optimisticTask : item)).sort(sortTasks))
-
-    try {
-      const updatedTask = await updateAcademicTask(task.id, {
-        actual_minutes: nextActualMinutes,
-        status: task.status,
-        student_subject: task.student_subject,
-        title: task.title,
-        description: task.description,
-        due_date: task.due_date,
-      })
-      setTasks((current) => current.map((item) => (item.id === task.id ? updatedTask : item)).sort(sortTasks))
-      setStudySessions((current) => ({
-        ...current,
-        [task.id]: { running: false, elapsedSeconds: 0 },
-      }))
-    } catch {
-      setStudyError('Não foi possível salvar o tempo de estudo.')
-      setTasks((current) => current.map((item) => (item.id === task.id ? task : item)).sort(sortTasks))
-      setStudySessions((current) => ({
-        ...current,
-        [task.id]: { ...session, running: true },
-      }))
     }
   }
 
@@ -334,7 +262,6 @@ export function TasksPage() {
             ) : null}
           </div>
           {toggleError ? <div className="mt-4"><Alert>{toggleError}</Alert></div> : null}
-          {studyError ? <div className="mt-4"><Alert>{studyError}</Alert></div> : null}
           {tasks.length === 0 ? (
             <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center dark:border-slate-700 dark:bg-slate-900/60">
               <LoaderCircle className="mx-auto text-slate-400 dark:text-slate-500" size={28} aria-hidden="true" />
@@ -422,24 +349,24 @@ export function TasksPage() {
                               </div>
                             </dl>
 
-                            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-                              <div className="flex items-start justify-between gap-3">
+                            <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+                              <div className="flex items-center justify-between gap-3">
                                 <div>
-                                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Estudo em tempo real</p>
-                                  <p className="mt-1 text-sm font-bold text-slate-950 dark:text-slate-50">
-                                    {studySessions[task.id]?.running ? `Sessão ativa · ${formatStudyTime(studySessions[task.id].elapsedSeconds)}` : 'Sessão pausada'}
+                                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-700 dark:text-indigo-300">
+                                    Sessão de Estudo Pomodoro
                                   </p>
-                                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                                    Minutos acumulados: {task.actual_minutes + Math.floor((studySessions[task.id]?.elapsedSeconds ?? 0) / 60)} min
+                                  <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+                                    {task.actual_minutes > 0
+                                      ? `${task.actual_minutes} min realizados`
+                                      : 'Nenhuma sessão iniciada ainda'}
                                   </p>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => (studySessions[task.id]?.running ? void stopStudy(task) : startStudy(task))}
-                                  className="inline-flex min-h-10 items-center rounded-lg bg-indigo-600 px-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                                <Link
+                                  to={`/estudo?taskId=${task.id}`}
+                                  className="inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
                                 >
-                                  {studySessions[task.id]?.running ? 'Pausar' : 'Iniciar estudo'}
-                                </button>
+                                  Iniciar estudo →
+                                </Link>
                               </div>
                             </div>
                           </article>
