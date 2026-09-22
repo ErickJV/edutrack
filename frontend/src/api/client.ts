@@ -341,9 +341,17 @@ export async function deleteAcademicReading(id: string): Promise<void> {
 }
 
 export async function logReadingPages(id: string, payload: ReadingLogPayload): Promise<AcademicReading> {
+  const pages = payload.pages ?? payload.pages_read ?? 0
+  const date = payload.read_date || payload.date || new Date().toISOString().split('T')[0]
   return request<AcademicReading>(`/api/v1/academic-readings/${id}/log`, {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      ...payload,
+      pages,
+      pages_read: pages,
+      date,
+      read_date: date,
+    }),
   })
 }
 

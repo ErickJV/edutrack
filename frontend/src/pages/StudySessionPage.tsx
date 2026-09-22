@@ -174,20 +174,29 @@ export function StudySessionPage() {
 
   const handleQuickLog10 = async (reading: AcademicReading) => {
     try {
+      setError('')
       const updated = await logReadingPages(reading.id, { pages: 10 })
       setReadings((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
       const freshLogs = await listReadingLogs()
       setReadingLogs(freshLogs)
-    } catch {
-      setError('Erro ao registrar páginas na leitura.')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao registrar páginas na leitura.'
+      setError(message)
     }
   }
 
   const handleLogCustomPages = async (readingId: string, payload: ReadingLogPayload) => {
-    const updated = await logReadingPages(readingId, payload)
-    setReadings((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
-    const freshLogs = await listReadingLogs()
-    setReadingLogs(freshLogs)
+    try {
+      setError('')
+      const updated = await logReadingPages(readingId, payload)
+      setReadings((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+      const freshLogs = await listReadingLogs()
+      setReadingLogs(freshLogs)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao registrar páginas na leitura.'
+      setError(message)
+      throw err
+    }
   }
 
   const handleCreateNoteFromReading = (reading: AcademicReading) => {

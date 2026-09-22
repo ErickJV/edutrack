@@ -510,6 +510,7 @@ class StudyNoteSerializer(serializers.ModelSerializer):
 
 class ReadingLogSerializer(serializers.ModelSerializer):
     reading_title = serializers.CharField(source="reading.title", read_only=True)
+    read_date = serializers.DateField(source="date", read_only=True)
 
     class Meta:
         model = ReadingLog
@@ -518,10 +519,11 @@ class ReadingLogSerializer(serializers.ModelSerializer):
             "reading",
             "reading_title",
             "date",
+            "read_date",
             "pages_read",
             "created_at",
         )
-        read_only_fields = ("id", "reading_title", "created_at")
+        read_only_fields = ("id", "reading_title", "read_date", "created_at")
 
     def validate_reading(self, value):
         if value is not None:

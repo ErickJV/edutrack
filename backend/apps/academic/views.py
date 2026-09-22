@@ -469,6 +469,8 @@ class AcademicReadingLogPagesView(generics.GenericAPIView):
 
         pages = request.data.get("pages_read")
         if pages is None:
+            pages = request.data.get("pages")
+        if pages is None:
             return Response({"pages_read": "Número de páginas lidas é obrigatório."}, status=400)
         try:
             pages = int(pages)
@@ -477,21 +479,31 @@ class AcademicReadingLogPagesView(generics.GenericAPIView):
         except (ValueError, TypeError):
             return Response({"pages_read": "Número de páginas lidas inválido."}, status=400)
 
-        date_str = request.data.get("date")
+        date_str = request.data.get("read_date") or request.data.get("date")
         log_date = timezone.now().date()
         if date_str:
             try:
-                log_date = timezone.datetime.strptime(date_str, "%Y-%m-%d").date()
+                log_date = timezone.datetime.strptime(str(date_str), "%Y-%m-%d").date()
             except ValueError:
                 return Response({"date": "Formato de data inválido. Use AAAA-MM-DD."}, status=400)
 
-        # Update or create log for this reading and date
-        ReadingLog.objects.update_or_create(
+        # Update or create log for this reading and date with additive accumulation
+        log_entry = ReadingLog.objects.filter(
             user=user,
             reading=reading,
             date=log_date,
-            defaults={"pages_read": pages},
-        )
+        ).first()
+
+        if log_entry:
+            log_entry.pages_read += pages
+            log_entry.save(update_fields=["pages_read"])
+        else:
+            ReadingLog.objects.create(
+                user=user,
+                reading=reading,
+                date=log_date,
+                pages_read=pages,
+            )
 
         new_current = request.data.get("current_page")
         if new_current is not None:

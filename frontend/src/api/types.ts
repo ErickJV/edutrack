@@ -213,14 +213,18 @@ export type ReadingLog = {
   reading: string
   reading_title?: string
   pages_read: number
-  current_page_after: number
-  read_date: string
+  current_page_after?: number
+  date?: string
+  read_date?: string
   created_at: string
 }
 
 export type ReadingLogPayload = {
-  pages: number
+  pages?: number
+  pages_read?: number
+  date?: string
   read_date?: string
+  current_page?: number
 }
 
 export type ReadingDayData = {

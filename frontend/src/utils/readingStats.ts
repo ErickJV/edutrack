@@ -21,8 +21,10 @@ export function calculateReadingSummary(
   // Aggregate pages read by date (YYYY-MM-DD)
   const pagesByDate = new Map<string, number>()
   for (const log of logs) {
-    const d = log.read_date
-    pagesByDate.set(d, (pagesByDate.get(d) ?? 0) + log.pages_read)
+    const d = log.read_date || log.date || (log.created_at ? log.created_at.split('T')[0] : '')
+    if (d) {
+      pagesByDate.set(d, (pagesByDate.get(d) ?? 0) + log.pages_read)
+    }
   }
 
   const todayStr = formatLocalDate(referenceDate)

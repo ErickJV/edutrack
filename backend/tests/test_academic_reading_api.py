@@ -105,11 +105,11 @@ def test_academic_reading_log_and_auto_completion(client: Client, offering):
         daily_goal_pages=15,
     )
 
-    # 1. Registrar progresso (+30 páginas)
+    # 1. Registrar progresso (+30 páginas) usando pages e read_date
     today_str = timezone.now().date().isoformat()
     log_res = client.post(
         f"/api/v1/academic-readings/{reading.id}/log",
-        data={"pages_read": 30, "date": today_str},
+        data={"pages": 30, "read_date": today_str},
         content_type="application/json",
     )
     assert log_res.status_code == 200
@@ -123,7 +123,7 @@ def test_academic_reading_log_and_auto_completion(client: Client, offering):
     log = ReadingLog.objects.get(reading=reading, user=user)
     assert log.pages_read == 30
 
-    # 2. Registrar mais páginas para concluir (ex: +60 páginas)
+    # 2. Registrar mais páginas no mesmo dia para concluir (ex: +60 páginas usando pages_read e date)
     log_res2 = client.post(
         f"/api/v1/academic-readings/{reading.id}/log",
         data={"pages_read": 60, "date": today_str},
@@ -135,12 +135,20 @@ def test_academic_reading_log_and_auto_completion(client: Client, offering):
     assert data2["progress_percent"] == 100
     assert data2["status"] == "completed"
 
-    # 3. Listar logs
+    # Verificar acumulação aditiva no mesmo dia: 30 + 60 = 90
+    assert ReadingLog.objects.filter(reading=reading, user=user).count() == 1
+    log.refresh_from_db()
+    assert log.pages_read == 90
+
+    # 3. Listar logs e verificar campos date e read_date
     logs_res = client.get("/api/v1/reading-logs?days=14")
     assert logs_res.status_code == 200
     logs_data = logs_res.json()
     assert len(logs_data) >= 1
     assert logs_data[0]["reading"] == str(reading.id)
+    assert logs_data[0]["date"] == today_str
+    assert logs_data[0]["read_date"] == today_str
+    assert logs_data[0]["pages_read"] == 90
 
 
 def test_study_note_linked_to_reading(client: Client, offering):
