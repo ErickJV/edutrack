@@ -11,6 +11,12 @@ from .views import (
     AcademicTaskToggleCompleteView,
     AcademicTermDetailView,
     AcademicTermListCreateView,
+    CalendarView,
+    ClassOccurrenceAttendanceView,
+    ClassOccurrenceDetailView,
+    ClassOccurrenceListCreateView,
+    ClassScheduleDetailView,
+    ClassScheduleListCreateView,
     CurriculumListView,
     DashboardSummaryView,
     ProfessorDetailView,
@@ -106,5 +112,31 @@ urlpatterns = [
         ReadingLogListView.as_view(),
         name="reading-log-list",
     ),
+    path(
+        "class-schedules",
+        ClassScheduleListCreateView.as_view(),
+        name="class-schedule-list-create",
+    ),
+    path(
+        "class-schedules/<uuid:pk>",
+        ClassScheduleDetailView.as_view(),
+        name="class-schedule-detail",
+    ),
+    path(
+        "class-occurrences",
+        ClassOccurrenceListCreateView.as_view(),
+        name="class-occurrence-list-create",
+    ),
+    path(
+        "class-occurrences/<uuid:pk>",
+        ClassOccurrenceDetailView.as_view(),
+        name="class-occurrence-detail",
+    ),
+    path(
+        "class-occurrences/<uuid:pk>/attendance",
+        ClassOccurrenceAttendanceView.as_view(),
+        name="class-occurrence-attendance",
+    ),
+    path("calendar", CalendarView.as_view(), name="calendar"),
 ]
 

@@ -188,6 +188,11 @@ class ClassSchedule(models.Model):
 
 
 class ClassOccurrence(models.Model):
+    class AttendanceStatus(models.TextChoices):
+        PRESENT = "present", "Presente"
+        ABSENT = "absent", "Falta"
+        UNRECORDED = "unrecorded", "Não informado"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     student_subject = models.ForeignKey(
         StudentSubject,
@@ -201,6 +206,8 @@ class ClassOccurrence(models.Model):
         on_delete=models.SET_NULL,
         related_name="occurrences",
     )
+    # Stable origin key: schedule + local calendar date (for idempotent generation)
+    origin_date = models.DateField(null=True, blank=True)
     replaces = models.ForeignKey(
         "self",
         null=True,
@@ -212,6 +219,14 @@ class ClassOccurrence(models.Model):
     ends_at = models.DateTimeField()
     room = models.CharField(max_length=80, blank=True)
     cancelled = models.BooleanField(default=False)
+    # Attendance (stored per-occurrence for integrity; initially unrecorded)
+    attendance_status = models.CharField(
+        max_length=20,
+        choices=AttendanceStatus.choices,
+        default=AttendanceStatus.UNRECORDED,
+    )
+    # Marks occurrences edited individually – excluded from bulk series recalculation
+    individually_edited = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -219,6 +234,14 @@ class ClassOccurrence(models.Model):
         ordering = ("starts_at",)
         verbose_name = "ocorrência de aula"
         verbose_name_plural = "ocorrências de aula"
+        constraints = [
+            # Prevent duplicate generation from the same schedule+date
+            models.UniqueConstraint(
+                fields=("schedule", "origin_date"),
+                condition=models.Q(schedule__isnull=False, origin_date__isnull=False),
+                name="unique_schedule_origin_date",
+            )
+        ]
 
     def __str__(self) -> str:
         status = " (Cancelada)" if self.cancelled else ""

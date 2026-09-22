@@ -17,9 +17,9 @@
 
 - [x] 3.1 Criar modelos/migrações de semestre, horário e ocorrência com índices, chaves estáveis e vínculo opcional da matrícula; verificar migrações em SQL Server, sem gerar semestre para dados legados.
 - [x] 3.2 Implementar APIs de semestre e associação em matrícula; testar datas inclusivas, fuso, duração, propriedade e conflito de troca com histórico.
-- [ ] 3.3 Implementar geração semanal transacional e APIs de horário com contratos; testar limites do semestre, vários blocos, repetição idempotente, concorrência e horários locais inválidos.
-- [ ] 3.4 Implementar consulta/edição individual, cancelamento e aula avulsa/reposição; testar sala, vínculo de reposição, exclusão do total válido, reativação e HTTP 404 para referências alheias.
-- [ ] 3.5 Implementar reconciliação de séries e datas do semestre protegendo histórico; testar ids preservados, cancelamento só de futuras intocadas e resposta 409 para conflitos.
+- [x] 3.3 Implementar geração semanal transacional e APIs de horário com contratos; testar limites do semestre, vários blocos, repetição idempotente, concorrência e horários locais inválidos.
+- [x] 3.4 Implementar consulta/edição individual, cancelamento e aula avulsa/reposição; testar sala, vínculo de reposição, exclusão do total válido, reativação e HTTP 404 para referências alheias.
+- [x] 3.5 Implementar reconciliação de séries e datas do semestre protegendo histórico; testar ids preservados, cancelamento só de futuras intocadas e resposta 409 para conflitos.
 - [ ] 3.6 Criar configuração de semestre e horários na disciplina, com lista de aulas editável; verificar estados vazio/carregando/erro, vigência e edição pelo teclado em testes de interface.
 
 ## 4. Frequência e progresso temporal

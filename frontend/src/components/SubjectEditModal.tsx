@@ -8,6 +8,7 @@ import { createProfessor, listProfessors, updateStudentSubject } from '../api/cl
 import type { Professor, StudentSubject } from '../api/types'
 import { Alert } from './Feedback'
 import { Input, PrimaryButton, Select } from './FormControls'
+import { ScheduleConfig } from './ScheduleConfig'
 
 type SubjectEditModalProps = {
   open: boolean
@@ -23,6 +24,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [newProfName, setNewProfName] = useState('')
   const [workloadHours, setWorkloadHours] = useState('')
+  const [termId, setTermId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -54,6 +56,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
     )
     setIsCreatingNew(false)
     setNewProfName('')
+    setTermId(enrollment.term?.id ?? null)
     setError('')
   }, [enrollment, open])
   if (!open || !enrollment) return null
@@ -212,6 +215,12 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
               onChange={(e) => setWorkloadHours(e.target.value)}
               hint="Permite ajustar a carga da sua turma caso difira da matriz oficial."
               required
+            />
+
+            <ScheduleConfig
+              enrollmentId={enrollment.id}
+              termId={termId}
+              onTermLinked={(id) => setTermId(id)}
             />
           </div>
 

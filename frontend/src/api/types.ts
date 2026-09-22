@@ -62,6 +62,7 @@ export type StudentSubject = {
   professor?: Professor | null
   professor_name: string
   display_professor_name?: string
+  term?: AcademicTerm | null
   custom_workload_hours?: number | null
   effective_workload_hours?: number
   status: 'active' | 'completed' | 'dropped'
@@ -241,3 +242,63 @@ export type ReadingSummary = {
   last_14_days: ReadingDayData[]
 }
 
+
+export type AcademicTerm = {
+  id: string
+  name: string
+  start_date: string
+  end_date: string
+  timezone: string
+  created_at: string
+  updated_at: string
+}
+
+export type AcademicTermPayload = {
+  name: string
+  start_date: string
+  end_date: string
+  timezone?: string
+}
+
+export type ClassSchedule = {
+  id: string
+  student_subject_id: string
+  weekday: number
+  start_time: string
+  end_time: string
+  room: string
+  valid_from: string | null
+  valid_until: string | null
+  occurrences_count: number
+  created_at: string
+  updated_at: string
+}
+
+export type ClassSchedulePayload = {
+  student_subject_id: string
+  weekday: number
+  start_time: string
+  end_time: string
+  room?: string
+  valid_from?: string | null
+  valid_until?: string | null
+}
+
+export type AttendanceStatus = 'present' | 'absent' | 'unrecorded'
+
+export type ClassOccurrence = {
+  id: string
+  student_subject_id: string
+  schedule_id: string | null
+  origin_date: string | null
+  replaces: string | null
+  starts_at: string
+  ends_at: string
+  room: string
+  cancelled: boolean
+  attendance_status: AttendanceStatus
+  individually_edited: boolean
+  subject_name: string
+  created_at: string
+  updated_at: string
+}

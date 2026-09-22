@@ -5,8 +5,13 @@ import type {
   AcademicTask,
   AcademicTaskPayload,
   AcademicTaskStatus,
+  AcademicTerm,
+  AcademicTermPayload,
   AuthResponse,
   AuthUser,
+  ClassOccurrence,
+  ClassSchedule,
+  ClassSchedulePayload,
   CourseOffering,
   DashboardSummary,
   Professor,
@@ -190,7 +195,12 @@ export async function saveStudentSubjects(payload: { semester_period?: string; s
 
 export async function updateStudentSubject(
   id: string,
-  payload: { professor_name?: string; custom_workload_hours?: number | null; professor_id?: string | null },
+  payload: {
+    professor_name?: string
+    custom_workload_hours?: number | null
+    professor_id?: string | null
+    term_id?: string | null
+  },
 ): Promise<StudentSubject> {
   return request<StudentSubject>(`/api/v1/student-subjects/${id}`, {
     method: 'PATCH',
@@ -362,4 +372,68 @@ export async function listReadingLogs(params: { reading?: string } = {}): Promis
   return request<ReadingLog[]>(`/api/v1/reading-logs${suffix}`)
 }
 
+
+// Academic Terms
+export async function listAcademicTerms(): Promise<AcademicTerm[]> {
+  return request<AcademicTerm[]>('/api/v1/academic-terms')
+}
+
+export async function createAcademicTerm(payload: AcademicTermPayload): Promise<AcademicTerm> {
+  return request<AcademicTerm>('/api/v1/academic-terms', { method: 'POST', body: JSON.stringify(payload) }, [201])
+}
+
+export async function updateAcademicTerm(id: string, payload: Partial<AcademicTermPayload>): Promise<AcademicTerm> {
+  return request<AcademicTerm>(`/api/v1/academic-terms/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+}
+
+// Class Schedules
+export async function listClassSchedules(params: { student_subject_id?: string } = {}): Promise<ClassSchedule[]> {
+  const search = new URLSearchParams()
+  if (params.student_subject_id) search.set('student_subject_id', params.student_subject_id)
+  const suffix = search.toString() ? `?${search}` : ''
+  return request<ClassSchedule[]>(`/api/v1/class-schedules${suffix}`)
+}
+
+export async function createClassSchedule(payload: ClassSchedulePayload): Promise<ClassSchedule> {
+  return request<ClassSchedule>('/api/v1/class-schedules', { method: 'POST', body: JSON.stringify(payload) }, [201])
+}
+
+export async function updateClassSchedule(id: string, payload: Partial<Omit<ClassSchedulePayload, 'student_subject_id'>>): Promise<ClassSchedule> {
+  return request<ClassSchedule>(`/api/v1/class-schedules/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+}
+
+export async function deleteClassSchedule(id: string): Promise<void> {
+  await request(`/api/v1/class-schedules/${id}`, { method: 'DELETE' }, [204])
+}
+
+// Class Occurrences
+export async function listClassOccurrences(params: {
+  student_subject_id?: string
+  from?: string
+  to?: string
+} = {}): Promise<ClassOccurrence[]> {
+  const search = new URLSearchParams()
+  if (params.student_subject_id) search.set('student_subject_id', params.student_subject_id)
+  if (params.from) search.set('from', params.from)
+  if (params.to) search.set('to', params.to)
+  const suffix = search.toString() ? `?${search}` : ''
+  return request<ClassOccurrence[]>(`/api/v1/class-occurrences${suffix}`)
+}
+
+export async function updateClassOccurrence(
+  id: string,
+  payload: { room?: string; cancelled?: boolean; starts_at?: string; ends_at?: string },
+): Promise<ClassOccurrence> {
+  return request<ClassOccurrence>(`/api/v1/class-occurrences/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+}
+
+export async function recordAttendance(
+  occurrenceId: string,
+  status: 'present' | 'absent' | 'unrecorded',
+): Promise<ClassOccurrence> {
+  return request<ClassOccurrence>(
+    `/api/v1/class-occurrences/${occurrenceId}/attendance`,
+    { method: 'PUT', body: JSON.stringify({ status }) },
+  )
+}
 

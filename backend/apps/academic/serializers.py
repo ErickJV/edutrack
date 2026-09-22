@@ -7,6 +7,8 @@ from .models import (
     AcademicReading,
     AcademicTask,
     AcademicTerm,
+    ClassOccurrence,
+    ClassSchedule,
     Professor,
     ReadingLog,
     StudentSubject,
@@ -77,6 +79,320 @@ class AcademicTermSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         return AcademicTerm.objects.create(user=user, **validated_data)
 
+
+def _generate_occurrences(schedule: ClassSchedule) -> list[ClassOccurrence]:
+    """
+    Generate (or retrieve) ClassOccurrence rows for every weekday matching the
+    schedule within its effective date window (clamped to the term).
+
+    Returns the list of occurrences created or already-existing.
+    Raises serializers.ValidationError on ambiguous/nonexistent local times.
+    """
+    import zoneinfo
+    from datetime import date, datetime, timedelta
+
+    subject = schedule.student_subject
+    term = subject.term
+    if term is None:
+        return []
+
+    tz = zoneinfo.ZoneInfo(term.timezone)
+
+    # Clamp validity window to term bounds
+    window_start: date = max(term.start_date, schedule.valid_from or term.start_date)
+    window_end: date = min(term.end_date, schedule.valid_until or term.end_date)
+    if window_start > window_end:
+        return []
+
+    # Find first matching weekday >= window_start
+    days_ahead = (schedule.weekday - window_start.weekday()) % 7
+    first_day = window_start + timedelta(days=days_ahead)
+
+    occurrences: list[ClassOccurrence] = []
+    current_day = first_day
+    while current_day <= window_end:
+        # Build the naive local datetimes for this occurrence
+        naive_start = datetime.combine(current_day, schedule.start_time)
+        naive_end = datetime.combine(current_day, schedule.end_time)
+
+        # Localize, detecting ambiguous/nonexistent times
+        try:
+            local_start = naive_start.replace(tzinfo=tz)
+            # fold=0 → check if it's ambiguous (two UTC representations)
+            local_start_fold0 = datetime.combine(current_day, schedule.start_time, tzinfo=tz)
+            local_start_fold1 = local_start_fold0.replace(fold=1)
+            if local_start_fold0.utcoffset() != local_start_fold1.utcoffset():
+                raise serializers.ValidationError(
+                    {
+                        "start_time": (
+                            f"Horário local ambíguo em {current_day} no fuso {term.timezone}."
+                            " Ajuste para um horário fora da transição de horário de verão."
+                        )
+                    }
+                )
+            # Detect nonexistent times: the normalized UTC round-trip differs from naive
+            utc_start = local_start_fold0.astimezone(zoneinfo.ZoneInfo("UTC"))
+            if utc_start.astimezone(tz).replace(tzinfo=None) != naive_start:
+                raise serializers.ValidationError(
+                    {
+                        "start_time": (
+                            f"Horário local inexistente em {current_day} no fuso {term.timezone}."
+                            " Ajuste para um horário fora da transição de horário de verão."
+                        )
+                    }
+                )
+
+            local_end_fold0 = datetime.combine(current_day, schedule.end_time, tzinfo=tz)
+            local_end_fold1 = local_end_fold0.replace(fold=1)
+            if local_end_fold0.utcoffset() != local_end_fold1.utcoffset():
+                raise serializers.ValidationError(
+                    {
+                        "end_time": (
+                            f"Horário local ambíguo em {current_day} no fuso {term.timezone}."
+                        )
+                    }
+                )
+            utc_end = local_end_fold0.astimezone(zoneinfo.ZoneInfo("UTC"))
+            naive_end_check = utc_end.astimezone(tz).replace(tzinfo=None)
+            if naive_end_check != naive_end:
+                raise serializers.ValidationError(
+                    {"end_time": f"Horário local inexistente em {current_day} no fuso {term.timezone}."}
+                )
+        except serializers.ValidationError:
+            raise
+        except Exception as exc:
+            raise serializers.ValidationError(
+                {"start_time": f"Erro ao processar horário: {exc}"}
+            ) from exc
+
+        # Idempotent create
+        occurrence, _ = ClassOccurrence.objects.get_or_create(
+            schedule=schedule,
+            origin_date=current_day,
+            defaults={
+                "student_subject": subject,
+                "starts_at": utc_start,
+                "ends_at": utc_end,
+                "room": schedule.room,
+            },
+        )
+        occurrences.append(occurrence)
+        current_day += timedelta(weeks=1)
+
+    return occurrences
+
+
+class ClassOccurrenceSerializer(serializers.ModelSerializer):
+    subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
+    student_subject_id = serializers.UUIDField(source="student_subject.id", read_only=True)
+    schedule_id = serializers.UUIDField(source="schedule.id", read_only=True, allow_null=True)
+
+    class Meta:
+        model = ClassOccurrence
+        fields = (
+            "id",
+            "student_subject_id",
+            "schedule_id",
+            "origin_date",
+            "replaces",
+            "starts_at",
+            "ends_at",
+            "room",
+            "cancelled",
+            "attendance_status",
+            "individually_edited",
+            "subject_name",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "student_subject_id",
+            "schedule_id",
+            "origin_date",
+            "attendance_status",
+            "individually_edited",
+            "subject_name",
+            "created_at",
+            "updated_at",
+        )
+
+
+class ClassScheduleSerializer(serializers.ModelSerializer):
+    student_subject_id = serializers.UUIDField()
+    occurrences_count = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = ClassSchedule
+        fields = (
+            "id",
+            "student_subject_id",
+            "weekday",
+            "start_time",
+            "end_time",
+            "room",
+            "valid_from",
+            "valid_until",
+            "occurrences_count",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "occurrences_count", "created_at", "updated_at")
+
+    def get_occurrences_count(self, obj: ClassSchedule) -> int:
+        return obj.occurrences.filter(cancelled=False).count()
+
+    def validate_student_subject_id(self, value):
+        user = self.context["request"].user
+        try:
+            ss = StudentSubject.objects.select_related("term").get(
+                id=value, user=user, status=StudentSubject.Status.ACTIVE
+            )
+        except StudentSubject.DoesNotExist as exc:
+            raise serializers.ValidationError(
+                "Disciplina do aluno não encontrada ou arquivada."
+            ) from exc
+        self._student_subject = ss
+        return value
+
+    def validate(self, attrs):
+        ss: StudentSubject = getattr(
+            self, "_student_subject",
+            getattr(self.instance, "student_subject", None),
+        )
+        start_time = attrs.get("start_time") or getattr(self.instance, "start_time", None)
+        end_time = attrs.get("end_time") or getattr(self.instance, "end_time", None)
+        if start_time and end_time and end_time <= start_time:
+            raise serializers.ValidationError(
+                {"end_time": "O horário de término deve ser posterior ao início."}
+            )
+        # Validate valid_from / valid_until within term
+        term = ss.term if ss else None
+        valid_from = attrs.get("valid_from") or getattr(self.instance, "valid_from", None)
+        valid_until = attrs.get("valid_until") or getattr(self.instance, "valid_until", None)
+        if term:
+            if valid_from and valid_from < term.start_date:
+                raise serializers.ValidationError(
+                    {"valid_from": "A vigência não pode ser anterior ao início do semestre."}
+                )
+            if valid_until and valid_until > term.end_date:
+                raise serializers.ValidationError(
+                    {"valid_until": "A vigência não pode ser posterior ao fim do semestre."}
+                )
+        return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        user = self.context["request"].user
+        ss: StudentSubject = self._student_subject
+        validated_data.pop("student_subject_id")
+        schedule = ClassSchedule.objects.create(
+            user=user, student_subject=ss, **validated_data
+        )
+        _generate_occurrences(schedule)
+        return schedule
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        validated_data.pop("student_subject_id", None)
+        instance = super().update(instance, validated_data)
+        # Re-generate is handled by the view's reconciliation logic (task 3.5)
+        return instance
+
+
+class ClassOccurrenceWriteSerializer(serializers.ModelSerializer):
+    """Used for POST (standalone/makeup) and PATCH (room, cancelled, starts_at, ends_at)."""
+
+    student_subject_id = serializers.UUIDField()
+    replaces_id = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = ClassOccurrence
+        fields = (
+            "id",
+            "student_subject_id",
+            "replaces_id",
+            "starts_at",
+            "ends_at",
+            "room",
+            "cancelled",
+            "attendance_status",
+            "individually_edited",
+            "origin_date",
+            "schedule_id",
+            "subject_name",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "attendance_status",
+            "individually_edited",
+            "origin_date",
+            "schedule_id",
+            "subject_name",
+            "created_at",
+            "updated_at",
+        )
+
+    schedule_id = serializers.UUIDField(source="schedule.id", read_only=True, allow_null=True)
+    subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
+
+    def validate_student_subject_id(self, value):
+        user = self.context["request"].user
+        try:
+            ss = StudentSubject.objects.get(id=value, user=user, status=StudentSubject.Status.ACTIVE)
+        except StudentSubject.DoesNotExist as exc:
+            raise serializers.ValidationError(
+                "Disciplina do aluno não encontrada ou arquivada."
+            ) from exc
+        self._student_subject = ss
+        return value
+
+    def validate_replaces_id(self, value):
+        if value is None:
+            return None
+        user = self.context["request"].user
+        try:
+            occ = ClassOccurrence.objects.select_related("student_subject").get(id=value)
+        except ClassOccurrence.DoesNotExist as exc:
+            raise serializers.ValidationError("Aula não encontrada.") from exc
+        if occ.student_subject.user_id != user.id:
+            raise serializers.ValidationError("Aula não encontrada.")
+        return occ
+
+    def validate(self, attrs):
+        starts_at = attrs.get("starts_at") or getattr(self.instance, "starts_at", None)
+        ends_at = attrs.get("ends_at") or getattr(self.instance, "ends_at", None)
+        if starts_at and ends_at and ends_at <= starts_at:
+            raise serializers.ValidationError(
+                {"ends_at": "O término deve ser posterior ao início."}
+            )
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        ss: StudentSubject = self._student_subject
+        validated_data.pop("student_subject_id")
+        replaces = validated_data.pop("replaces_id", None)
+        return ClassOccurrence.objects.create(
+            student_subject=ss,
+            replaces=replaces,
+            **validated_data,
+        )
+
+    def update(self, instance, validated_data):
+        validated_data.pop("student_subject_id", None)
+        validated_data.pop("replaces_id", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.individually_edited = True
+        instance.save()
+        return instance
+
+
+class AttendanceSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=ClassOccurrence.AttendanceStatus.choices)
 
 class ProfessorSerializer(serializers.ModelSerializer):
     name = serializers.CharField(min_length=1, max_length=120, trim_whitespace=True)
