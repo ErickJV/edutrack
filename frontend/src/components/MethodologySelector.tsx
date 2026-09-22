@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { BookOpen, ChevronDown, ChevronUp, FileText } from 'lucide-react'
+import { BookOpen, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import type { StudyMethodologyKey } from '../api/types'
 
 export type MethodologyInfo = {
@@ -145,110 +145,103 @@ export function MethodologySelector({
   const [isOpen, setIsOpen] = useState(false)
 
   const current = useMemo(
-    () => METHODOLOGIES.find((m) => m.key === selectedMethodology) || null,
+    () => METHODOLOGIES.find((m) => m.key === selectedMethodology) || METHODOLOGIES[0],
     [selectedMethodology],
   )
 
   return (
     <section
       aria-label="Metodologias de Estudo Ativo"
-      className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+      className="flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition dark:border-slate-800 dark:bg-slate-900"
     >
-      {/* Accordion Header / Toggle */}
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-expanded={isOpen}
-        aria-label="Expandir ou recolher guia de metodologias"
-        className="flex w-full items-center justify-between text-left focus-visible:outline-2 focus-visible:outline-indigo-600 rounded-xl"
-      >
-        <div className="flex items-center gap-2">
-          <BookOpen className="size-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-          <div>
-            <h3 className="text-xs font-black tracking-tight text-slate-950 dark:text-slate-50">
-              Metodologia de Estudo
-            </h3>
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-              {current ? current.title : 'Selecione uma metodologia'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1">
-          {current && (
-            <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${current.badgeColor}`}>
-              Ativa
-            </span>
-          )}
-          {isOpen ? (
-            <ChevronUp className="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" />
-          ) : (
-            <ChevronDown className="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" />
-          )}
-        </div>
-      </button>
-
-      {/* Collapsible Drawer Content */}
-      {isOpen ? (
-        <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-          {/* Methodology Selector Tabs/Pills */}
-          <div className="grid grid-cols-2 gap-1.5">
-            {METHODOLOGIES.map((m) => {
-              const isSelected = m.key === selectedMethodology
-              return (
-                <button
-                  key={m.key}
-                  type="button"
-                  onClick={() => onSelectMethodology(m.key)}
-                  aria-label={`Selecionar ${m.title}`}
-                  className={`flex flex-col items-start rounded-xl border p-2 text-left transition focus-visible:outline-2 focus-visible:outline-indigo-600 min-h-12 ${
-                    isSelected
-                      ? 'border-indigo-600 bg-indigo-50/70 ring-1 ring-indigo-600 dark:border-indigo-400 dark:bg-indigo-950/40 dark:ring-indigo-400'
-                      : 'border-slate-200 bg-slate-50 hover:bg-white dark:border-slate-800 dark:bg-slate-950/40 dark:hover:bg-slate-900'
-                  }`}
-                >
-                  <span className={`rounded px-1 py-0.2 text-[9px] font-bold uppercase tracking-wider ${m.badgeColor}`}>
-                    {m.title}
-                  </span>
-                </button>
-              )
-            })}
+      <div>
+        {/* Header with Title and Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
+              <BookOpen className="size-4" aria-hidden="true" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black tracking-tight text-slate-950 dark:text-slate-50">
+                Metodologia de Estudo
+              </h3>
+              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                {current.title} · {current.subtitle}
+              </p>
+            </div>
           </div>
 
-          {/* Active Methodology Guide */}
-          {current ? (
-            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/50">
+          <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            aria-expanded={isOpen}
+            aria-label="Expandir ou recolher guia de metodologias"
+            className="inline-flex size-7 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+          >
+            {isOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+          </button>
+        </div>
+
+        {/* Collapsible Drawer Content */}
+        {isOpen ? (
+          <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+            {/* Methodology Selection Tabs/Pills */}
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4" aria-label="Escolher metodologia">
+              {METHODOLOGIES.map((m) => {
+                const isSelected = m.key === (selectedMethodology || 'feynman')
+                return (
+                  <button
+                    key={m.key}
+                    type="button"
+                    aria-label={`Selecionar ${m.title}`}
+                    onClick={() => onSelectMethodology(m.key)}
+                    className={`inline-flex min-h-7 items-center justify-center gap-1 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+                      isSelected
+                        ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500'
+                        : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-300 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span>{m.title}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Active Guide Card */}
+            <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800/80 dark:bg-slate-950/40">
               <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
                 {current.description}
               </p>
 
-              <div className="mt-2 space-y-1 border-t border-slate-200/80 pt-2 dark:border-slate-800">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Passos recomendados:
-                </p>
-                <ol className="list-decimal space-y-0.5 pl-3.5 text-[11px] text-slate-700 dark:text-slate-300">
-                  {current.steps.map((step, idx) => (
-                    <li key={idx} className="leading-snug">
-                      {step}
-                    </li>
-                  ))}
-                </ol>
+              <div className="mt-2.5 grid grid-cols-1 gap-2 border-t border-slate-200/60 pt-2 dark:border-slate-800/60 sm:grid-cols-2">
+                {current.steps.map((step, idx) => (
+                  <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
+                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[9px] font-black text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                      {idx + 1}
+                    </span>
+                    <span className="leading-tight">{step}</span>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {onInsertTemplate ? (
+            {/* Insert template button */}
+            {onInsertTemplate ? (
+              <div className="mt-3">
                 <button
                   type="button"
                   onClick={() => onInsertTemplate(current.template)}
-                  className="mt-3 inline-flex min-h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                  aria-label="Inserir roteiro na anotação"
+                  className="inline-flex min-h-8 w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white"
                 >
-                  <FileText className="size-3.5" aria-hidden="true" />
-                  Inserir roteiro na anotação
+                  <Sparkles className="size-3.5 text-amber-400 dark:text-amber-500" aria-hidden="true" />
+                  <span>Inserir roteiro na anotação</span>
                 </button>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
     </section>
   )
 }

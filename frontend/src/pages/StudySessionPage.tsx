@@ -220,7 +220,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
 
   return (
     <div className="min-h-screen bg-slate-50/50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-50">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         {/* Navigation & Header */}
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -354,22 +354,28 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
           </div>
         ) : null}
 
-        {/* TAB 1: WORKSPACE & POMODORO (Asymmetric 2-Column Grid: ~25% Left / ~75% Right) */}
+        {/* TAB 1: WORKSPACE (Top row: Pomodoro & Methodology side-by-side | Bottom row: Full Width Textbook) */}
         {activeTab === 'workspace' && (
-          <div className="grid gap-6 lg:grid-cols-12">
-            {/* Left Column (~25% / 3 cols): Minimalist Pomodoro & Collapsible Methodology */}
-            <div className="flex flex-col gap-4 lg:col-span-4 xl:col-span-3">
-              <PomodoroTimer activeTask={activeTask} onSyncMinutes={handleSyncMinutes} />
+          <div className="flex flex-col gap-6">
+            {/* Top Row: Focus Utilities side-by-side */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+              {/* Pomodoro Timer (~5 cols on desktop) */}
+              <div className="lg:col-span-5">
+                <PomodoroTimer activeTask={activeTask} onSyncMinutes={handleSyncMinutes} />
+              </div>
 
-              <MethodologySelector
-                selectedMethodology={selectedMethodology}
-                onSelectMethodology={setSelectedMethodology}
-                onInsertTemplate={handleInsertTemplate}
-              />
+              {/* Methodology Guide (~7 cols on desktop) */}
+              <div className="lg:col-span-7">
+                <MethodologySelector
+                  selectedMethodology={selectedMethodology}
+                  onSelectMethodology={setSelectedMethodology}
+                  onInsertTemplate={handleInsertTemplate}
+                />
+              </div>
             </div>
 
-            {/* Right Column (~75% / 9 cols): Expanded Textbook Workspace */}
-            <div className="lg:col-span-8 xl:col-span-9">
+            {/* Bottom Row: Full-width Textbook Workspace */}
+            <div className="w-full">
               <StudyNotesWorkspace
                 activeSubject={activeSubject}
                 activeTask={activeTask}

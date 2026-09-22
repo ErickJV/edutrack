@@ -1,17 +1,40 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
+  AlertTriangle,
+  AlignLeft,
   BookOpen,
+  Check,
   CheckSquare,
+  ChevronLeft,
+  ChevronRight,
   Code,
+  Columns2,
+  Copy,
+  Eye,
+  FileEdit,
   FolderPlus,
+  Heading1,
+  Heading2,
+  Heading3,
+  Heading4,
   Highlighter,
   Info,
   Italic,
+  Lightbulb,
   List,
+  ListOrdered,
+  Maximize2,
+  Minimize2,
+  Palette,
   Plus,
   Quote,
+  Search,
+  Sparkles,
+  Strikethrough,
   Table as TableIcon,
   Trash2,
+  Type,
+  Underline,
 } from 'lucide-react'
 import type {
   AcademicReading,
@@ -41,6 +64,26 @@ const COLOR_OPTIONS = [
   { label: 'Roxo', value: 'purple', bg: 'bg-purple-500' },
 ]
 
+const TEXT_COLORS = [
+  { label: 'Padrão', class: '', preview: 'bg-slate-900 dark:bg-slate-100' },
+  { label: 'Âmbar', class: 'text-amber-600 dark:text-amber-400 font-semibold', preview: 'bg-amber-500' },
+  { label: 'Esmeralda', class: 'text-emerald-600 dark:text-emerald-400 font-semibold', preview: 'bg-emerald-500' },
+  { label: 'Ciano', class: 'text-cyan-600 dark:text-cyan-400 font-semibold', preview: 'bg-cyan-500' },
+  { label: 'Roxo', class: 'text-purple-600 dark:text-purple-400 font-semibold', preview: 'bg-purple-500' },
+  { label: 'Rosa', class: 'text-rose-600 dark:text-rose-400 font-semibold', preview: 'bg-rose-500' },
+]
+
+const HIGHLIGHT_COLORS = [
+  { label: 'Amarelo', class: 'bg-yellow-200/90 text-yellow-950 dark:bg-yellow-900/60 dark:text-yellow-200 px-1 py-0.5 rounded', preview: 'bg-yellow-300' },
+  { label: 'Verde', class: 'bg-emerald-200/90 text-emerald-950 dark:bg-emerald-900/60 dark:text-emerald-200 px-1 py-0.5 rounded', preview: 'bg-emerald-300' },
+  { label: 'Ciano', class: 'bg-cyan-200/90 text-cyan-950 dark:bg-cyan-900/60 dark:text-cyan-200 px-1 py-0.5 rounded', preview: 'bg-cyan-300' },
+  { label: 'Rosa', class: 'bg-rose-200/90 text-rose-950 dark:bg-rose-900/60 dark:text-rose-200 px-1 py-0.5 rounded', preview: 'bg-rose-300' },
+  { label: 'Roxo', class: 'bg-purple-200/90 text-purple-950 dark:bg-purple-900/60 dark:text-purple-200 px-1 py-0.5 rounded', preview: 'bg-purple-300' },
+]
+
+export type FontFamilyChoice = 'sans' | 'serif' | 'mono'
+export type ViewModeChoice = 'edit' | 'preview' | 'split'
+
 export type StudyNotesWorkspaceProps = {
   activeSubject?: StudentSubject | null
   activeTask?: AcademicTask | null
@@ -69,6 +112,16 @@ export function StudyNotesWorkspace({
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // Sidebar collapsible state on desktop
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  // Editor styling & view states
+  const [fontFamily, setFontFamily] = useState<FontFamilyChoice>('sans')
+  const [viewMode, setViewMode] = useState<ViewModeChoice>('edit')
+  const [colorMenuOpen, setColorMenuOpen] = useState(false)
+  const [calloutMenuOpen, setCalloutMenuOpen] = useState(false)
+  const [copiedCodeIndex, setCopiedCodeIndex] = useState<number | null>(null)
 
   // Editor states
   const [editorTitle, setEditorTitle] = useState('')
@@ -136,12 +189,6 @@ export function StudyNotesWorkspace({
     }
   }, [])
 
-  // Active note lookup
-  const activeNote = useMemo(
-    () => notes.find((n) => n.id === activeNoteId) || null,
-    [notes, activeNoteId],
-  )
-
   // Switch active note
   const selectNote = useCallback((note: StudyNote) => {
     setActiveNoteId(note.id)
@@ -155,24 +202,14 @@ export function StudyNotesWorkspace({
     setMobileView('editor')
   }, [])
 
-  // Auto-save debounced
+  // Auto-save debounce
   const triggerAutoSave = useCallback(
-    (
-      overrides?: Partial<{
-        title: string
-        content: string
-        folder: string | null
-        student_subject: string | null
-        task: string | null
-        reading: string | null
-      }>,
-    ) => {
+    (overrides?: Partial<StudyNotePayload>) => {
       if (!activeNoteId) return
+      setSaveStatus('saving')
       if (saveTimeoutRef.current) {
         window.clearTimeout(saveTimeoutRef.current)
       }
-      setSaveStatus('saving')
-
       saveTimeoutRef.current = window.setTimeout(async () => {
         try {
           const payload: StudyNotePayload = {
@@ -359,6 +396,15 @@ export function StudyNotesWorkspace({
     }, 0)
   }
 
+  // Word & Character count calculation
+  const noteStats = useMemo(() => {
+    const trimmed = editorContent.trim()
+    const words = trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0
+    const chars = editorContent.length
+    const readingTimeMinutes = Math.max(1, Math.ceil(words / 200))
+    return { words, chars, readingTimeMinutes }
+  }, [editorContent])
+
   // Filtered notes by folder and search
   const filteredNotes = useMemo(() => {
     return notes.filter((note) => {
@@ -371,31 +417,394 @@ export function StudyNotesWorkspace({
     })
   }, [notes, selectedFolderId, searchQuery])
 
+  // Font family class helper
+  const fontClass = useMemo(() => {
+    switch (fontFamily) {
+      case 'serif':
+        return 'font-serif'
+      case 'mono':
+        return 'font-mono'
+      case 'sans':
+      default:
+        return 'font-sans'
+    }
+  }, [fontFamily])
+
+  // Simple and clean Rich Markdown Parser for Preview
+  const renderFormattedPreview = useCallback((content: string) => {
+    if (!content.trim()) {
+      return (
+        <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
+          Nenhum conteúdo para visualização. Escreva algo no editor!
+        </div>
+      )
+    }
+
+    const lines = content.split('\n')
+    const elements: React.ReactNode[] = []
+    let inCodeBlock = false
+    let codeBlockLang = ''
+    let codeBlockContent: string[] = []
+    let inTable = false
+    let tableRows: string[][] = []
+    let inList = false
+    let listItems: React.ReactNode[] = []
+
+    const flushList = () => {
+      if (inList && listItems.length > 0) {
+        elements.push(
+          <ul key={`list-${elements.length}`} className="my-3 space-y-1.5 pl-5 list-disc text-sm text-slate-800 dark:text-slate-200">
+            {listItems}
+          </ul>
+        )
+        inList = false
+        listItems = []
+      }
+    }
+
+    const flushTable = () => {
+      if (inTable && tableRows.length > 0) {
+        const headerRow = tableRows[0]
+        const bodyRows = tableRows.slice(1).filter((r) => !r.every((c) => c.match(/^[-:]+$/)))
+        elements.push(
+          <div key={`table-${elements.length}`} className="my-4 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+            <table className="w-full text-left text-xs sm:text-sm">
+              <thead className="bg-slate-100 text-slate-900 font-bold dark:bg-slate-800 dark:text-slate-100">
+                <tr>
+                  {headerRow.map((cell, idx) => (
+                    <th key={idx} className="border-b border-slate-200 px-3 py-2 dark:border-slate-700">
+                      {parseInlineFormatting(cell.trim())}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                {bodyRows.map((row, rIdx) => (
+                  <tr key={rIdx} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                    {row.map((cell, cIdx) => (
+                      <td key={cIdx} className="px-3 py-2 text-slate-700 dark:text-slate-300">
+                        {parseInlineFormatting(cell.trim())}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+        inTable = false
+        tableRows = []
+      }
+    }
+
+    const parseInlineFormatting = (text: string): React.ReactNode => {
+      // Regex replacements for highlights, bold, italic, underline, strikethrough, spans
+      // To keep it simple and safe in React:
+      const parts: React.ReactNode[] = []
+      // We parse spans or mark tags
+      let cursor = 0
+      const tokenRegex = /(==[^=]+==|<b>.*?<\/b>|\*\*.*?\*\*|<u>.*?<\/u>|~~.*?~~|\*.*?\*|<mark class="([^"]*)">([\s\S]*?)<\/mark>|<span class="([^"]*)">([\s\S]*?)<\/span>|`[^`]+`)/g
+      let match: RegExpExecArray | null
+
+      while ((match = tokenRegex.exec(text)) !== null) {
+        if (match.index > cursor) {
+          parts.push(text.substring(cursor, match.index))
+        }
+        const full = match[0]
+
+        if (full.startsWith('==') && full.endsWith('==')) {
+          parts.push(
+            <mark key={match.index} className="rounded bg-yellow-200/90 px-1 py-0.5 text-yellow-950 dark:bg-yellow-900/60 dark:text-yellow-200">
+              {full.slice(2, -2)}
+            </mark>
+          )
+        } else if (full.startsWith('**') && full.endsWith('**')) {
+          parts.push(<strong key={match.index} className="font-bold text-slate-950 dark:text-slate-50">{full.slice(2, -2)}</strong>)
+        } else if (full.startsWith('<u>') && full.endsWith('</u>')) {
+          parts.push(<u key={match.index} className="underline decoration-slate-400">{full.slice(3, -4)}</u>)
+        } else if (full.startsWith('~~') && full.endsWith('~~')) {
+          parts.push(<del key={match.index} className="line-through text-slate-400">{full.slice(2, -2)}</del>)
+        } else if (full.startsWith('*') && full.endsWith('*')) {
+          parts.push(<em key={match.index} className="italic">{full.slice(1, -1)}</em>)
+        } else if (full.startsWith('<mark')) {
+          const markClass = match[2] || ''
+          const markContent = match[3] || ''
+          parts.push(
+            <mark key={match.index} className={markClass}>
+              {markContent}
+            </mark>
+          )
+        } else if (full.startsWith('<span')) {
+          const spanClass = match[4] || ''
+          const spanContent = match[5] || ''
+          parts.push(
+            <span key={match.index} className={spanClass}>
+              {spanContent}
+            </span>
+          )
+        } else if (full.startsWith('`') && full.endsWith('`')) {
+          parts.push(
+            <code key={match.index} className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-indigo-600 dark:bg-slate-800 dark:text-indigo-400">
+              {full.slice(1, -1)}
+            </code>
+          )
+        }
+        cursor = tokenRegex.lastIndex
+      }
+
+      if (cursor < text.length) {
+        parts.push(text.substring(cursor))
+      }
+      return parts.length > 0 ? parts : text
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+
+      // Code blocks
+      if (line.startsWith('```')) {
+        flushList()
+        flushTable()
+        if (inCodeBlock) {
+          const codeText = codeBlockContent.join('\n')
+          const blockIdx = elements.length
+          elements.push(
+            <div key={`code-${blockIdx}`} className="relative my-4 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-slate-50 font-mono text-xs">
+              <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-4 py-1.5 text-[11px] text-slate-400">
+                <span>{codeBlockLang || 'código'}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(codeText)
+                    setCopiedCodeIndex(blockIdx)
+                    setTimeout(() => setCopiedCodeIndex(null), 2000)
+                  }}
+                  className="inline-flex items-center gap-1 text-[10px] text-slate-400 hover:text-white transition"
+                >
+                  {copiedCodeIndex === blockIdx ? <Check className="size-3 text-emerald-400" /> : <Copy className="size-3" />}
+                  {copiedCodeIndex === blockIdx ? 'Copiado' : 'Copiar'}
+                </button>
+              </div>
+              <pre className="p-4 overflow-x-auto leading-relaxed">
+                <code>{codeText}</code>
+              </pre>
+            </div>
+          )
+          inCodeBlock = false
+          codeBlockContent = []
+        } else {
+          inCodeBlock = true
+          codeBlockLang = line.replace('```', '').trim()
+        }
+        continue
+      }
+
+      if (inCodeBlock) {
+        codeBlockContent.push(line)
+        continue
+      }
+
+      // Tables
+      if (line.includes('|') && line.trim().startsWith('|') && line.trim().endsWith('|')) {
+        flushList()
+        inTable = true
+        const rowCells = line.trim().slice(1, -1).split('|')
+        tableRows.push(rowCells)
+        continue
+      } else if (inTable) {
+        flushTable()
+      }
+
+      // Callouts / Blockquotes
+      if (line.startsWith('>')) {
+        flushList()
+        flushTable()
+        const quoteContent = line.replace(/^>\s?/, '')
+
+        // Check for Callout tags
+        if (quoteContent.startsWith('[!NOTE]')) {
+          elements.push(
+            <div key={`callout-note-${i}`} className="my-3 flex items-start gap-2.5 rounded-xl border border-indigo-200 bg-indigo-50/70 p-3.5 text-xs text-indigo-950 dark:border-indigo-900/60 dark:bg-indigo-950/30 dark:text-indigo-200">
+              <Info className="size-4 shrink-0 text-indigo-600 dark:text-indigo-400 mt-0.5" />
+              <div className="flex-1 font-medium">{parseInlineFormatting(quoteContent.replace('[!NOTE]', '').trim())}</div>
+            </div>
+          )
+          continue
+        } else if (quoteContent.startsWith('[!TIP]')) {
+          elements.push(
+            <div key={`callout-tip-${i}`} className="my-3 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-xs text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
+              <Lightbulb className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+              <div className="flex-1 font-medium">{parseInlineFormatting(quoteContent.replace('[!TIP]', '').trim())}</div>
+            </div>
+          )
+          continue
+        } else if (quoteContent.startsWith('[!WARNING]')) {
+          elements.push(
+            <div key={`callout-warn-${i}`} className="my-3 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+              <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <div className="flex-1 font-medium">{parseInlineFormatting(quoteContent.replace('[!WARNING]', '').trim())}</div>
+            </div>
+          )
+          continue
+        } else if (quoteContent.startsWith('[!IMPORTANT]')) {
+          elements.push(
+            <div key={`callout-imp-${i}`} className="my-3 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50/70 p-3.5 text-xs text-rose-950 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200">
+              <Sparkles className="size-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+              <div className="flex-1 font-medium">{parseInlineFormatting(quoteContent.replace('[!IMPORTANT]', '').trim())}</div>
+            </div>
+          )
+          continue
+        }
+
+        elements.push(
+          <blockquote key={`quote-${i}`} className="my-3 border-l-4 border-indigo-500 pl-4 py-1 italic text-slate-700 dark:text-slate-300 text-sm bg-slate-50 dark:bg-slate-900/50 rounded-r-lg">
+            {parseInlineFormatting(quoteContent)}
+          </blockquote>
+        )
+        continue
+      }
+
+      // Checklists
+      if (line.match(/^-\s*\[([ xX])\]\s+(.*)/)) {
+        flushList()
+        flushTable()
+        const isChecked = line.toLowerCase().includes('[x]')
+        const taskText = line.replace(/^-\s*\[([ xX])\]\s+/, '')
+        elements.push(
+          <div key={`check-${i}`} className="my-1.5 flex items-center gap-2 text-sm">
+            <span className={`flex size-4 items-center justify-center rounded border ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700'}`}>
+              {isChecked && <Check className="size-3" />}
+            </span>
+            <span className={isChecked ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'}>
+              {parseInlineFormatting(taskText)}
+            </span>
+          </div>
+        )
+        continue
+      }
+
+      // Bullet lists
+      if (line.startsWith('- ') || line.startsWith('* ')) {
+        inList = true
+        listItems.push(
+          <li key={`li-${i}`}>
+            {parseInlineFormatting(line.replace(/^[-*]\s+/, ''))}
+          </li>
+        )
+        continue
+      } else {
+        flushList()
+      }
+
+      // Headings
+      if (line.startsWith('# ')) {
+        elements.push(<h1 key={`h1-${i}`} className="mt-6 mb-3 text-2xl font-black tracking-tight text-slate-950 dark:text-slate-50 border-b border-slate-200 dark:border-slate-800 pb-1.5">{parseInlineFormatting(line.slice(2))}</h1>)
+      } else if (line.startsWith('## ')) {
+        elements.push(<h2 key={`h2-${i}`} className="mt-5 mb-2.5 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{parseInlineFormatting(line.slice(3))}</h2>)
+      } else if (line.startsWith('### ')) {
+        elements.push(<h3 key={`h3-${i}`} className="mt-4 mb-2 text-base font-bold text-slate-800 dark:text-slate-200">{parseInlineFormatting(line.slice(4))}</h3>)
+      } else if (line.startsWith('#### ')) {
+        elements.push(<h4 key={`h4-${i}`} className="mt-3 mb-1.5 text-sm font-bold text-slate-700 dark:text-slate-300">{parseInlineFormatting(line.slice(5))}</h4>)
+      } else if (line.startsWith('---')) {
+        elements.push(<hr key={`hr-${i}`} className="my-5 border-slate-200 dark:border-slate-800" />)
+      } else if (line.trim()) {
+        elements.push(<p key={`p-${i}`} className="my-2 leading-relaxed text-sm text-slate-800 dark:text-slate-200">{parseInlineFormatting(line)}</p>)
+      }
+    }
+
+    flushList()
+    flushTable()
+    return elements
+  }, [copiedCodeIndex])
+
   return (
     <section
       aria-label="Caderno de Anotações e Workspace de Estudo"
-      className="flex flex-col rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
+      className="flex w-full flex-col rounded-3xl border border-slate-200 bg-white shadow-sm transition dark:border-slate-800 dark:bg-slate-900"
     >
-      {/* Header with Title and Mobile View Switcher */}
-      <div className="flex flex-wrap items-center justify-between border-b border-slate-200 px-5 py-3.5 dark:border-slate-800 sm:px-6">
-        <div>
-          <h3 className="text-lg font-black tracking-tight text-slate-950 dark:text-slate-50">
-            Caderno de Anotações
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Espaço de síntese e documentação acadêmica
-          </p>
-        </div>
-
-        {/* Mobile toggle button */}
-        <div className="flex items-center gap-2 sm:hidden">
+      {/* Top Header of the Notebook */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-800 sm:px-6">
+        <div className="flex items-center gap-3">
+          {/* Toggle sidebar button for desktop */}
           <button
             type="button"
-            onClick={() => setMobileView(mobileView === 'sidebar' ? 'editor' : 'sidebar')}
-            className="inline-flex min-h-9 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+            title={sidebarCollapsed ? 'Expandir pastas e notas' : 'Recolher lateral'}
+            aria-label="Alternar painel lateral de pastas"
+            className="hidden lg:inline-flex size-8 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
           >
-            {mobileView === 'sidebar' ? 'Ver Editor →' : '← Pastas & Notas'}
+            {sidebarCollapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
           </button>
+
+          <div>
+            <h3 className="text-base font-black tracking-tight text-slate-950 dark:text-slate-50 sm:text-lg">
+              Caderno de Anotações (Textbook)
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Sínteses, anotações de aulas e registros de leitura acadêmica
+            </p>
+          </div>
+        </div>
+
+        {/* View Mode Switcher (Editor / Split / Preview) & Mobile Toggle */}
+        <div className="flex items-center gap-2">
+          {/* View mode toggle pills */}
+          <div
+            role="group"
+            aria-label="Modo de visualização"
+            className="flex rounded-xl border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-800 dark:bg-slate-950"
+          >
+            <button
+              type="button"
+              onClick={() => setViewMode('edit')}
+              className={`inline-flex min-h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-bold transition ${
+                viewMode === 'edit'
+                  ? 'bg-white text-indigo-600 shadow-xs dark:bg-slate-800 dark:text-indigo-400'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+              title="Modo Edição"
+            >
+              <FileEdit className="size-3.5" />
+              <span className="hidden sm:inline">Editor</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('split')}
+              className={`hidden md:inline-flex min-h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-bold transition ${
+                viewMode === 'split'
+                  ? 'bg-white text-indigo-600 shadow-xs dark:bg-slate-800 dark:text-indigo-400'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+              title="Modo Dividido (Editor + Preview)"
+            >
+              <Columns2 className="size-3.5" />
+              <span>Dividido</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('preview')}
+              className={`inline-flex min-h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-bold transition ${
+                viewMode === 'preview'
+                  ? 'bg-white text-indigo-600 shadow-xs dark:bg-slate-800 dark:text-indigo-400'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+              title="Modo Leitura / Visualização"
+            >
+              <Eye className="size-3.5" />
+              <span className="hidden sm:inline">Visualizar</span>
+            </button>
+          </div>
+
+          {/* Mobile view toggle button */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileView(mobileView === 'sidebar' ? 'editor' : 'sidebar')}
+              className="inline-flex min-h-8 items-center rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
+            >
+              {mobileView === 'sidebar' ? 'Ver Anotação →' : '← Pastas'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -405,13 +814,13 @@ export function StudyNotesWorkspace({
         </div>
       ) : null}
 
-      {/* Main Workspace Layout */}
-      <div className="grid min-h-[580px] lg:grid-cols-12">
-        {/* Left Sub-Column: Folders & Note List (4 cols) */}
+      {/* Main Workspace Grid */}
+      <div className="flex flex-1 min-h-[620px]">
+        {/* Left Sub-Column: Folders & Note List */}
         <aside
-          className={`flex flex-col border-r border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/40 lg:col-span-4 ${
-            mobileView === 'editor' ? 'hidden sm:flex' : 'flex'
-          }`}
+          className={`flex-col border-r border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/40 transition-all duration-200 ${
+            sidebarCollapsed ? 'hidden' : 'flex w-full lg:w-72 xl:w-80 shrink-0'
+          } ${mobileView === 'editor' ? 'hidden lg:flex' : 'flex'}`}
         >
           {/* Folders Bar */}
           <div className="flex items-center justify-between">
@@ -426,7 +835,7 @@ export function StudyNotesWorkspace({
                 setEditingFolderId(null)
                 setFolderModalOpen(true)
               }}
-              className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-indigo-600 transition hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:text-indigo-400 dark:hover:bg-slate-800"
+              className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-indigo-600 transition hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:text-indigo-400 dark:hover:bg-slate-800"
             >
               <FolderPlus className="size-3.5" aria-hidden="true" />
               <span>Nova pasta</span>
@@ -438,7 +847,7 @@ export function StudyNotesWorkspace({
             <button
               type="button"
               onClick={() => setSelectedFolderId('all')}
-              className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
+              className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
                 selectedFolderId === 'all'
                   ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500'
                   : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
@@ -449,34 +858,32 @@ export function StudyNotesWorkspace({
                 {notes.length}
               </span>
             </button>
-
-            {folders.map((folder) => {
-              const isSelected = selectedFolderId === folder.id
+            {folders.map((f) => {
+              const isSelected = selectedFolderId === f.id
               return (
-                <div key={folder.id} className="group relative inline-flex items-center">
+                <div key={f.id} className="group relative inline-flex items-center">
                   <button
                     type="button"
-                    onClick={() => setSelectedFolderId(folder.id)}
-                    className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
+                    onClick={() => setSelectedFolderId(f.id)}
+                    className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
                       isSelected
                         ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500'
                         : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
                     }`}
                   >
-                    <span className="max-w-[100px] truncate">{folder.name}</span>
+                    <span>{f.name}</span>
                     <span className="rounded-full bg-slate-200/60 px-1.5 py-0.2 text-[10px] text-slate-800 dark:bg-slate-700 dark:text-slate-200">
-                      {folder.notes_count}
+                      {f.notes_count}
                     </span>
                   </button>
-
                   <button
                     type="button"
-                    aria-label={`Excluir pasta ${folder.name}`}
                     onClick={(e) => {
                       e.stopPropagation()
-                      void handleDeleteFolder(folder.id)
+                      void handleDeleteFolder(f.id)
                     }}
-                    className="ml-0.5 hidden text-xs font-bold text-rose-500 hover:text-rose-700 group-hover:inline-block"
+                    className="ml-0.5 hidden text-slate-400 hover:text-rose-500 group-hover:inline-block"
+                    title="Excluir pasta"
                   >
                     ×
                   </button>
@@ -485,32 +892,38 @@ export function StudyNotesWorkspace({
             })}
           </div>
 
-          {/* Search and New Note Action */}
-          <div className="mt-3 flex items-center gap-2">
+          {/* Search Notes */}
+          <div className="relative mt-3">
+            <Search className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
             <input
               id={searchInputId}
               type="search"
-              placeholder="Buscar anotações..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="min-h-9 w-full rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+              placeholder="Buscar anotação..."
+              className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
             />
+          </div>
 
+          {/* Notes List Header */}
+          <div className="mt-3.5 flex items-center justify-between">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Anotações ({filteredNotes.length})
+            </h4>
             <button
               type="button"
               onClick={() => void handleCreateNote()}
-              aria-label="Criar nova anotação"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-              title="Nova anotação"
+              className="inline-flex min-h-7 items-center gap-1 rounded-lg bg-indigo-50 px-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
             >
-              <Plus className="size-4" aria-hidden="true" />
+              <Plus className="size-3.5" aria-hidden="true" />
+              <span>Nova nota</span>
             </button>
           </div>
 
-          {/* Notes List */}
-          <div className="mt-3 flex-1 space-y-1.5 overflow-y-auto max-h-[480px] pr-1">
+          {/* Notes Scrollable Cards */}
+          <div className="mt-2 flex-1 space-y-1.5 overflow-y-auto pr-1">
             {filteredNotes.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+              <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
                 Nenhuma anotação encontrada.
               </div>
             ) : (
@@ -521,38 +934,40 @@ export function StudyNotesWorkspace({
                     key={note.id}
                     type="button"
                     onClick={() => selectNote(note)}
-                    className={`flex w-full flex-col rounded-xl p-2.5 text-left transition focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+                    className={`flex w-full flex-col rounded-xl border p-2.5 text-left transition focus-visible:outline-2 focus-visible:outline-indigo-600 ${
                       isSelected
-                        ? 'border border-indigo-600 bg-indigo-50/80 shadow-xs dark:border-indigo-500 dark:bg-indigo-950/40'
-                        : 'border border-slate-200/80 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 dark:hover:bg-slate-800/60'
+                        ? 'border-indigo-600 bg-indigo-50/70 shadow-xs dark:border-indigo-400 dark:bg-indigo-950/40'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/60'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-1">
+                    <div className="flex w-full items-center justify-between gap-2">
                       <h5 className="truncate text-xs font-bold text-slate-900 dark:text-slate-100">
                         {note.title || 'Sem título'}
                       </h5>
-                      {note.reading_title ? (
-                        <span className="rounded bg-cyan-50 px-1 py-0.2 text-[9px] font-bold text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300">
-                          📖 Leitura
-                        </span>
-                      ) : note.methodology ? (
-                        <span className="rounded bg-indigo-50 px-1 py-0.2 text-[9px] font-bold uppercase text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                          {note.methodology}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-slate-600 dark:text-slate-400">
-                      {note.content ? note.content.slice(0, 100) : 'Sem conteúdo ainda...'}
-                    </p>
-                    <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400">
-                      <span>{note.folder_name ? `📁 ${note.folder_name}` : 'Sem pasta'}</span>
-                      <span>
+                      <span className="shrink-0 text-[10px] text-slate-400">
                         {new Date(note.updated_at).toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: 'short',
                         })}
                       </span>
                     </div>
+                    <p className="mt-1 line-clamp-2 text-[11px] text-slate-500 dark:text-slate-400">
+                      {note.content ? note.content.slice(0, 100) : 'Sem conteúdo...'}
+                    </p>
+                    {note.subject_name || note.reading_title ? (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {note.subject_name && (
+                          <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[9px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                            {note.subject_name}
+                          </span>
+                        )}
+                        {note.reading_title && (
+                          <span className="rounded bg-indigo-100/70 px-1.5 py-0.2 text-[9px] font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                            📖 {note.reading_title}
+                          </span>
+                        )}
+                      </div>
+                    ) : null}
                   </button>
                 )
               })
@@ -560,43 +975,45 @@ export function StudyNotesWorkspace({
           </div>
         </aside>
 
-        {/* Right Sub-Column: Expanded Note Editor (8 cols) */}
-        <div
-          className={`flex flex-col p-4 sm:p-5 lg:col-span-8 ${
-            mobileView === 'sidebar' ? 'hidden sm:flex' : 'flex'
+        {/* Right Main Column: Editor & Preview Area */}
+        <main
+          className={`flex-1 flex-col p-4 sm:p-6 ${
+            mobileView === 'sidebar' ? 'hidden lg:flex' : 'flex'
           }`}
         >
-          {activeNote ? (
-            <div className="flex flex-col h-full">
-              {/* Note Metadata Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+          {activeNoteId ? (
+            <div className="flex h-full flex-col">
+              {/* Note Metadata Bar (Subject, Task, Reading, Folder & Delete) */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3 dark:border-slate-800">
                 <div className="flex flex-wrap items-center gap-2">
-                  {/* Folder picker */}
-                  <div className="flex items-center gap-1">
-                    <label
-                      htmlFor={editorFolderSelectId}
-                      className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                    >
-                      Pasta:
-                    </label>
-                    <select
-                      id={editorFolderSelectId}
-                      value={editorFolderId}
-                      onChange={(e) => {
-                        const next = e.target.value
-                        setEditorFolderId(next)
-                        triggerAutoSave({ folder: next || null })
-                      }}
-                      className="min-h-8 rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
-                    >
-                      <option value="">(Sem pasta)</option>
-                      {folders.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Folder select */}
+                  {folders.length > 0 ? (
+                    <div className="flex items-center gap-1">
+                      <label
+                        htmlFor={editorFolderSelectId}
+                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
+                      >
+                        Pasta:
+                      </label>
+                      <select
+                        id={editorFolderSelectId}
+                        value={editorFolderId}
+                        onChange={(e) => {
+                          const next = e.target.value
+                          setEditorFolderId(next)
+                          triggerAutoSave({ folder: next || null })
+                        }}
+                        className="min-h-7 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                      >
+                        <option value="">(Nenhuma)</option>
+                        {folders.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
 
                   {/* Subject link */}
                   {subjects.length > 0 ? (
@@ -615,7 +1032,7 @@ export function StudyNotesWorkspace({
                           setEditorSubjectId(next)
                           triggerAutoSave({ student_subject: next || null })
                         }}
-                        className="min-h-8 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                        className="min-h-7 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
                       >
                         <option value="">(Nenhuma)</option>
                         {subjects.map((s) => (
@@ -644,7 +1061,7 @@ export function StudyNotesWorkspace({
                           setEditorTaskId(next)
                           triggerAutoSave({ task: next || null })
                         }}
-                        className="min-h-8 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                        className="min-h-7 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
                       >
                         <option value="">(Nenhuma)</option>
                         {tasks.map((t) => (
@@ -673,7 +1090,7 @@ export function StudyNotesWorkspace({
                           setEditorReadingId(next)
                           triggerAutoSave({ reading: next || null })
                         }}
-                        className="min-h-8 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                        className="min-h-7 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
                       >
                         <option value="">(Nenhuma)</option>
                         {readings.map((r) => (
@@ -686,28 +1103,49 @@ export function StudyNotesWorkspace({
                   ) : null}
                 </div>
 
-                {/* Save status & Delete action */}
+                {/* Typography selector & Delete button */}
                 <div className="flex items-center gap-2">
-                  <span
-                    aria-live="polite"
-                    className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                  >
-                    {saveStatus === 'saving'
-                      ? 'Salvando...'
-                      : saveStatus === 'saved'
-                        ? 'Salvo ✓'
-                        : saveStatus === 'error'
-                          ? 'Erro ao salvar'
-                          : ''}
-                  </span>
+                  <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-800 dark:bg-slate-950">
+                    <button
+                      type="button"
+                      onClick={() => setFontFamily('sans')}
+                      className={`min-h-6 rounded px-2 text-[10px] font-bold font-sans ${
+                        fontFamily === 'sans' ? 'bg-white shadow-xs text-indigo-600 dark:bg-slate-800 dark:text-indigo-400' : 'text-slate-500'
+                      }`}
+                      title="Fonte Sans-serif Moderna"
+                    >
+                      Sans
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFontFamily('serif')}
+                      className={`min-h-6 rounded px-2 text-[10px] font-bold font-serif ${
+                        fontFamily === 'serif' ? 'bg-white shadow-xs text-indigo-600 dark:bg-slate-800 dark:text-indigo-400' : 'text-slate-500'
+                      }`}
+                      title="Fonte Serif Acadêmica (Livro)"
+                    >
+                      Serif
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFontFamily('mono')}
+                      className={`min-h-6 rounded px-2 text-[10px] font-bold font-mono ${
+                        fontFamily === 'mono' ? 'bg-white shadow-xs text-indigo-600 dark:bg-slate-800 dark:text-indigo-400' : 'text-slate-500'
+                      }`}
+                      title="Fonte Monospace Código"
+                    >
+                      Mono
+                    </button>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => void handleDeleteCurrentNote()}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
                     title="Excluir anotação"
                   >
                     <Trash2 className="size-3.5" aria-hidden="true" />
-                    <span>Excluir</span>
+                    <span className="hidden sm:inline">Excluir</span>
                   </button>
                 </div>
               </div>
@@ -722,172 +1160,372 @@ export function StudyNotesWorkspace({
                     setEditorTitle(next)
                     triggerAutoSave({ title: next })
                   }}
-                  placeholder="Sem título"
+                  placeholder="Título da anotação..."
                   aria-label="Título da anotação"
-                  className="w-full border-0 bg-transparent p-0 text-xl font-black tracking-tight text-slate-950 placeholder:text-slate-400 focus:ring-0 dark:text-slate-50 sm:text-2xl"
+                  className={`w-full border-0 bg-transparent p-0 text-xl font-black tracking-tight text-slate-950 placeholder:text-slate-400 focus:ring-0 dark:text-slate-50 sm:text-2xl ${fontClass}`}
                 />
               </div>
 
-              {/* Notion / Rich Text Formatting Toolbar */}
+              {/* Comprehensive Rich Formatting Toolbar */}
               <div
                 role="toolbar"
                 aria-label="Barra de ferramentas de formatação"
-                className="mt-3 flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-slate-50/90 p-1 dark:border-slate-800 dark:bg-slate-950/50"
+                className="mt-3 flex flex-wrap items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50/95 p-1.5 dark:border-slate-800 dark:bg-slate-950/80 shadow-2xs"
               >
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('# ')}
-                  className="min-h-7 rounded px-1.5 text-xs font-black text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Título H1"
-                >
-                  H1
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('## ')}
-                  className="min-h-7 rounded px-1.5 text-xs font-black text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Título H2"
-                >
-                  H2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('### ')}
-                  className="min-h-7 rounded px-1.5 text-xs font-black text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Título H3"
-                >
-                  H3
-                </button>
+                {/* Headings */}
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('# ')}
+                    className="min-h-7 rounded-lg px-2 text-xs font-black text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Título Principal (H1)"
+                  >
+                    H1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('## ')}
+                    className="min-h-7 rounded-lg px-2 text-xs font-black text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Seção (H2)"
+                  >
+                    H2
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('### ')}
+                    className="min-h-7 rounded-lg px-2 text-xs font-black text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Subseção (H3)"
+                  >
+                    H3
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('#### ')}
+                    className="min-h-7 rounded-lg px-2 text-xs font-black text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Tópico (H4)"
+                  >
+                    H4
+                  </button>
+                </div>
 
-                <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-0.5" />
+                <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
 
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('**', '**')}
-                  className="min-h-7 rounded px-1.5 text-xs font-black text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Negrito (**texto**)"
-                >
-                  B
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('*', '*')}
-                  className="inline-flex min-h-7 items-center rounded px-1.5 text-xs italic font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Itálico (*texto*)"
-                >
-                  <Italic className="size-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('==', '==')}
-                  className="inline-flex min-h-7 items-center gap-0.5 rounded px-1.5 text-xs font-bold text-amber-700 hover:bg-white dark:text-amber-300 dark:hover:bg-slate-800"
-                  title="Realce (==texto==)"
-                >
-                  <Highlighter className="size-3.5" aria-hidden="true" />
-                </button>
+                {/* Inline Formatting */}
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('**', '**')}
+                    className="min-h-7 rounded-lg px-2 text-xs font-black text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Negrito (**texto**)"
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('*', '*')}
+                    className="inline-flex min-h-7 items-center rounded-lg px-2 text-xs italic font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Itálico (*texto*)"
+                  >
+                    <Italic className="size-3.5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('<u>', '</u>')}
+                    className="inline-flex min-h-7 items-center rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Sublinhado (<u>texto</u>)"
+                  >
+                    <Underline className="size-3.5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('~~', '~~')}
+                    className="inline-flex min-h-7 items-center rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Tachado (~~texto~~)"
+                  >
+                    <Strikethrough className="size-3.5" aria-hidden="true" />
+                  </button>
+                </div>
 
-                <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-0.5" />
+                <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
 
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('- ')}
-                  className="inline-flex min-h-7 items-center gap-1 rounded px-1.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Lista com marcadores"
-                >
-                  <List className="size-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('- [ ] ')}
-                  className="inline-flex min-h-7 items-center gap-1 rounded px-1.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Lista de tarefas / Checklist"
-                >
-                  <CheckSquare className="size-3.5" aria-hidden="true" />
-                </button>
+                {/* Color & Highlight Dropdown Menu */}
+                <div className="relative inline-block">
+                  <button
+                    type="button"
+                    onClick={() => setColorMenuOpen((prev) => !prev)}
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Cores de texto e Marca-texto"
+                  >
+                    <Palette className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span>Cores & Destaque</span>
+                  </button>
 
-                <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-0.5" />
+                  {colorMenuOpen ? (
+                    <div className="absolute left-0 top-8 z-30 w-56 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Cor do Texto
+                        </span>
+                        <div className="mt-1.5 grid grid-cols-3 gap-1">
+                          {TEXT_COLORS.map((c) => (
+                            <button
+                              key={c.label}
+                              type="button"
+                              onClick={() => {
+                                if (c.class) {
+                                  insertFormatting(`<span class="${c.class}">`, '</span>')
+                                }
+                                setColorMenuOpen(false)
+                              }}
+                              className="flex items-center gap-1.5 rounded-lg p-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                            >
+                              <span className={`size-3 rounded-full ${c.preview}`} />
+                              <span>{c.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('```\n', '\n```')}
-                  className="inline-flex min-h-7 items-center gap-1 rounded px-1.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Bloco de código"
-                >
-                  <Code className="size-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('> ')}
-                  className="inline-flex min-h-7 items-center gap-1 rounded px-1.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Citação"
-                >
-                  <Quote className="size-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('> [!NOTE]\n> ')}
-                  className="inline-flex min-h-7 items-center gap-1 rounded px-1.5 text-xs font-bold text-indigo-700 hover:bg-white dark:text-indigo-300 dark:hover:bg-slate-800"
-                  title="Destaque / Callout"
-                >
-                  <Info className="size-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    insertFormatting('\n| Coluna 1 | Coluna 2 |\n|---|---|\n| Item 1 | Item 2 |\n')
-                  }
-                  className="inline-flex min-h-7 items-center gap-1 rounded px-1.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Tabela simples"
-                >
-                  <TableIcon className="size-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertFormatting('\n---\n')}
-                  className="min-h-7 rounded px-1.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Divisor horizontal"
-                >
-                  —
-                </button>
+                      <div className="mt-3 border-t border-slate-100 pt-2 dark:border-slate-800">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Marca-Texto (Highlight)
+                        </span>
+                        <div className="mt-1.5 grid grid-cols-2 gap-1">
+                          {HIGHLIGHT_COLORS.map((h) => (
+                            <button
+                              key={h.label}
+                              type="button"
+                              onClick={() => {
+                                insertFormatting(`<mark class="${h.class}">`, '</mark>')
+                                setColorMenuOpen(false)
+                              }}
+                              className="flex items-center gap-1.5 rounded-lg p-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                            >
+                              <span className={`size-3 rounded-full ${h.preview}`} />
+                              <span>{h.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+
+                {/* Lists & Checklists */}
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('- ')}
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Lista com marcadores"
+                  >
+                    <List className="size-3.5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('1. ')}
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Lista numerada"
+                  >
+                    <ListOrdered className="size-3.5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('- [ ] ')}
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Checklist de estudo"
+                  >
+                    <CheckSquare className="size-3.5" aria-hidden="true" />
+                  </button>
+                </div>
+
+                <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+
+                {/* Callouts Dropdown */}
+                <div className="relative inline-block">
+                  <button
+                    type="button"
+                    onClick={() => setCalloutMenuOpen((prev) => !prev)}
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-indigo-700 hover:bg-white dark:text-indigo-300 dark:hover:bg-slate-800"
+                    title="Blocos de Destaque / Callouts"
+                  >
+                    <Info className="size-3.5" />
+                    <span>Callout</span>
+                  </button>
+
+                  {calloutMenuOpen ? (
+                    <div className="absolute left-0 top-8 z-30 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-slate-900 space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          insertFormatting('> [!NOTE] ')
+                          setCalloutMenuOpen(false)
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-xs font-semibold text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/40"
+                      >
+                        <Info className="size-3.5" />
+                        <span>Nota Informativa</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          insertFormatting('> [!TIP] ')
+                          setCalloutMenuOpen(false)
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                      >
+                        <Lightbulb className="size-3.5" />
+                        <span>Dica Acadêmica</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          insertFormatting('> [!WARNING] ')
+                          setCalloutMenuOpen(false)
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-xs font-semibold text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/40"
+                      >
+                        <AlertTriangle className="size-3.5" />
+                        <span>Alerta / Pegadinha</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          insertFormatting('> [!IMPORTANT] ')
+                          setCalloutMenuOpen(false)
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40"
+                      >
+                        <Sparkles className="size-3.5" />
+                        <span>Crítico para Prova</span>
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Structure: Code, Quote, Table, Divider */}
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('```typescript\n', '\n```')}
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Bloco de Código"
+                  >
+                    <Code className="size-3.5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('> ')}
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Citação"
+                  >
+                    <Quote className="size-3.5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      insertFormatting('\n| Conceito | Definição | Exemplo |\n|---|---|---|\n| Item 1 | ... | ... |\n| Item 2 | ... | ... |\n')
+                    }
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Tabela formatada"
+                  >
+                    <TableIcon className="size-3.5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertFormatting('\n---\n')}
+                    className="min-h-7 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Divisor horizontal"
+                  >
+                    —
+                  </button>
+                </div>
               </div>
 
-              {/* Textarea for note content */}
-              <div className="mt-3 flex-1 flex flex-col">
-                <textarea
-                  ref={textareaRef}
-                  value={editorContent}
-                  onChange={(e) => {
-                    const next = e.target.value
-                    setEditorContent(next)
-                    triggerAutoSave({ content: next })
-                  }}
-                  placeholder="Escreva suas anotações, sínteses e dúvidas aqui... Use a barra acima ou markdown para títulos, checklists, tabelas e destaques."
-                  aria-label="Conteúdo da anotação"
-                  className="size-full min-h-[420px] flex-1 resize-y rounded-2xl border-0 bg-transparent p-3 font-mono text-sm leading-relaxed text-slate-800 placeholder:text-slate-400 focus:ring-0 dark:text-slate-200"
-                />
+              {/* Main Workspace Editor & Preview Content */}
+              <div className="mt-3 flex flex-1 gap-4 overflow-hidden min-h-[440px]">
+                {/* Editor Textarea Pane */}
+                {(viewMode === 'edit' || viewMode === 'split') && (
+                  <div className={`flex flex-col flex-1 rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/40 p-2 shadow-2xs`}>
+                    <textarea
+                      ref={textareaRef}
+                      value={editorContent}
+                      onChange={(e) => {
+                        const next = e.target.value
+                        setEditorContent(next)
+                        triggerAutoSave({ content: next })
+                      }}
+                      placeholder="Escreva suas anotações, sínteses e dúvidas aqui... Use a barra acima para títulos, cores, destaques, checklists e callouts."
+                      aria-label="Conteúdo da anotação"
+                      className={`size-full flex-1 resize-none border-0 bg-transparent p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:ring-0 dark:text-slate-100 ${fontClass}`}
+                    />
+                  </div>
+                )}
+
+                {/* Rich Markdown Preview Pane */}
+                {(viewMode === 'preview' || viewMode === 'split') && (
+                  <div className={`flex flex-col flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-950/70 shadow-2xs ${fontClass}`}>
+                    <div className="prose dark:prose-invert max-w-none text-slate-900 dark:text-slate-100">
+                      {renderFormattedPreview(editorContent)}
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Footer Status Bar with Stats */}
+              <footer className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                <div className="flex items-center gap-3">
+                  <span>
+                    <strong>{noteStats.words}</strong> palavras
+                  </span>
+                  <span>·</span>
+                  <span>
+                    <strong>{noteStats.chars}</strong> caracteres
+                  </span>
+                  <span>·</span>
+                  <span>
+                    ~<strong>{noteStats.readingTimeMinutes}</strong> min de leitura
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span aria-live="polite" className="font-semibold">
+                    {saveStatus === 'saving' ? (
+                      <span className="text-indigo-600 dark:text-indigo-400">Salvando alterações...</span>
+                    ) : saveStatus === 'saved' ? (
+                      <span className="text-emerald-600 dark:text-emerald-400">Salvo ✓</span>
+                    ) : saveStatus === 'error' ? (
+                      <span className="text-rose-600 dark:text-rose-400">Erro ao salvar</span>
+                    ) : (
+                      'Sincronizado'
+                    )}
+                  </span>
+                </div>
+              </footer>
             </div>
           ) : (
-            <div className="flex h-full flex-col items-center justify-center py-20 text-center">
-              <span className="text-4xl">📝</span>
-              <h4 className="mt-3 text-lg font-black text-slate-900 dark:text-slate-100">
+            <div className="flex h-full flex-col items-center justify-center py-24 text-center">
+              <span className="text-5xl">📝</span>
+              <h4 className="mt-4 text-xl font-black text-slate-900 dark:text-slate-100">
                 Seu Caderno de Estudo
               </h4>
-              <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-                Organize anotações personalizadas por disciplinas e pastas, com suporte a templates e
-                metodologias ativas.
+              <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
+                Organize anotações acadêmicas personalizadas por disciplinas e pastas, com suporte a templates de
+                metodologias ativas, paleta de cores e formatação rica.
               </p>
               <button
                 type="button"
                 onClick={() => void handleCreateNote()}
-                className="mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                className="mt-5 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
               >
                 <Plus className="size-4" aria-hidden="true" />
                 Criar primeira anotação
               </button>
             </div>
           )}
-        </div>
+        </main>
       </div>
 
       {/* Folder Creation / Edit Modal */}
