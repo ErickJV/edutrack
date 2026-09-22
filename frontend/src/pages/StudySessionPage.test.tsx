@@ -2,7 +2,14 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { StudySessionPage } from './StudySessionPage'
-import type { AcademicTask, StudentSubject, StudyFolder, StudyNote } from '../api/types'
+import type {
+  AcademicReading,
+  AcademicTask,
+  ReadingLog,
+  StudentSubject,
+  StudyFolder,
+  StudyNote,
+} from '../api/types'
 
 const mockTasks: AcademicTask[] = [
   {
@@ -75,6 +82,39 @@ const mockNotes: StudyNote[] = [
   },
 ]
 
+const mockReadings: AcademicReading[] = [
+  {
+    id: 'reading-1',
+    student_subject: 'ss-1',
+    subject_name: 'Estrutura de Dados',
+    title: 'Estruturas de Dados e Seus Algoritmos',
+    author: 'Mark Allen Weiss',
+    total_pages: 350,
+    current_page: 70,
+    status: 'READING',
+    exam_name: 'P1 Semestral',
+    exam_questions_count: 8,
+    exam_date: '2027-05-15',
+    target_date: '2027-05-10',
+    progress_percent: 20,
+    suggested_pages_per_day: 10,
+    created_at: '2027-01-01T00:00:00Z',
+    updated_at: '2027-01-01T00:00:00Z',
+  },
+]
+
+const mockReadingLogs: ReadingLog[] = [
+  {
+    id: 'log-1',
+    reading: 'reading-1',
+    reading_title: 'Estruturas de Dados e Seus Algoritmos',
+    pages_read: 20,
+    current_page_after: 70,
+    read_date: new Date().toISOString().split('T')[0],
+    created_at: '2027-01-01T00:00:00Z',
+  },
+]
+
 const {
   listAcademicTasks,
   listStudentSubjects,
@@ -87,6 +127,12 @@ const {
   updateStudyNote,
   deleteStudyNote,
   updateAcademicTask,
+  listAcademicReadings,
+  createAcademicReading,
+  updateAcademicReading,
+  deleteAcademicReading,
+  logReadingPages,
+  listReadingLogs,
 } = vi.hoisted(() => ({
   listAcademicTasks: vi.fn(),
   listStudentSubjects: vi.fn(),
@@ -99,6 +145,12 @@ const {
   updateStudyNote: vi.fn(),
   deleteStudyNote: vi.fn(),
   updateAcademicTask: vi.fn(),
+  listAcademicReadings: vi.fn(),
+  createAcademicReading: vi.fn(),
+  updateAcademicReading: vi.fn(),
+  deleteAcademicReading: vi.fn(),
+  logReadingPages: vi.fn(),
+  listReadingLogs: vi.fn(),
 }))
 
 vi.mock('../api/client', () => ({
@@ -113,6 +165,12 @@ vi.mock('../api/client', () => ({
   updateStudyNote,
   deleteStudyNote,
   updateAcademicTask,
+  listAcademicReadings,
+  createAcademicReading,
+  updateAcademicReading,
+  deleteAcademicReading,
+  logReadingPages,
+  listReadingLogs,
 }))
 
 vi.mock('../auth/AuthContext', () => ({
@@ -132,6 +190,9 @@ describe('StudySessionPage', () => {
     listStudentSubjects.mockResolvedValue(mockSubjects)
     listStudyFolders.mockResolvedValue(mockFolders)
     listStudyNotes.mockResolvedValue(mockNotes)
+    listAcademicReadings.mockResolvedValue(mockReadings)
+    listReadingLogs.mockResolvedValue(mockReadingLogs)
+
     createStudyNote.mockImplementation(async (payload) => ({
       id: 'new-note-id',
       folder: payload.folder || null,
@@ -152,9 +213,10 @@ describe('StudySessionPage', () => {
       id,
     }))
     updateAcademicTask.mockResolvedValue({ ...mockTasks[0], actual_minutes: 50 })
+    logReadingPages.mockResolvedValue({ ...mockReadings[0], current_page: 80, progress_percent: 23 })
   })
 
-  it('renders the study session page with pomodoro timer, methodology and notes workspace', async () => {
+  it('renders the study session page with pomodoro timer, methodology accordion and notes workspace', async () => {
     render(
       <MemoryRouter initialEntries={['/estudo']}>
         <Routes>
@@ -172,14 +234,13 @@ describe('StudySessionPage', () => {
 
     // Pomodoro Timer shows default 25:00
     expect(screen.getByText('25:00')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /foco/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /pausa curta/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /pausa longa/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /^foco$/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /^curta$/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /^longa$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^iniciar$/i })).toBeInTheDocument()
 
-    // Methodology section exists
-    expect(screen.getAllByText(/método feynman/i).length).toBeGreaterThan(0)
-    expect(screen.getByText(/revisão espaçada/i)).toBeInTheDocument()
+    // Methodology drawer header exists
+    expect(screen.getByText(/metodologia de estudo/i)).toBeInTheDocument()
 
     // Textbook / Notes Workspace exists
     expect(screen.getAllByText('Algoritmos').length).toBeGreaterThan(0)
@@ -217,17 +278,17 @@ describe('StudySessionPage', () => {
     })
 
     // Switch to Short Break (default 5:00)
-    const shortBreakTab = screen.getByRole('tab', { name: /pausa curta/i })
+    const shortBreakTab = screen.getByRole('tab', { name: /^curta$/i })
     fireEvent.click(shortBreakTab)
     expect(screen.getByText('05:00')).toBeInTheDocument()
 
     // Switch to Long Break (default 15:00)
-    const longBreakTab = screen.getByRole('tab', { name: /pausa longa/i })
+    const longBreakTab = screen.getByRole('tab', { name: /^longa$/i })
     fireEvent.click(longBreakTab)
     expect(screen.getByText('15:00')).toBeInTheDocument()
   })
 
-  it('allows inserting methodology template into notes editor', async () => {
+  it('allows expanding methodology drawer and inserting template into notes editor', async () => {
     const user = userEvent.setup()
 
     render(
@@ -242,8 +303,12 @@ describe('StudySessionPage', () => {
       await Promise.resolve()
     })
 
-    // Click on Feynman method card
-    const feynmanCard = screen.getByRole('button', { name: /método feynman/i })
+    // Click on Methodology Accordion to expand
+    const accordionToggle = screen.getByRole('button', { name: /expandir ou recolher guia de metodologias/i })
+    await user.click(accordionToggle)
+
+    // Click on Feynman method card inside drawer
+    const feynmanCard = screen.getByRole('button', { name: /selecionar método feynman/i })
     await user.click(feynmanCard)
 
     // Check that button to apply template is available
@@ -255,5 +320,34 @@ describe('StudySessionPage', () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue(/conceito central/i)).toBeInTheDocument()
     })
+  })
+
+  it('switches to Academic Reading tab and displays reading cards and streak tracker', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <MemoryRouter initialEntries={['/estudo']}>
+        <Routes>
+          <Route path="/estudo" element={<StudySessionPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    // Click on Leitura Acadêmica tab
+    const readingTab = screen.getByRole('tab', { name: /leitura acadêmica/i })
+    await user.click(readingTab)
+
+    expect(screen.getByText(/estruturas de dados e seus algoritmos/i)).toBeInTheDocument()
+    expect(screen.getByText(/p1 semestral/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /\+10 págs/i })).toBeInTheDocument()
+
+    // Test quick +10 pages button
+    const plus10Btn = screen.getByRole('button', { name: /\+10 págs/i })
+    await user.click(plus10Btn)
+    expect(logReadingPages).toHaveBeenCalledWith('reading-1', { pages: 10 })
   })
 })

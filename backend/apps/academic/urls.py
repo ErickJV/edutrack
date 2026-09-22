@@ -3,6 +3,9 @@ from django.urls import path
 from .views import (
     AcademicEventDetailView,
     AcademicEventListCreateView,
+    AcademicReadingDetailView,
+    AcademicReadingListCreateView,
+    AcademicReadingLogPagesView,
     AcademicTaskDetailView,
     AcademicTaskListCreateView,
     AcademicTaskToggleCompleteView,
@@ -12,6 +15,7 @@ from .views import (
     DashboardSummaryView,
     ProfessorDetailView,
     ProfessorListCreateView,
+    ReadingLogListView,
     StudentSubjectDetailView,
     StudentSubjectListCreateView,
     StudyFolderDetailView,
@@ -81,6 +85,26 @@ urlpatterns = [
         "study-notes/<uuid:pk>",
         StudyNoteDetailView.as_view(),
         name="study-note-detail",
+    ),
+    path(
+        "academic-readings",
+        AcademicReadingListCreateView.as_view(),
+        name="academic-reading-list-create",
+    ),
+    path(
+        "academic-readings/<uuid:pk>",
+        AcademicReadingDetailView.as_view(),
+        name="academic-reading-detail",
+    ),
+    path(
+        "academic-readings/<uuid:pk>/log",
+        AcademicReadingLogPagesView.as_view(),
+        name="academic-reading-log-pages",
+    ),
+    path(
+        "reading-logs",
+        ReadingLogListView.as_view(),
+        name="reading-log-list",
     ),
 ]
 

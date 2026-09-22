@@ -134,6 +134,8 @@ export type StudyNote = {
   subject_name?: string
   task: string | null
   task_title?: string
+  reading?: string | null
+  reading_title?: string
   title: string
   content: string
   methodology: string
@@ -145,6 +147,7 @@ export type StudyNotePayload = {
   folder?: string | null
   student_subject?: string | null
   task?: string | null
+  reading?: string | null
   title?: string
   content?: string
   methodology?: string
@@ -165,4 +168,72 @@ export type StudyMethodologyKey =
   | 'spaced_repetition'
   | 'mind_map'
   | 'elaborative_interrogation'
+
+export type AcademicReadingStatus =
+  | 'NOT_STARTED'
+  | 'READING'
+  | 'COMPLETED'
+  | 'PAUSED'
+  | 'DROPPED'
+
+export type AcademicReading = {
+  id: string
+  student_subject: string | null
+  subject_name?: string
+  title: string
+  author: string
+  total_pages: number
+  current_page: number
+  status: AcademicReadingStatus
+  exam_name: string
+  exam_questions_count: number
+  exam_date: string | null
+  target_date: string | null
+  progress_percent: number
+  suggested_pages_per_day: number
+  created_at: string
+  updated_at: string
+}
+
+export type AcademicReadingPayload = {
+  student_subject?: string | null
+  title: string
+  author?: string
+  total_pages: number
+  current_page?: number
+  status?: AcademicReadingStatus
+  exam_name?: string
+  exam_questions_count?: number
+  exam_date?: string | null
+  target_date?: string | null
+}
+
+export type ReadingLog = {
+  id: string
+  reading: string
+  reading_title?: string
+  pages_read: number
+  current_page_after: number
+  read_date: string
+  created_at: string
+}
+
+export type ReadingLogPayload = {
+  pages: number
+  read_date?: string
+}
+
+export type ReadingDayData = {
+  date: string
+  dayLabel: string
+  pages: number
+  goalMet: boolean
+}
+
+export type ReadingSummary = {
+  daily_goal: number
+  today_pages_read: number
+  active_streak: number
+  last_14_days: ReadingDayData[]
+}
 

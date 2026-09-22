@@ -1,4 +1,6 @@
 import type {
+  AcademicReading,
+  AcademicReadingPayload,
   AcademicSubject,
   AcademicTask,
   AcademicTaskPayload,
@@ -9,6 +11,8 @@ import type {
   DashboardSummary,
   Professor,
   ProfilePayload,
+  ReadingLog,
+  ReadingLogPayload,
   StudentSubject,
   StudyFolder,
   StudyFolderPayload,
@@ -273,12 +277,14 @@ export async function listStudyNotes(params: {
   folder?: string
   student_subject?: string
   task?: string
+  reading?: string
   search?: string
 } = {}): Promise<StudyNote[]> {
   const search = new URLSearchParams()
   if (params.folder) search.set('folder', params.folder)
   if (params.student_subject) search.set('student_subject', params.student_subject)
   if (params.task) search.set('task', params.task)
+  if (params.reading) search.set('reading', params.reading)
   if (params.search) search.set('search', params.search)
   const suffix = search.toString() ? `?${search.toString()}` : ''
   return request<StudyNote[]>(`/api/v1/study-notes${suffix}`)
@@ -301,4 +307,51 @@ export async function updateStudyNote(id: string, payload: Partial<StudyNotePayl
 export async function deleteStudyNote(id: string): Promise<void> {
   await request(`/api/v1/study-notes/${id}`, { method: 'DELETE' }, [204])
 }
+
+export async function listAcademicReadings(params: {
+  status?: string
+  student_subject?: string
+} = {}): Promise<AcademicReading[]> {
+  const search = new URLSearchParams()
+  if (params.status) search.set('status', params.status)
+  if (params.student_subject) search.set('student_subject', params.student_subject)
+  const suffix = search.toString() ? `?${search.toString()}` : ''
+  return request<AcademicReading[]>(`/api/v1/academic-readings${suffix}`)
+}
+
+export async function createAcademicReading(payload: AcademicReadingPayload): Promise<AcademicReading> {
+  return request<AcademicReading>('/api/v1/academic-readings', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, [201])
+}
+
+export async function updateAcademicReading(
+  id: string,
+  payload: Partial<AcademicReadingPayload>
+): Promise<AcademicReading> {
+  return request<AcademicReading>(`/api/v1/academic-readings/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteAcademicReading(id: string): Promise<void> {
+  await request(`/api/v1/academic-readings/${id}`, { method: 'DELETE' }, [204])
+}
+
+export async function logReadingPages(id: string, payload: ReadingLogPayload): Promise<AcademicReading> {
+  return request<AcademicReading>(`/api/v1/academic-readings/${id}/log`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function listReadingLogs(params: { reading?: string } = {}): Promise<ReadingLog[]> {
+  const search = new URLSearchParams()
+  if (params.reading) search.set('reading', params.reading)
+  const suffix = search.toString() ? `?${search.toString()}` : ''
+  return request<ReadingLog[]>(`/api/v1/reading-logs${suffix}`)
+}
+
 

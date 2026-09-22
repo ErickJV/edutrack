@@ -4,9 +4,11 @@ from rest_framework import serializers
 
 from .models import (
     AcademicEvent,
+    AcademicReading,
     AcademicTask,
     AcademicTerm,
     Professor,
+    ReadingLog,
     StudentSubject,
     StudyFolder,
     StudyNote,
@@ -435,6 +437,10 @@ class StudyNoteSerializer(serializers.ModelSerializer):
         queryset=AcademicTask.objects.all(), required=False, allow_null=True
     )
     task_title = serializers.CharField(source="task.title", read_only=True)
+    reading = serializers.PrimaryKeyRelatedField(
+        queryset=AcademicReading.objects.all(), required=False, allow_null=True
+    )
+    reading_title = serializers.CharField(source="reading.title", read_only=True)
     title = serializers.CharField(
         required=False, default="Sem título", allow_blank=True, max_length=200
     )
@@ -451,6 +457,8 @@ class StudyNoteSerializer(serializers.ModelSerializer):
             "subject_name",
             "task",
             "task_title",
+            "reading",
+            "reading_title",
             "title",
             "content",
             "methodology",
@@ -462,6 +470,7 @@ class StudyNoteSerializer(serializers.ModelSerializer):
             "folder_name",
             "subject_name",
             "task_title",
+            "reading_title",
             "created_at",
             "updated_at",
         )
@@ -486,6 +495,153 @@ class StudyNoteSerializer(serializers.ModelSerializer):
             if value.user_id != user.id:
                 raise serializers.ValidationError("A tarefa informada não pertence ao usuário.")
         return value
+
+    def validate_reading(self, value):
+        if value is not None:
+            user = self.context["request"].user
+            if value.user_id != user.id:
+                raise serializers.ValidationError("A leitura informada não pertence ao usuário.")
+        return value
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+
+class ReadingLogSerializer(serializers.ModelSerializer):
+    reading_title = serializers.CharField(source="reading.title", read_only=True)
+
+    class Meta:
+        model = ReadingLog
+        fields = (
+            "id",
+            "reading",
+            "reading_title",
+            "date",
+            "pages_read",
+            "created_at",
+        )
+        read_only_fields = ("id", "reading_title", "created_at")
+
+    def validate_reading(self, value):
+        if value is not None:
+            user = self.context["request"].user
+            if value.user_id != user.id:
+                raise serializers.ValidationError("A leitura informada não pertence ao usuário.")
+        return value
+
+    def validate_pages_read(self, value):
+        if value < 0:
+            raise serializers.ValidationError("O número de páginas lidas não pode ser negativo.")
+        return value
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        reading = validated_data["reading"]
+        date = validated_data.get("date", timezone.now().date())
+        pages_read = validated_data.get("pages_read", 0)
+
+        log, _ = ReadingLog.objects.update_or_create(
+            user=user,
+            reading=reading,
+            date=date,
+            defaults={"pages_read": pages_read},
+        )
+        return log
+
+
+class AcademicReadingSerializer(serializers.ModelSerializer):
+    student_subject = serializers.PrimaryKeyRelatedField(
+        queryset=StudentSubject.objects.all(), required=False, allow_null=True
+    )
+    subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
+    subject_id = serializers.UUIDField(source="student_subject.subject.id", read_only=True)
+    progress_percent = serializers.IntegerField(read_only=True)
+    pages_remaining = serializers.IntegerField(read_only=True)
+    suggested_daily_pages = serializers.SerializerMethodField()
+    days_until_exam = serializers.SerializerMethodField()
+    notes_count = serializers.IntegerField(source="study_notes.count", read_only=True)
+
+    class Meta:
+        model = AcademicReading
+        fields = (
+            "id",
+            "student_subject",
+            "subject_name",
+            "subject_id",
+            "title",
+            "author",
+            "total_pages",
+            "current_page",
+            "daily_goal_pages",
+            "exam_name",
+            "exam_questions_count",
+            "exam_date",
+            "status",
+            "progress_percent",
+            "pages_remaining",
+            "suggested_daily_pages",
+            "days_until_exam",
+            "notes_count",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "subject_name",
+            "subject_id",
+            "progress_percent",
+            "pages_remaining",
+            "suggested_daily_pages",
+            "days_until_exam",
+            "notes_count",
+            "created_at",
+            "updated_at",
+        )
+
+    def get_days_until_exam(self, obj) -> int | None:
+        if not obj.exam_date:
+            return None
+        today = timezone.now().date()
+        diff = (obj.exam_date - today).days
+        return diff
+
+    def get_suggested_daily_pages(self, obj) -> int | None:
+        if not obj.exam_date or obj.status == AcademicReading.Status.COMPLETED:
+            return None
+        days = self.get_days_until_exam(obj)
+        if days is None:
+            return None
+        if days <= 0:
+            return obj.pages_remaining
+        remaining = obj.pages_remaining
+        if remaining <= 0:
+            return 0
+        return max(1, (remaining + days - 1) // days)
+
+    def validate_student_subject(self, value):
+        if value is not None:
+            user = self.context["request"].user
+            if value.user_id != user.id:
+                raise serializers.ValidationError("A disciplina informada não pertence ao usuário.")
+        return value
+
+    def validate_total_pages(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("O total de páginas deve ser maior que zero.")
+        return value
+
+    def validate_current_page(self, value):
+        if value < 0:
+            raise serializers.ValidationError("A página atual não pode ser negativa.")
+        return value
+
+    def validate(self, attrs):
+        total = attrs.get("total_pages", getattr(self.instance, "total_pages", None))
+        current = attrs.get("current_page", getattr(self.instance, "current_page", 0))
+        if total is not None and current > total:
+            attrs["current_page"] = total
+        return attrs
 
     def create(self, validated_data):
         validated_data["user"] = self.context["request"].user

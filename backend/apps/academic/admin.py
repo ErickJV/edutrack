@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import AcademicTask, StudentSubject, StudyFolder, StudyNote, Subject
+from .models import (
+    AcademicReading,
+    AcademicTask,
+    ReadingLog,
+    StudentSubject,
+    StudyFolder,
+    StudyNote,
+    Subject,
+)
 
 
 @admin.register(Subject)
@@ -33,7 +41,39 @@ class StudyFolderAdmin(admin.ModelAdmin):
 
 @admin.register(StudyNote)
 class StudyNoteAdmin(admin.ModelAdmin):
-    list_display = ("title", "user", "folder", "methodology", "created_at", "updated_at")
+    list_display = (
+        "title",
+        "user",
+        "folder",
+        "reading",
+        "methodology",
+        "created_at",
+        "updated_at",
+    )
     list_filter = ("methodology",)
     search_fields = ("title", "content", "user__email")
+
+
+@admin.register(AcademicReading)
+class AcademicReadingAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "user",
+        "student_subject",
+        "current_page",
+        "total_pages",
+        "status",
+        "exam_name",
+        "exam_date",
+    )
+    list_filter = ("status",)
+    search_fields = ("title", "author", "exam_name", "user__email")
+
+
+@admin.register(ReadingLog)
+class ReadingLogAdmin(admin.ModelAdmin):
+    list_display = ("reading", "user", "date", "pages_read", "created_at")
+    list_filter = ("date",)
+    search_fields = ("reading__title", "user__email")
+
 

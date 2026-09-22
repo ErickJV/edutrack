@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { BookOpen, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import type { StudyMethodologyKey } from '../api/types'
 
 export type MethodologyInfo = {
@@ -21,9 +22,9 @@ const METHODOLOGIES: MethodologyInfo[] = [
       'Técnica baseada no princípio de que você só domina um assunto quando é capaz de explicá-lo sem rodeios para um iniciante.',
     steps: [
       'Escolha o conceito central a ser dominado.',
-      'Escreva uma explicação como se estivesse ensinando uma pessoa sem experiência no assunto.',
+      'Escreva uma explicação como se estivesse ensinando uma pessoa sem experiência.',
       'Diagnostique as partes onde a explicação travou ou usou jargões desnecessários.',
-      'Consulte as fontes, simplifique o raciocínio e use analogias práticas do mundo real.',
+      'Consulte as fontes, simplifique o raciocínio e use analogias práticas.',
     ],
     template: `# [Método Feynman] Tópico: [Conceito Central]
 
@@ -44,15 +45,15 @@ const METHODOLOGIES: MethodologyInfo[] = [
   {
     key: 'spaced_repetition',
     title: 'Revisão Espaçada',
-    subtitle: 'Combata a curva do esquecimento com ciclos programados',
+    subtitle: 'Combata a curva do esquecimento com ciclos',
     badgeColor: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300',
     description:
       'Distribui o esforço de memória ao longo de janelas temporais graduais para converter a retenção em memória de longo prazo.',
     steps: [
       'Primeira fixação (imediata): síntese ativa das ideias principais.',
       '1ª Revisão (+24h): recordar ativamente sem consultar as notas.',
-      '2ª Revisão (+3 dias): aplicar em exercícios práticos e resolver problemas.',
-      '3ª Revisão (+7 dias) e 4ª Revisão (+30 dias): consolidação final e checagem de retenção.',
+      '2ª Revisão (+3 dias): aplicar em exercícios práticos.',
+      '3ª Revisão (+7 dias) e 4ª Revisão (+30 dias): consolidação final.',
     ],
     template: `# [Revisão Espaçada] Tema: [Título do Tópico]
 
@@ -103,12 +104,12 @@ const METHODOLOGIES: MethodologyInfo[] = [
     subtitle: 'Aprofunde o porquê por trás dos fatos',
     badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
     description:
-      'Técnica cognitiva focada em indagar ativamente "Por que isso é verdade?" e "Como isso acontece?", gerando conexões explicativas profundas.',
+      'Técnica focada em indagar ativamente "Por que isso é verdade?" e "Como isso acontece?", gerando conexões explicativas profundas.',
     steps: [
-      'Selecione uma afirmação, regra ou fórmula técnica estudada.',
-      'Pergunte-se: "Por que esse resultado faz sentido?" e "O que causa essa regra?".',
-      'Elabore a resposta conectando com preceitos já aprendidos.',
-      'Explore as condições de contorno: o que aconteceria se essa condição não existisse?',
+      'Selecione uma afirmação, regra ou teorema estudado.',
+      'Pergunte-se: "Por que esse resultado faz sentido?".',
+      'Elabore a resposta conectando com preceitos aprendidos.',
+      'Explore as condições de contorno e exceções.',
     ],
     template: `# [Interrogação Elaborativa] Assunto: [Tema em Análise]
 
@@ -141,6 +142,8 @@ export function MethodologySelector({
   onSelectMethodology,
   onInsertTemplate,
 }: MethodologySelectorProps) {
+  const [isOpen, setIsOpen] = useState(false)
+
   const current = useMemo(
     () => METHODOLOGIES.find((m) => m.key === selectedMethodology) || null,
     [selectedMethodology],
@@ -149,82 +152,101 @@ export function MethodologySelector({
   return (
     <section
       aria-label="Metodologias de Estudo Ativo"
-      className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6"
+      className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
-            Direcionamento Pedagógico
-          </p>
-          <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-slate-50">
-            Metodologia Ativa de Estudo
-          </h3>
-        </div>
-        {current && onInsertTemplate ? (
-          <button
-            type="button"
-            onClick={() => onInsertTemplate(current.template)}
-            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-50 px-4 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60 sm:mt-0"
-          >
-            Inserir roteiro na anotação
-          </button>
-        ) : null}
-      </div>
-
-      {/* Grid of methodology selector cards */}
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {METHODOLOGIES.map((m) => {
-          const isSelected = m.key === selectedMethodology
-          return (
-            <button
-              key={m.key}
-              type="button"
-              onClick={() => onSelectMethodology(m.key)}
-              className={`flex flex-col items-start rounded-2xl border p-3 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 min-h-16 ${
-                isSelected
-                  ? 'border-indigo-600 bg-indigo-50/50 shadow-sm ring-2 ring-indigo-600 dark:border-indigo-400 dark:bg-indigo-950/30 dark:ring-indigo-400'
-                  : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-950/40 dark:hover:border-slate-700 dark:hover:bg-slate-900'
-              }`}
-            >
-              <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.badgeColor}`}>
-                {m.title}
-              </span>
-              <span className="mt-2 line-clamp-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                {m.subtitle}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Selected methodology details */}
-      {current ? (
-        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/50">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="text-sm font-black text-slate-900 dark:text-slate-100">
-              Guia Prático: {current.title}
-            </h4>
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              {current.subtitle}
-            </span>
-          </div>
-
-          <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-            {current.description}
-          </p>
-
-          <div className="mt-3 space-y-1.5 border-t border-slate-200 pt-3 dark:border-slate-800">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Etapas recomendadas para este bloco de foco:
+      {/* Accordion Header / Toggle */}
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        aria-label="Expandir ou recolher guia de metodologias"
+        className="flex w-full items-center justify-between text-left focus-visible:outline-2 focus-visible:outline-indigo-600 rounded-xl"
+      >
+        <div className="flex items-center gap-2">
+          <BookOpen className="size-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+          <div>
+            <h3 className="text-xs font-black tracking-tight text-slate-950 dark:text-slate-50">
+              Metodologia de Estudo
+            </h3>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              {current ? current.title : 'Selecione uma metodologia'}
             </p>
-            <ol className="list-decimal space-y-1 pl-4 text-xs text-slate-700 dark:text-slate-300">
-              {current.steps.map((step, idx) => (
-                <li key={idx} className="leading-snug">
-                  {step}
-                </li>
-              ))}
-            </ol>
           </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          {current && (
+            <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${current.badgeColor}`}>
+              Ativa
+            </span>
+          )}
+          {isOpen ? (
+            <ChevronUp className="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" />
+          )}
+        </div>
+      </button>
+
+      {/* Collapsible Drawer Content */}
+      {isOpen ? (
+        <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+          {/* Methodology Selector Tabs/Pills */}
+          <div className="grid grid-cols-2 gap-1.5">
+            {METHODOLOGIES.map((m) => {
+              const isSelected = m.key === selectedMethodology
+              return (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => onSelectMethodology(m.key)}
+                  aria-label={`Selecionar ${m.title}`}
+                  className={`flex flex-col items-start rounded-xl border p-2 text-left transition focus-visible:outline-2 focus-visible:outline-indigo-600 min-h-12 ${
+                    isSelected
+                      ? 'border-indigo-600 bg-indigo-50/70 ring-1 ring-indigo-600 dark:border-indigo-400 dark:bg-indigo-950/40 dark:ring-indigo-400'
+                      : 'border-slate-200 bg-slate-50 hover:bg-white dark:border-slate-800 dark:bg-slate-950/40 dark:hover:bg-slate-900'
+                  }`}
+                >
+                  <span className={`rounded px-1 py-0.2 text-[9px] font-bold uppercase tracking-wider ${m.badgeColor}`}>
+                    {m.title}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Active Methodology Guide */}
+          {current ? (
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/50">
+              <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                {current.description}
+              </p>
+
+              <div className="mt-2 space-y-1 border-t border-slate-200/80 pt-2 dark:border-slate-800">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Passos recomendados:
+                </p>
+                <ol className="list-decimal space-y-0.5 pl-3.5 text-[11px] text-slate-700 dark:text-slate-300">
+                  {current.steps.map((step, idx) => (
+                    <li key={idx} className="leading-snug">
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              {onInsertTemplate ? (
+                <button
+                  type="button"
+                  onClick={() => onInsertTemplate(current.template)}
+                  className="mt-3 inline-flex min-h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                >
+                  <FileText className="size-3.5" aria-hidden="true" />
+                  Inserir roteiro na anotação
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>

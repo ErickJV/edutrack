@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class Subject(models.Model):
@@ -320,6 +321,86 @@ class StudyFolder(models.Model):
         return self.name
 
 
+class AcademicReading(models.Model):
+    class Status(models.TextChoices):
+        READING = "reading", "Lendo"
+        COMPLETED = "completed", "Concluído"
+        DROPPED = "dropped", "Pausado/Abandonado"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="academic_readings",
+    )
+    student_subject = models.ForeignKey(
+        StudentSubject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="academic_readings",
+    )
+    title = models.CharField(max_length=255)
+    author = models.CharField(max_length=255, blank=True, default="")
+    total_pages = models.PositiveIntegerField()
+    current_page = models.PositiveIntegerField(default=0)
+    daily_goal_pages = models.PositiveIntegerField(default=15)
+    exam_name = models.CharField(max_length=120, blank=True, default="")
+    exam_questions_count = models.PositiveIntegerField(null=True, blank=True)
+    exam_date = models.DateField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.READING,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-updated_at",)
+        verbose_name = "leitura acadêmica"
+        verbose_name_plural = "leituras acadêmicas"
+
+    def __str__(self) -> str:
+        return self.title
+
+    @property
+    def progress_percent(self) -> int:
+        if not self.total_pages:
+            return 0
+        return min(100, int((self.current_page / self.total_pages) * 100))
+
+    @property
+    def pages_remaining(self) -> int:
+        return max(0, self.total_pages - self.current_page)
+
+
+class ReadingLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reading_logs",
+    )
+    reading = models.ForeignKey(
+        AcademicReading,
+        on_delete=models.CASCADE,
+        related_name="logs",
+    )
+    date = models.DateField(default=timezone.now)
+    pages_read = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-date", "-created_at")
+        unique_together = ("reading", "date")
+        verbose_name = "registro de leitura"
+        verbose_name_plural = "registros de leitura"
+
+    def __str__(self) -> str:
+        return f"{self.reading.title} - {self.pages_read} págs ({self.date})"
+
+
 class StudyNote(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -343,6 +424,13 @@ class StudyNote(models.Model):
     )
     task = models.ForeignKey(
         AcademicTask,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="study_notes",
+    )
+    reading = models.ForeignKey(
+        AcademicReading,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

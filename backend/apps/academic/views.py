@@ -10,9 +10,11 @@ from apps.accounts.models import User
 
 from .models import (
     AcademicEvent,
+    AcademicReading,
     AcademicTask,
     AcademicTerm,
     Professor,
+    ReadingLog,
     StudentSubject,
     StudyFolder,
     StudyNote,
@@ -21,11 +23,13 @@ from .models import (
 from .permissions import IsAuthenticatedOr401
 from .serializers import (
     AcademicEventSerializer,
+    AcademicReadingSerializer,
     AcademicTaskSerializer,
     AcademicTaskWriteSerializer,
     AcademicTermSerializer,
     DashboardSummarySerializer,
     ProfessorSerializer,
+    ReadingLogSerializer,
     StudentSubjectSelectionSerializer,
     StudentSubjectSerializer,
     StudentSubjectUpdateSerializer,
@@ -372,7 +376,7 @@ class StudyNoteListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = cast(User, self.request.user)
         queryset = StudyNote.objects.select_related(
-            "folder", "student_subject", "student_subject__subject", "task"
+            "folder", "student_subject", "student_subject__subject", "task", "reading"
         ).filter(user=user)
 
         folder_id = self.request.query_params.get("folder")
@@ -386,6 +390,10 @@ class StudyNoteListCreateView(generics.ListCreateAPIView):
         task_id = self.request.query_params.get("task")
         if task_id:
             queryset = queryset.filter(task_id=UUID(task_id))
+
+        reading_id = self.request.query_params.get("reading")
+        if reading_id:
+            queryset = queryset.filter(reading_id=UUID(reading_id))
 
         search = self.request.query_params.get("search")
         if search:
@@ -404,6 +412,131 @@ class StudyNoteDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         user = cast(User, self.request.user)
         return StudyNote.objects.select_related(
-            "folder", "student_subject", "student_subject__subject", "task"
+            "folder", "student_subject", "student_subject__subject", "task", "reading"
         ).filter(user=user)
+
+
+class AcademicReadingListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicReadingSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        queryset = AcademicReading.objects.select_related(
+            "student_subject", "student_subject__subject"
+        ).prefetch_related("study_notes", "logs").filter(user=user)
+
+        student_subject_id = self.request.query_params.get("student_subject")
+        if student_subject_id:
+            queryset = queryset.filter(student_subject_id=UUID(student_subject_id))
+
+        status = self.request.query_params.get("status")
+        if status:
+            queryset = queryset.filter(status=status)
+
+        search = self.request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(title__icontains=search)
+
+        return queryset.order_by("-updated_at")
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class AcademicReadingDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicReadingSerializer
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return AcademicReading.objects.select_related(
+            "student_subject", "student_subject__subject"
+        ).prefetch_related("study_notes", "logs").filter(user=user)
+
+
+class AcademicReadingLogPagesView(generics.GenericAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = ReadingLogSerializer
+
+    def post(self, request, pk, *args, **kwargs):
+        user = cast(User, request.user)
+        try:
+            reading = AcademicReading.objects.get(pk=pk, user=user)
+        except AcademicReading.DoesNotExist:
+            return Response({"detail": "Leitura não encontrada."}, status=404)
+
+        pages = request.data.get("pages_read")
+        if pages is None:
+            return Response({"pages_read": "Número de páginas lidas é obrigatório."}, status=400)
+        try:
+            pages = int(pages)
+            if pages < 0:
+                raise ValueError
+        except (ValueError, TypeError):
+            return Response({"pages_read": "Número de páginas lidas inválido."}, status=400)
+
+        date_str = request.data.get("date")
+        log_date = timezone.now().date()
+        if date_str:
+            try:
+                log_date = timezone.datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return Response({"date": "Formato de data inválido. Use AAAA-MM-DD."}, status=400)
+
+        # Update or create log for this reading and date
+        ReadingLog.objects.update_or_create(
+            user=user,
+            reading=reading,
+            date=log_date,
+            defaults={"pages_read": pages},
+        )
+
+        new_current = request.data.get("current_page")
+        if new_current is not None:
+            try:
+                reading.current_page = min(reading.total_pages, max(0, int(new_current)))
+            except (ValueError, TypeError):
+                pass
+        else:
+            reading.current_page = min(reading.total_pages, reading.current_page + pages)
+
+        if reading.current_page >= reading.total_pages:
+            reading.status = AcademicReading.Status.COMPLETED
+        elif (
+            reading.status == AcademicReading.Status.COMPLETED
+            and reading.current_page < reading.total_pages
+        ):
+            reading.status = AcademicReading.Status.READING
+
+        reading.save()
+
+        serializer = AcademicReadingSerializer(reading, context={"request": request})
+        return Response(serializer.data, status=200)
+
+
+class ReadingLogListView(generics.ListAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = ReadingLogSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        queryset = ReadingLog.objects.select_related("reading").filter(user=user)
+
+        reading_id = self.request.query_params.get("reading")
+        if reading_id:
+            queryset = queryset.filter(reading_id=UUID(reading_id))
+
+        days = self.request.query_params.get("days")
+        if days:
+            try:
+                cutoff = timezone.now().date() - timezone.timedelta(days=int(days))
+                queryset = queryset.filter(date__gte=cutoff)
+            except (ValueError, TypeError):
+                pass
+
+        return queryset.order_by("-date")
+
 

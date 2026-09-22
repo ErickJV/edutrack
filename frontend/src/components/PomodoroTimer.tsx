@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
+import { Play, Pause, SkipForward, RotateCcw, Settings2 } from 'lucide-react'
 import type { AcademicTask, PomodoroMode, PomodoroSettings } from '../api/types'
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
@@ -107,11 +108,11 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
       try {
         await onSyncMinutes(minutes)
         setAccumulatedFocusSeconds((prev) => Math.max(0, prev - minutes * 60))
-        setSyncNotice(`+${minutes} min registrados na tarefa!`)
-        window.setTimeout(() => setSyncNotice(''), 4000)
+        setSyncNotice(`+${minutes} min sincronizados!`)
+        window.setTimeout(() => setSyncNotice(''), 3500)
       } catch {
         setSyncNotice('Erro ao sincronizar minutos com a tarefa.')
-        window.setTimeout(() => setSyncNotice(''), 4000)
+        window.setTimeout(() => setSyncNotice(''), 3500)
       }
     },
     [activeTask, onSyncMinutes],
@@ -179,7 +180,6 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
 
   const toggleRunning = () => {
     if (isRunning && mode === 'focus' && accumulatedFocusSeconds >= 60) {
-      // Sync on pause if 1+ minutes accumulated
       void commitFocusTime(accumulatedFocusSeconds)
     }
     setIsRunning((prev) => !prev)
@@ -212,112 +212,106 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
   const minutesDisplay = Math.floor(secondsRemaining / 60)
   const secondsDisplay = secondsRemaining % 60
   const formattedTime = `${String(minutesDisplay).padStart(2, '0')}:${String(secondsDisplay).padStart(2, '0')}`
-
-  // Circular progress calculation
   const progressPercent = Math.min(100, Math.max(0, ((totalSeconds - secondsRemaining) / totalSeconds) * 100))
-  const radius = 88
-  const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference - (progressPercent / 100) * circumference
 
   return (
     <section
       aria-label="Temporizador Pomodoro"
-      className="relative flex flex-col items-center rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8"
+      className="relative flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
-      {/* Mode Navigation Tabs */}
-      <div
-        role="tablist"
-        aria-label="Modo do Pomodoro"
-        className="flex max-w-full flex-wrap justify-center gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 dark:border-slate-800 dark:bg-slate-950"
-      >
+      {/* Header / Mode Segmented Bar */}
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+        <div
+          role="tablist"
+          aria-label="Modo do Pomodoro"
+          className="grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950 flex-1 max-w-[240px]"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'focus'}
+            onClick={() => switchMode('focus')}
+            className={`min-h-8 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+              mode === 'focus'
+                ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
+                : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50'
+            }`}
+          >
+            Foco
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'short_break'}
+            onClick={() => switchMode('short_break')}
+            className={`min-h-8 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+              mode === 'short_break'
+                ? 'bg-cyan-600 text-white shadow-sm dark:bg-cyan-500'
+                : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50'
+            }`}
+          >
+            Curta
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'long_break'}
+            onClick={() => switchMode('long_break')}
+            className={`min-h-8 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+              mode === 'long_break'
+                ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500'
+                : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50'
+            }`}
+          >
+            Longa
+          </button>
+        </div>
+
         <button
           type="button"
-          role="tab"
-          aria-selected={mode === 'focus'}
-          onClick={() => switchMode('focus')}
-          className={`min-h-11 min-w-11 rounded-xl px-4 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:text-sm ${
-            mode === 'focus'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 dark:bg-indigo-500'
-              : 'text-slate-600 hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50'
-          }`}
+          onClick={() => {
+            setTempSettings(settings)
+            setSettingsOpen(true)
+          }}
+          aria-label="Configurar tempos do Pomodoro"
+          className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          title="Configurações"
         >
-          Foco ({settings.focusMinutes}m)
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'short_break'}
-          onClick={() => switchMode('short_break')}
-          className={`min-h-11 min-w-11 rounded-xl px-4 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:text-sm ${
-            mode === 'short_break'
-              ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20 dark:bg-cyan-500'
-              : 'text-slate-600 hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50'
-          }`}
-        >
-          Pausa Curta ({settings.shortBreakMinutes}m)
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'long_break'}
-          onClick={() => switchMode('long_break')}
-          className={`min-h-11 min-w-11 rounded-xl px-4 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:text-sm ${
-            mode === 'long_break'
-              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 dark:bg-emerald-500'
-              : 'text-slate-600 hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50'
-          }`}
-        >
-          Pausa Longa ({settings.longBreakMinutes}m)
+          <Settings2 className="size-4" aria-hidden="true" />
         </button>
       </div>
 
-      {/* Circular Timer Visual */}
-      <div className="relative my-6 flex size-56 items-center justify-center sm:size-64">
-        <svg className="size-full -rotate-90" viewBox="0 0 200 200" aria-hidden="true">
-          <circle
-            cx="100"
-            cy="100"
-            r={radius}
-            className="stroke-slate-200 fill-none dark:stroke-slate-800"
-            strokeWidth="10"
-          />
-          <circle
-            cx="100"
-            cy="100"
-            r={radius}
-            className={`fill-none transition-all duration-300 ease-linear ${
-              mode === 'focus'
-                ? 'stroke-indigo-600 dark:stroke-indigo-500'
-                : mode === 'short_break'
-                  ? 'stroke-cyan-500 dark:stroke-cyan-400'
-                  : 'stroke-emerald-500 dark:stroke-emerald-400'
-            }`}
-            strokeWidth="10"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-          />
-        </svg>
-
+      {/* Main Digital Display & Progress Line */}
+      <div className="flex flex-col items-center justify-center py-4 text-center">
         <div
-          className="absolute flex flex-col items-center justify-center text-center"
-          role="progressbar"
-          aria-valuenow={Math.round(progressPercent)}
-          aria-valuemin={0}
-          aria-valuemax={100}
+          role="timer"
           aria-label={`Tempo de ${mode === 'focus' ? 'Foco' : 'Pausa'}: ${formattedTime}`}
+          className="font-mono text-4xl font-black tracking-tight text-slate-950 dark:text-slate-50"
         >
-          <span
-            aria-live="polite"
-            className="font-mono text-4xl font-black tracking-tight text-slate-950 dark:text-slate-50 sm:text-5xl"
-          >
-            {formattedTime}
-          </span>
-          <span className="mt-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+          {formattedTime}
+        </div>
+
+        {/* Linear Slim Progress Bar */}
+        <div className="mt-2.5 h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div
+            className={`h-full transition-all duration-300 ease-linear ${
+              mode === 'focus'
+                ? 'bg-indigo-600 dark:bg-indigo-500'
+                : mode === 'short_break'
+                  ? 'bg-cyan-500 dark:bg-cyan-400'
+                  : 'bg-emerald-500 dark:bg-emerald-400'
+            }`}
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        {/* Status / Task Subtext */}
+        <div className="mt-2 flex items-center justify-center gap-1.5 text-xs">
+          <span className="font-semibold text-slate-500 dark:text-slate-400">
             {mode === 'focus' ? 'Ciclo de Foco' : mode === 'short_break' ? 'Pausa Curta' : 'Pausa Longa'}
           </span>
           {activeTask ? (
-            <span className="mt-1 max-w-[170px] truncate text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+            <span className="max-w-[120px] truncate rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
               {activeTask.title}
             </span>
           ) : null}
@@ -328,77 +322,63 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
       {syncNotice ? (
         <div
           role="status"
-          className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
+          className="mb-2 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-center text-[11px] font-bold text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
         >
           {syncNotice}
         </div>
       ) : null}
 
-      {/* Action Controls */}
-      <div className="flex flex-wrap items-center justify-center gap-3">
+      {/* Action Controls Row */}
+      <div className="flex items-center justify-center gap-2 pt-1">
         <button
           type="button"
           onClick={toggleRunning}
-          className={`inline-flex min-h-12 min-w-32 items-center justify-center rounded-2xl px-6 text-base font-black transition focus-visible:outline-2 focus-visible:outline-offset-2 shadow-lg ${
+          className={`inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-black transition focus-visible:outline-2 focus-visible:outline-offset-2 shadow-sm ${
             isRunning
-              ? 'border border-amber-300 bg-amber-500 text-white shadow-amber-500/20 hover:bg-amber-600 focus-visible:outline-amber-600'
-              : 'bg-indigo-600 text-white shadow-indigo-600/25 hover:bg-indigo-700 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600'
+              ? 'bg-amber-500 text-white hover:bg-amber-600 focus-visible:outline-amber-600'
+              : 'bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600'
           }`}
         >
-          {isRunning ? 'Pausar' : 'Iniciar'}
+          {isRunning ? (
+            <>
+              <Pause className="size-3.5" aria-hidden="true" /> Pausar
+            </>
+          ) : (
+            <>
+              <Play className="size-3.5 fill-current" aria-hidden="true" /> Iniciar
+            </>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={skipInterval}
+          aria-label="Pular intervalo"
+          className="inline-flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-white hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          title="Pular intervalo"
+        >
+          <SkipForward className="size-4" aria-hidden="true" />
         </button>
 
         <button
           type="button"
           onClick={resetTimer}
           aria-label="Reiniciar temporizador"
-          className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700 transition hover:bg-white hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="inline-flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-white hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          title="Reiniciar"
         >
-          Reiniciar
-        </button>
-
-        <button
-          type="button"
-          onClick={skipInterval}
-          aria-label="Pular para próximo intervalo"
-          className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700 transition hover:bg-white hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-        >
-          Pular
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setTempSettings(settings)
-            setSettingsOpen(true)
-          }}
-          aria-label="Configurar tempos do Pomodoro"
-          className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700 transition hover:bg-white hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-        >
-          Configurar
+          <RotateCcw className="size-4" aria-hidden="true" />
         </button>
       </div>
 
-      {/* Session Progress Info */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-6 border-t border-slate-100 pt-5 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-        <div>
-          <span className="font-semibold">Pomodoros concluídos:</span>{' '}
-          <strong className="font-bold text-slate-900 dark:text-slate-100">{completedPomodoros}</strong>
-        </div>
-        <div>
-          <span className="font-semibold">Até a pausa longa:</span>{' '}
-          <strong className="font-bold text-slate-900 dark:text-slate-100">
-            {settings.longBreakInterval - (completedPomodoros % settings.longBreakInterval)} restantes
-          </strong>
-        </div>
-        {activeTask ? (
-          <div>
-            <span className="font-semibold">Tempo da tarefa:</span>{' '}
-            <strong className="font-bold text-slate-900 dark:text-slate-100">
-              {activeTask.actual_minutes} min realizados
-            </strong>
-          </div>
-        ) : null}
+      {/* Discrete Cycles Footer */}
+      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
+        <span className="font-semibold">
+          🍅 <strong>{completedPomodoros}</strong> {completedPomodoros === 1 ? 'concluído' : 'concluídos'}
+        </span>
+        <span>
+          {settings.longBreakInterval - (completedPomodoros % settings.longBreakInterval)} p/ longa
+        </span>
       </div>
 
       {/* Settings Modal */}
@@ -407,24 +387,24 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
           role="dialog"
           aria-modal="true"
           aria-labelledby="pomodoro-settings-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
         >
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
             <h3
               id="pomodoro-settings-title"
-              className="text-lg font-black tracking-tight text-slate-950 dark:text-slate-50"
+              className="text-base font-black text-slate-950 dark:text-slate-50"
             >
               Configurar Pomodoro
             </h3>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Personalize a duração dos ciclos de foco e descanso de acordo com seu ritmo de estudo.
+              Ajuste as durações personalizadas para sua rotina de foco.
             </p>
 
-            <form onSubmit={handleSaveSettings} className="mt-5 space-y-4">
+            <form onSubmit={handleSaveSettings} className="mt-4 space-y-3">
               <div>
                 <label
                   htmlFor={focusInputId}
-                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 >
                   Tempo de Foco (minutos)
                 </label>
@@ -433,19 +413,18 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
                   type="number"
                   min="1"
                   max="120"
-                  required
                   value={tempSettings.focusMinutes}
                   onChange={(e) =>
-                    setTempSettings({ ...tempSettings, focusMinutes: Math.max(1, Number(e.target.value)) })
+                    setTempSettings({ ...tempSettings, focusMinutes: Number(e.target.value) || 25 })
                   }
-                  className="mt-1 block w-full min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-50"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor={shortBreakInputId}
-                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 >
                   Pausa Curta (minutos)
                 </label>
@@ -454,19 +433,21 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
                   type="number"
                   min="1"
                   max="60"
-                  required
                   value={tempSettings.shortBreakMinutes}
                   onChange={(e) =>
-                    setTempSettings({ ...tempSettings, shortBreakMinutes: Math.max(1, Number(e.target.value)) })
+                    setTempSettings({
+                      ...tempSettings,
+                      shortBreakMinutes: Number(e.target.value) || 5,
+                    })
                   }
-                  className="mt-1 block w-full min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-50"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor={longBreakInputId}
-                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 >
                   Pausa Longa (minutos)
                 </label>
@@ -475,62 +456,71 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
                   type="number"
                   min="1"
                   max="90"
-                  required
                   value={tempSettings.longBreakMinutes}
                   onChange={(e) =>
-                    setTempSettings({ ...tempSettings, longBreakMinutes: Math.max(1, Number(e.target.value)) })
+                    setTempSettings({
+                      ...tempSettings,
+                      longBreakMinutes: Number(e.target.value) || 15,
+                    })
                   }
-                  className="mt-1 block w-full min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-50"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor={intervalInputId}
-                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 >
-                  Ciclos até Pausa Longa
+                  Intervalo para Pausa Longa (ciclos)
                 </label>
                 <input
                   id={intervalInputId}
                   type="number"
                   min="1"
                   max="12"
-                  required
                   value={tempSettings.longBreakInterval}
                   onChange={(e) =>
-                    setTempSettings({ ...tempSettings, longBreakInterval: Math.max(1, Number(e.target.value)) })
+                    setTempSettings({
+                      ...tempSettings,
+                      longBreakInterval: Number(e.target.value) || 4,
+                    })
                   }
-                  className="mt-1 block w-full min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-50"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
                 />
               </div>
 
               <div className="flex items-center gap-2 pt-1">
                 <input
-                  id="sound-enabled"
+                  id="sound-enabled-checkbox"
                   type="checkbox"
                   checked={tempSettings.soundEnabled}
-                  onChange={(e) => setTempSettings({ ...tempSettings, soundEnabled: e.target.checked })}
-                  className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800"
+                  onChange={(e) =>
+                    setTempSettings({ ...tempSettings, soundEnabled: e.target.checked })
+                  }
+                  className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-950"
                 />
-                <label htmlFor="sound-enabled" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Emitir sinal sonoro ao fim de cada ciclo
+                <label
+                  htmlFor="sound-enabled-checkbox"
+                  className="text-xs font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Tocar som ao finalizar ciclo
                 </label>
               </div>
 
-              <div className="mt-6 flex justify-end gap-3 pt-2">
+              <div className="mt-4 flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setSettingsOpen(false)}
-                  className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="min-h-9 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                  className="min-h-9 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
                 >
-                  Salvar preferências
+                  Salvar
                 </button>
               </div>
             </form>
