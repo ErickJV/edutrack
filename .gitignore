@@ -1,5 +1,50 @@
+# --------------------------------------------------
+# Ambientes e Segredos
+# --------------------------------------------------
 .env
-.env.local
+.env.*
+!.env.example
+
+# --------------------------------------------------
+# OpenSpec (Isolado de todo o versionamento de source)
+# --------------------------------------------------
+openspec/
+.openspec/
+.openspec*
+*.openspec.yaml
+
+# --------------------------------------------------
+# Assistentes de IA e Ferramentas (Oh My Pi / Agents)
+# --------------------------------------------------
+.omp/
+.agents/
+.claude/
+.cursor/
+.codex/
+
+# --------------------------------------------------
+# Nix & Sistema Operacional
+# --------------------------------------------------
+result
+result-*
+.direnv/
+.DS_Store
+Thumbs.db
+
+# --------------------------------------------------
+# Logs e Saídas Temporárias
+# --------------------------------------------------
+logs/
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# --------------------------------------------------
+# Backend (Python / Django)
+# --------------------------------------------------
 .venv/
 __pycache__/
 *.py[cod]
@@ -9,11 +54,20 @@ __pycache__/
 .ruff_cache/
 htmlcov/
 .coverage
+.coverage.*
+
+# --------------------------------------------------
+# Frontend (Node / TypeScript / Vite / Playwright)
+# --------------------------------------------------
 node_modules/
 *.tsbuildinfo
+dist/
 frontend/dist/
 frontend/playwright-report/
 frontend/test-results/
-.DS_Store
+
+# --------------------------------------------------
+# IDEs e Editores
+# --------------------------------------------------
 .idea/
 .vscode/
