@@ -10,7 +10,7 @@ dependencies = [
   "djangorestframework==3.18.0",
   "drf-spectacular==0.30.0",
   "gunicorn==26.2.0",
-  "mssql-django==1.8.0",
+  "mssql-django==2.0.0",
 ]
 
 [dependency-groups]
