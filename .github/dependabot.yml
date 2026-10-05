@@ -44,10 +44,3 @@ updates:
     ignore:
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
-  - package-ecosystem: github-actions
-    directory: /
-    schedule:
-      interval: weekly
-      day: monday
-      time: "09:50"
-      timezone: America/Sao_Paulo
