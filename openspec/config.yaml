@@ -1,0 +1,64 @@
+schema: spec-driven
+
+context: |
+  Projeto: EduTrack — Plataforma de organização acadêmica para estudantes universitários (Faculdade Impacta).
+  Idioma: pt-BR. Todos os artefatos (proposal, specs, design, tasks) devem ser gerados em português do Brasil.
+
+  Filosofia de Desenvolvimento:
+  - Desenvolvimento ágil, enxuto e orientado a Sprints.
+  - Evitar micro-tarefas fragmentadas, suites de teste frágeis ou mocks redundantes que inflacionam tokens.
+  - Verificação por execução prática (smoke run): rodar a aplicação, testar o fluxo no navegador e inspecionar respostas de API (curl / network).
+
+  Stack Tecnológica:
+  - Monorepo nativo (sem Docker, sem Mailpit, sem MSSQL):
+    - backend/: Python 3.14+, Django 5.2 LTS, Django REST Framework, django-allauth, psycopg (PostgreSQL 16+), gerenciado por uv.
+    - frontend/: React 19, TypeScript, Vite 8, Tailwind CSS 4, Lucide React, gerenciado por pnpm.
+  - Banco de Dados: PostgreSQL local/remoto nativo na porta 5432. Suporte a SQLite via DB_ENGINE=sqlite para desenvolvimento rápido zero-daemon.
+  - Produção (Azure VM): Gerenciado por PM2 (processos edutrack-api e edutrack-web) e Caddy como reverse proxy com HTTPS automático (impatrack.dev).
+
+  Comandos Nativos (Makefile):
+  - make install: Instala dependências do backend (uv sync) e frontend (pnpm install).
+  - make migrate: Aplica migrações no PostgreSQL.
+  - make seed: Popula cursos e matriz curricular inicial (Impacta).
+  - make superuser: Cria o administrador Django para /admin.
+  - make dev-api: Inicia o backend Django em 0.0.0.0:8000.
+  - make dev-web: Inicia o frontend Vite em 0.0.0.0:5173 (com proxy automático para :8000).
+  - make build: Compila o frontend para produção (tsc -b && vite build).
+  - make lint: Executa verificações de qualidade (ruff check . e pnpm lint && pnpm typecheck).
+
+  Regras de Negócio e Segurança:
+  - Domínio institucional: e-mails de alunos terminam em @aluno.impacta.edu.br.
+  - Autenticação: Login local e Google OAuth2 via django-allauth (/_allauth/browser/v1/). Em desenvolvimento local (DEBUG=True), novas contas ativam imediatamente sem exigir código de e-mail.
+  - Sessão e Segurança: Cookies HttpOnly, SameSite=Lax, proteção CSRF e senhas Argon2id.
+  - UI Mobile-first: Responsividade a partir de 360px de largura, sem overflow horizontal, alvos de toque >= 44px e foco navegável por teclado.
+
+rules:
+  proposal:
+    - "Escreva propostas diretas e concisas em português (pt-BR), com foco no valor de negócio da Sprint e nos objetivos práticos."
+    - "Identifique impacto claro em Backend, Frontend, Banco de Dados e UI."
+    - "Evite preâmbulos longos, tabelas repetitivas ou seções vazias que consomem tokens desnecessários."
+  specs:
+    - "Defina deltas normativos objetivos: o que o sistema deve fazer em cenários de sucesso, erro e permissões."
+    - "Para APIs: método HTTP, rota, payload JSON e status de retorno."
+    - "Para UI: telas, componentes, estados de feedback (carregando/vazio/erro) e interações."
+    - "Não exija a criação de suites de testes unitários sintéticos ou testes de regressão automatizados nos requisitos."
+  design:
+    - "Registre decisões técnicas diretas: modelagem de dados, rotas de API e arquitetura de componentes."
+    - "Reutilize modelos, serializadores e componentes existentes no repositório antes de criar novas abstrações."
+  tasks:
+    - "Estruture tasks.md obrigatoriamente como um SPRINT BACKLOG organizado em 2 a 4 fatias de entrega completas (ex: 1. Modelos & Banco, 2. Endpoints Backend, 3. Telas & Componentes Frontend, 4. Verificação Ponta a Ponta)."
+    - "NÃO gere micro-tarefas atomizadas para testes unitários, testes de mock ou tarefas triviais de um único arquivo que fragmentam o fluxo."
+    - "Cada item do backlog deve ser uma fatia executável autocontida, pronta para execução direta ou delegação em paralelo a subagentes."
+    - "A última tarefa da sprint deve ser sempre uma verificação prática funcional (smoke run da rota ou do fluxo no navegador)."
+
+operations:
+  apply:
+    guidance:
+      - "Execução em Sprint/Lote: execute as tarefas do backlog em fluxo contínuo ou delegue fatias independentes a subagentes concorrentes (task), sem pausar para confirmações triviais a cada arquivo editado."
+      - "Mantenha o foco em velocidade, entrega limpa e baixo consumo de tokens."
+      - "Valide as alterações executando a aplicação (make dev-api, pnpm typecheck, pnpm build ou curl), sem criar mocks ou suites de teste obsoletas."
+      - "Marque os itens do backlog concluídos (- [x]) conforme cada fatia for finalizada."
+  archive:
+    guidance:
+      - "Arquive a mudança quando todas as fatias do backlog da sprint estiverem concluídas e verificadas na prática."
+      - "Sincronize as especificações principais em openspec/specs/."

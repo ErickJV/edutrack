@@ -6,12 +6,9 @@
 !.env.example
 
 # --------------------------------------------------
-# OpenSpec (Isolado de todo o versionamento de source)
+# OpenSpec Local Cache
 # --------------------------------------------------
-openspec/
 .openspec/
-.openspec*
-*.openspec.yaml
 
 # --------------------------------------------------
 # Assistentes de IA e Ferramentas (Oh My Pi / Agents)
