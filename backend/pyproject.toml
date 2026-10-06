@@ -10,7 +10,7 @@ dependencies = [
   "djangorestframework==3.18.0",
   "drf-spectacular==0.30.0",
   "gunicorn==26.2.0",
-  "mssql-django==1.8.0",
+  "psycopg[binary]>=3.2.0",
 ]
 
 [dependency-groups]
@@ -18,15 +18,8 @@ dev = [
   "django-stubs==6.1.0",
   "djangorestframework-stubs==3.18.1",
   "mypy==1.18.2",
-  "pytest==9.1.1",
-  "pytest-django==4.11.1",
   "ruff==0.16.6",
 ]
-
-[tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "edutrack.settings"
-python_files = ["test_*.py", "*_tests.py"]
-addopts = "-ra --strict-markers"
 
 [tool.uv]
 required-version = ">=0.12.5"

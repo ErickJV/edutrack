@@ -90,7 +90,8 @@ TEMPLATES = [
     }
 ]
 
-if os.getenv("DB_ENGINE", "mssql") == "sqlite":
+DB_ENGINE = os.getenv("DB_ENGINE", "postgresql").lower()
+if DB_ENGINE == "sqlite":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -98,23 +99,14 @@ if os.getenv("DB_ENGINE", "mssql") == "sqlite":
         }
     }
 else:
-    trust_certificate = "yes" if env_bool("DB_TRUST_SERVER_CERTIFICATE", True) else "no"
-    encrypt = "yes" if env_bool("DB_ENCRYPT", True) else "no"
     DATABASES = {
         "default": {
-            "ENGINE": "mssql",
+            "ENGINE": "django.db.backends.postgresql",
             "NAME": os.getenv("DB_NAME", "edutrack"),
-            "USER": os.getenv("DB_USER", "sa"),
-            "PASSWORD": os.getenv("DB_PASSWORD", "EduTrack_local_2026!"),
+            "USER": os.getenv("DB_USER", "postgres"),
+            "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
             "HOST": os.getenv("DB_HOST", "localhost"),
-            "PORT": os.getenv("DB_PORT", "1433"),
-            "OPTIONS": {
-                "driver": os.getenv("DB_DRIVER", "ODBC Driver 18 for SQL Server"),
-                "extra_params": (
-                    f"Encrypt={encrypt};TrustServerCertificate={trust_certificate};"
-                    "Connection Timeout=30"
-                ),
-            },
+            "PORT": os.getenv("DB_PORT", "5432"),
         }
     }
 
@@ -147,8 +139,8 @@ ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*"]
 ACCOUNT_SIGNUP_FORM_CLASS = "apps.accounts.forms.EduTrackSignupForm"
 ACCOUNT_ADAPTER = "apps.accounts.adapters.EduTrackAccountAdapter"
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True
+ACCOUNT_EMAIL_VERIFICATION = "none" if DEBUG else "mandatory"
+ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = not DEBUG
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_TIMEOUT = 600
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_MAX_ATTEMPTS = 3
 ACCOUNT_EMAIL_VERIFICATION_SUPPORTS_RESEND = True
@@ -177,7 +169,7 @@ SOCIALACCOUNT_ADAPTER = "apps.accounts.adapters.EduTrackSocialAccountAdapter"
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
-SOCIALACCOUNT_EMAIL_VERIFICATION = "mandatory"
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none" if DEBUG else "mandatory"
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_STORE_TOKENS = False
 SOCIALACCOUNT_LOGIN_ON_GET = False
@@ -212,7 +204,12 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
 EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "1025"))
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", False)

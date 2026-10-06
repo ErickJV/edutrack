@@ -1,40 +1,30 @@
-.PHONY: dev down logs migrate seed superuser test e2e lint build install
+.PHONY: dev-api dev-web migrate seed superuser db-create lint build install
 
-dev:
-	docker compose up --build
+dev-api:
+	cd backend && python manage.py runserver 0.0.0.0:8000
 
-down:
-	docker compose down
-
-logs:
-	docker compose logs -f
+dev-web:
+	cd frontend && pnpm dev
 
 migrate:
-	docker compose run --rm api python manage.py migrate
+	cd backend && python manage.py migrate
 
 seed:
-	docker compose run --rm api python manage.py seed_initial_data
+	cd backend && python manage.py seed_initial_data
 
 superuser:
-	docker compose run --rm api python manage.py createsuperuser
+	cd backend && python manage.py createsuperuser
 
-test:
-	docker compose run --rm api pytest
-	docker compose run --rm web pnpm test --run
-
-e2e:
-	docker compose up --detach --build
-	cd frontend && PLAYWRIGHT_EXTERNAL_SERVER=true pnpm e2e
+db-create:
+	createdb -U $${DB_USER:-postgres} -h $${DB_HOST:-localhost} $${DB_NAME:-edutrack} 2>/dev/null || true
 
 lint:
-	docker compose run --rm api ruff check .
-	docker compose run --rm api mypy .
-	docker compose run --rm web pnpm lint
-	docker compose run --rm web pnpm typecheck
+	cd backend && ruff check .
+	cd frontend && pnpm lint && pnpm typecheck
 
 build:
-	docker compose run --rm web pnpm build
+	cd frontend && pnpm build
 
 install:
-	cd backend && uv sync --all-groups
+	cd backend && uv sync
 	cd frontend && pnpm install
