@@ -71,4 +71,4 @@ frontend/test-results/
 # --------------------------------------------------
 .idea/
 .vscode/
-.editorconfig/
+.editorconfig
