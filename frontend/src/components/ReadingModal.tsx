@@ -146,7 +146,7 @@ export function ReadingModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Engenharia de Software Moderna"
-              className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+              className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
             />
           </div>
 
@@ -164,7 +164,7 @@ export function ReadingModal({
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="Ex: Marco Tulio Valente"
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+                className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
               />
             </div>
 
@@ -179,7 +179,7 @@ export function ReadingModal({
                 id={subjectId}
                 value={studentSubject}
                 onChange={(e) => setStudentSubject(e.target.value)}
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+                className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
               >
                 <option value="">(Geral / Sem disciplina)</option>
                 {subjects.map((s) => (
@@ -206,7 +206,7 @@ export function ReadingModal({
                 required
                 value={totalPages}
                 onChange={(e) => setTotalPages(Number(e.target.value))}
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+                className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
               />
             </div>
 
@@ -224,7 +224,7 @@ export function ReadingModal({
                 max={totalPages}
                 value={currentPage}
                 onChange={(e) => setCurrentPage(Number(e.target.value))}
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+                className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
               />
             </div>
 
@@ -239,7 +239,7 @@ export function ReadingModal({
                 id={statusId}
                 value={status}
                 onChange={(e) => setStatus(e.target.value as AcademicReadingStatus)}
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+                className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
               >
                 <option value="NOT_STARTED">Não iniciado</option>
                 <option value="READING">Lendo</option>
@@ -251,8 +251,8 @@ export function ReadingModal({
           </div>
 
           {/* Exam Linkage Section */}
-          <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900/40 dark:bg-indigo-950/20">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+          <div className="rounded-xl border border-[#005063]/20 bg-[#005063]/5 p-3 dark:border-[#005063]/30 dark:bg-[#041019]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#005063] dark:text-[#a8d5e5]">
               Vínculo com Avaliação / Prova (Opcional)
             </span>
 
@@ -270,7 +270,7 @@ export function ReadingModal({
                   placeholder="Ex: P1 Semestral"
                   value={examName}
                   onChange={(e) => setExamName(e.target.value)}
-                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:outline-hidden dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-indigo-400"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#081a26] dark:text-slate-100 dark:focus:border-[#006768]"
                 />
               </div>
 
@@ -288,7 +288,7 @@ export function ReadingModal({
                   placeholder="Ex: 10"
                   value={examQuestionsCount || ''}
                   onChange={(e) => setExamQuestionsCount(Number(e.target.value) || 0)}
-                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:outline-hidden dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-indigo-400"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#081a26] dark:text-slate-100 dark:focus:border-[#006768]"
                 />
               </div>
 
@@ -304,7 +304,7 @@ export function ReadingModal({
                   type="date"
                   value={examDate}
                   onChange={(e) => setExamDate(e.target.value)}
-                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:outline-hidden dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-indigo-400"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#081a26] dark:text-slate-100 dark:focus:border-[#006768]"
                 />
               </div>
             </div>
@@ -321,7 +321,7 @@ export function ReadingModal({
             <button
               type="submit"
               disabled={loading}
-              className="min-h-9 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+              className="min-h-9 rounded-xl bg-[#0d3950] px-5 text-xs font-bold text-white hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
             >
               {loading ? 'Salvando...' : 'Salvar Leitura'}
             </button>

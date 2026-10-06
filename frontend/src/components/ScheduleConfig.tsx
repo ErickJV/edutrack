@@ -208,8 +208,8 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Calendar size={16} className="text-indigo-500" aria-hidden="true" />
-        <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+        <Calendar size={16} className="text-[#005063] dark:text-[#006768]" aria-hidden="true" />
+        <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#0d3950] dark:text-slate-300">
           Semestre e aulas
         </h3>
       </div>
@@ -218,14 +218,14 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
 
       {/* Term section */}
       {!termId ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60 space-y-3">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-[#005063]/30 dark:bg-[#040f17] space-y-3">
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Vincule um semestre para configurar horários e calcular progresso de aulas.
           </p>
 
           {loadingTerms ? (
             <div className="flex justify-center py-2" aria-label="Carregando semestres">
-              <LoaderCircle size={20} className="animate-spin text-indigo-400" aria-hidden="true" />
+              <LoaderCircle size={20} className="animate-spin text-[#005063]" aria-hidden="true" />
             </div>
           ) : (
             <>
@@ -249,7 +249,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                     type="button"
                     onClick={linkTerm}
                     disabled={!selectedTermId}
-                    className="mt-7 min-h-12 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                    className="mt-7 min-h-12 rounded-xl bg-[#0d3950] px-4 text-sm font-bold text-white transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#0d3950] disabled:opacity-50 dark:bg-[#005063] dark:hover:bg-[#006768]"
                   >
                     Vincular
                   </button>
@@ -260,12 +260,12 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                 <button
                   type="button"
                   onClick={() => setCreatingTerm(true)}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#006768] hover:underline dark:text-[#005063]"
                 >
                   <Plus size={14} aria-hidden="true" /> Criar novo semestre
                 </button>
               ) : (
-                <form onSubmit={createTerm} className="space-y-3 rounded-xl border border-indigo-200 bg-indigo-50/60 p-3.5 dark:border-indigo-900/50 dark:bg-indigo-950/30">
+                <form onSubmit={createTerm} className="space-y-3 rounded-xl border border-[#005063]/20 bg-[#dce6ef]/40 p-3.5 dark:border-[#005063]/30 dark:bg-[#040f17]">
                   {termError ? <Alert>{termError}</Alert> : null}
                   <Input
                     label="Nome do semestre"
@@ -301,7 +301,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                     <button
                       type="button"
                       onClick={() => setCreatingTerm(false)}
-                      className="min-h-11 rounded-xl border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                      className="min-h-11 rounded-xl border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
                     >
                       Cancelar
                     </button>
@@ -313,14 +313,14 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
         </div>
       ) : (
         /* Term is linked — show schedule config */
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60 space-y-4">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-[#005063]/30 dark:bg-[#040f17] space-y-4">
           {/* Term info */}
           {activeTerm ? (
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Semestre vinculado
               </p>
-              <p className="text-sm font-extrabold text-slate-950 dark:text-slate-50">
+              <p className="text-sm font-extrabold text-[#0d3950] dark:text-slate-50">
                 {activeTerm.name}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -338,7 +338,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
               <button
                 type="button"
                 onClick={() => setCreatingSchedule((v) => !v)}
-                className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#006768] hover:underline dark:text-[#005063]"
                 aria-expanded={creatingSchedule}
               >
                 <Plus size={14} aria-hidden="true" /> Adicionar horário
@@ -347,7 +347,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
 
             {loadingSchedules ? (
               <div className="flex justify-center py-2" aria-label="Carregando horários">
-                <LoaderCircle size={18} className="animate-spin text-indigo-400" aria-hidden="true" />
+                <LoaderCircle size={18} className="animate-spin text-[#005063]" aria-hidden="true" />
               </div>
             ) : schedules.length === 0 && !creatingSchedule ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -358,7 +358,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                 {schedules.map((s) => (
                   <li
                     key={s.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-[#005063]/30 dark:bg-[#081a26]"
                   >
                     <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                       {WEEKDAY_LABELS[s.weekday]} {s.start_time}–{s.end_time}
@@ -383,7 +383,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
             {creatingSchedule ? (
               <form
                 onSubmit={createSchedule}
-                className="mt-3 space-y-3 rounded-xl border border-indigo-200 bg-indigo-50/60 p-3.5 dark:border-indigo-900/50 dark:bg-indigo-950/30"
+                className="mt-3 space-y-3 rounded-xl border border-[#005063]/20 bg-[#dce6ef]/40 p-3.5 dark:border-[#005063]/30 dark:bg-[#040f17]"
               >
                 {schedError ? <Alert>{schedError}</Alert> : null}
                 <Select
@@ -430,7 +430,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                   <button
                     type="button"
                     onClick={() => setCreatingSchedule(false)}
-                    className="min-h-11 rounded-xl border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                    className="min-h-11 rounded-xl border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
                   >
                     Cancelar
                   </button>
@@ -447,13 +447,13 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
               </p>
               {loadingOccs ? (
                 <div className="flex justify-center py-2" aria-label="Carregando aulas">
-                  <LoaderCircle size={18} className="animate-spin text-indigo-400" aria-hidden="true" />
+                  <LoaderCircle size={18} className="animate-spin text-[#005063]" aria-hidden="true" />
                 </div>
               ) : occurrences.length === 0 ? (
                 <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma aula gerada ainda.</p>
               ) : (
                 <ul
-                  className="max-h-56 overflow-y-auto space-y-1.5 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900"
+                  className="max-h-56 overflow-y-auto space-y-1.5 rounded-xl border border-slate-200 bg-white p-2 dark:border-[#005063]/30 dark:bg-[#081a26]"
                   aria-label="Lista de aulas"
                 >
                   {occurrences.map((occ) => {
@@ -463,7 +463,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                         key={occ.id}
                         className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm ${
                           occ.cancelled
-                            ? 'bg-slate-100 text-slate-400 line-through dark:bg-slate-800 dark:text-slate-500'
+                            ? 'bg-slate-100 text-slate-400 line-through dark:bg-slate-800/60 dark:text-slate-500'
                             : 'text-slate-800 dark:text-slate-200'
                         }`}
                       >
@@ -474,7 +474,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                               aria-label="Sala da aula"
                               value={occRoom}
                               onChange={(e) => setOccRoom(e.target.value)}
-                              className="min-h-9 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                              className="min-h-9 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-[#005063] focus:ring-2 focus:ring-[#005063]/20 dark:border-slate-700 dark:bg-[#040f17] dark:text-slate-50"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') saveOccurrenceRoom(occ.id)
@@ -485,7 +485,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                               type="button"
                               onClick={() => saveOccurrenceRoom(occ.id)}
                               disabled={savingOcc}
-                              className="min-h-9 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+                              className="min-h-9 rounded-lg bg-[#0d3950] px-3 text-xs font-bold text-white transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#0d3950] disabled:opacity-50 dark:bg-[#005063] dark:hover:bg-[#006768]"
                             >
                               {savingOcc ? '...' : 'OK'}
                             </button>
@@ -506,7 +506,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                                 setEditingOccId(occ.id)
                                 setOccRoom(occ.room)
                               }}
-                              className="flex flex-1 items-start flex-col gap-0.5 text-left hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:hover:text-indigo-400"
+                              className="flex flex-1 items-start flex-col gap-0.5 text-left hover:text-[#006768] focus-visible:outline-2 focus-visible:outline-[#006768] dark:hover:text-[#005063]"
                               aria-label={`Editar sala: ${formatLocalDatetime(occ.starts_at, activeTerm?.timezone ?? 'America/Sao_Paulo')}${occ.room ? `, sala ${occ.room}` : ''}`}
                             >
                               <span className="text-xs font-semibold">
@@ -528,7 +528,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                               onClick={() => cancelOccurrence(occ)}
                               className={`min-w-[4.5rem] rounded-lg px-2 py-1 text-xs font-bold transition focus-visible:outline-2 ${
                                 occ.cancelled
-                                  ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 focus-visible:outline-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400 dark:hover:bg-indigo-900/60'
+                                  ? 'bg-[#005063]/15 text-[#005063] hover:bg-[#005063]/25 focus-visible:outline-[#005063] dark:bg-[#005063]/30 dark:text-[#006768] dark:hover:bg-[#005063]/40'
                                   : 'bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-rose-500 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-rose-950/40 dark:hover:text-rose-400'
                               }`}
                               aria-label={occ.cancelled ? 'Reativar aula' : 'Cancelar aula'}

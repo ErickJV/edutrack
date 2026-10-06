@@ -1,60 +1,60 @@
-import { CheckCircle2, GraduationCap, ShieldCheck, Sparkles } from 'lucide-react'
-
 import { Brand } from './Brand'
 import { ThemeToggle } from './ThemeToggle'
 
 export function AuthShell({
   title,
-  eyebrow,
   description,
   children,
 }: {
-  title: string
-  eyebrow: string
-  description: string
+  title?: string
+  eyebrow?: string
+  description?: string
   children: React.ReactNode
 }) {
   return (
-    <main className="min-h-dvh bg-slate-50 dark:bg-slate-950 lg:grid lg:grid-cols-[minmax(380px,0.92fr)_minmax(560px,1.08fr)]">
-      <aside className="relative hidden overflow-hidden bg-indigo-700 px-10 py-12 text-white lg:flex lg:flex-col lg:justify-between xl:px-16">
-        <div className="absolute -right-28 top-20 size-96 rounded-full bg-cyan-400/15 blur-3xl" />
-        <div className="absolute -bottom-20 -left-16 size-80 rounded-full bg-violet-400/20 blur-3xl" />
-        <div className="relative z-10"><Brand light /></div>
-        <section className="relative z-10 max-w-xl py-14">
-          <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-indigo-50">
-            <Sparkles size={16} aria-hidden="true" /> Feito para alunos Impacta
-          </span>
-          <h2 className="text-4xl font-black leading-[1.08] tracking-tight xl:text-5xl">
-            Sua vida acadêmica, <span className="text-cyan-300">mais organizada.</span>
-          </h2>
-          <p className="mt-6 max-w-lg text-lg leading-8 text-indigo-100">
-            Um espaço simples e seguro para acompanhar sua jornada na faculdade — começando pelo acesso.
-          </p>
-          <ul className="mt-10 space-y-4 text-sm font-medium text-indigo-50">
-            <li className="flex items-center gap-3"><CheckCircle2 className="text-cyan-300" size={20} /> Acesso exclusivo com e-mail institucional</li>
-            <li className="flex items-center gap-3"><ShieldCheck className="text-cyan-300" size={20} /> Autenticação protegida e dados seguros</li>
-            <li className="flex items-center gap-3"><GraduationCap className="text-cyan-300" size={20} /> Experiência personalizada para sua graduação</li>
-          </ul>
-        </section>
-        <p className="relative z-10 text-xs leading-5 text-indigo-200">
-          Projeto acadêmico autorizado. Não substitui os sistemas oficiais da Faculdade Impacta.
-        </p>
-      </aside>
+    <main className="relative flex min-h-dvh flex-col items-center justify-center bg-[#dce6ef] dark:bg-[#030d14] px-4 py-8 sm:px-6 lg:px-8 transition-colors duration-500">
+      {/* Top-right Minimalist Theme Toggle */}
+      <div className="fixed right-4 top-4 z-50 sm:right-6 sm:top-6">
+        <ThemeToggle />
+      </div>
 
-      <section className="flex min-h-dvh flex-col px-5 pb-8 pt-6 sm:px-8 lg:px-14 lg:py-12 xl:px-24">
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <div className="lg:hidden"><Brand /></div>
-          <div className="ml-auto"><ThemeToggle /></div>
-        </div>
-        <div className="mx-auto flex w-full max-w-[520px] flex-1 flex-col justify-center py-4">
-          <header className="mb-8">
-            <p className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-400">{eyebrow}</p>
-            <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-slate-50 sm:text-4xl">{title}</h1>
-            <p className="mt-3 max-w-lg text-base leading-7 text-slate-600 dark:text-slate-300">{description}</p>
-          </header>
-          {children}
-        </div>
-      </section>
+      {/* Expansive Container */}
+      <div className="w-full max-w-4xl">
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-8 text-[#0d3950] shadow-2xl transition-colors duration-500 sm:p-12 lg:p-14 dark:border-white/10 dark:bg-[#081a26] dark:text-white dark:shadow-black/90">
+          <div className="grid gap-8 lg:grid-cols-12 lg:gap-12 lg:items-start">
+            
+            {/* Left Column: Brand & Title */}
+            <div className="flex flex-col justify-start space-y-4 lg:col-span-5 lg:border-r lg:border-slate-100 dark:lg:border-white/10 lg:pr-8">
+              <div>
+                <Brand />
+              </div>
+              {title ? (
+                <h1 className="font-montserrat text-3xl font-extrabold tracking-tight text-[#0d3950] dark:text-white sm:text-4xl">
+                  {title}
+                </h1>
+              ) : null}
+              {description ? (
+                <p className="font-arial text-base leading-relaxed text-slate-600 dark:text-slate-300">
+                  {description}
+                </p>
+              ) : null}
+            </div>
+
+            {/* Right Column: Form */}
+            <div className="lg:col-span-7">
+              {children}
+            </div>
+
+          </div>
+        </section>
+
+        {/* Minimal Footer */}
+        <footer className="mt-6 text-center">
+          <p className="font-arial text-xs text-slate-500 dark:text-white/40">
+            EduTrack • Gestão Acadêmica
+          </p>
+        </footer>
+      </div>
     </main>
   )
 }

@@ -84,17 +84,17 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
         className="relative flex flex-col w-full max-w-3xl max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-950/20 dark:bg-slate-900 dark:border dark:border-slate-800"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="shrink-0 flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6 bg-white z-10 dark:border-slate-800 dark:bg-slate-900">
+        <header className="shrink-0 flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6 bg-white z-10 dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">Minhas disciplinas</p>
-            <h2 id="semester-selection-title" className="mt-1 text-xl font-black tracking-tight text-slate-950 dark:text-slate-50">
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#006768] dark:text-[#005063]">Minhas disciplinas</p>
+            <h2 id="semester-selection-title" className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-slate-50">
               Selecionar matérias do semestre
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid size-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 dark:focus-visible:outline-indigo-400"
+            className="grid size-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:text-slate-400 dark:hover:bg-[#040f17] dark:hover:text-slate-100 dark:focus-visible:outline-[#006768]"
             aria-label="Fechar modal"
           >
             <X size={18} aria-hidden="true" />
@@ -123,7 +123,7 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
               </p>
             </div>
 
-            <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-950/60">
+            <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 dark:border-[#005063]/30 dark:bg-[#040f17]">
               {loading ? (
                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Carregando matriz curricular…</p>
               ) : semesterSubjects.length === 0 ? (
@@ -137,8 +137,8 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
                         key={subject.id}
                         className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 text-left transition ${
                           checked
-                            ? 'border-indigo-300 bg-white shadow-sm dark:border-indigo-500/60 dark:bg-slate-800'
-                            : 'border-slate-200 bg-white/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700'
+                            ? 'border-[#006768] bg-white shadow-sm dark:border-[#006768] dark:bg-[#081a26]'
+                            : 'border-slate-200 bg-white/70 hover:border-slate-300 dark:border-slate-800 dark:bg-[#081a26]/60 dark:hover:border-[#005063]/40'
                         }`}
                       >
                         <input
@@ -150,11 +150,11 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
                               return current.filter((id) => id !== subject.id)
                             })
                           }}
-                          className="mt-1 size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800"
+                          className="mt-1 size-4 rounded border-slate-300 text-[#006768] focus:ring-[#006768] dark:border-slate-700 dark:bg-[#040f17]"
                         />
                         <span className="space-y-1">
-                          <span className="block text-sm font-extrabold text-slate-950 dark:text-slate-50">{subject.name}</span>
-                          <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          <span className="block text-sm font-extrabold text-[#0d3950] dark:text-slate-50">{subject.name}</span>
+                          <span className="block text-xs font-semibold uppercase tracking-wide text-[#005063] dark:text-slate-400">
                             {subject.code || 'Sem código'} · {subject.workload_hours}h
                           </span>
                           <span className="block text-sm leading-6 text-slate-600 dark:text-slate-300">{subject.description}</span>
@@ -167,11 +167,11 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
             </section>
           </div>
 
-          <div className="shrink-0 border-t border-slate-200 bg-slate-50/80 backdrop-blur-xs px-5 py-4 sm:px-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end dark:border-slate-800 dark:bg-slate-900/90">
+          <div className="shrink-0 border-t border-slate-200 bg-slate-50/80 backdrop-blur-xs px-5 py-4 sm:px-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end dark:border-[#005063]/30 dark:bg-[#081a26]/90">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-11 rounded-xl border border-slate-300 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="min-h-11 rounded-xl border border-slate-300 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
             >
               Cancelar
             </button>

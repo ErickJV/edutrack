@@ -228,10 +228,10 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-50">
+    <div className="min-h-screen bg-[#dce6ef] text-[#0d3950] transition-colors dark:bg-[#040f17] dark:text-slate-50">
       <div className="flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         {/* Navigation & Header */}
-        <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800">
+        <header className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 dark:border-[#005063]/30">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <Brand />
             <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 type="button"
                 onClick={() => void leave()}
                 disabled={leaving}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-white/80 px-4 text-sm font-semibold text-[#0d3950] transition hover:bg-white hover:text-[#0d3950] focus-visible:outline-2 focus-visible:outline-[#005063] dark:border-[#005063]/30 dark:bg-[#081a26]/80 dark:text-slate-300 dark:hover:bg-[#041019] dark:hover:text-white"
               >
                 <LogOut className="size-4" aria-hidden="true" />
                 {leaving ? 'Saindo...' : 'Sair'}
@@ -255,13 +255,13 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
           <div className="flex items-center gap-3">
             <Link
               to="/tarefas"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-200 bg-white p-2 text-slate-600 shadow-xs transition hover:bg-slate-50 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white p-2 text-[#0d3950] shadow-xs transition hover:bg-slate-50 dark:border-[#005063]/30 dark:bg-[#081a26] dark:text-slate-300 dark:hover:bg-[#041019]"
               aria-label="Voltar para Tarefas"
             >
               <ArrowLeft className="size-5" aria-hidden="true" />
             </Link>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-950 dark:text-slate-50 sm:text-3xl">
+              <h1 className="text-2xl font-black tracking-tight text-[#0d3950] dark:text-white sm:text-3xl">
                 Sessão de Estudo
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -276,17 +276,17 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
             <div
               role="tablist"
               aria-label="Seção de Estudo"
-              className="flex rounded-xl border border-slate-200 bg-white p-1 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+              className="flex rounded-xl border border-slate-200/80 bg-white p-1 shadow-xs dark:border-[#005063]/30 dark:bg-[#081a26]"
             >
               <button
                 type="button"
                 role="tab"
                 aria-selected={activeTab === 'workspace'}
                 onClick={() => switchTab('workspace')}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-[#005063] ${
                   activeTab === 'workspace'
-                    ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500'
-                    : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50'
+                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                    : 'text-[#0d3950]/80 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
                 }`}
               >
                 <FileText className="size-3.5" aria-hidden="true" />
@@ -297,10 +297,10 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 role="tab"
                 aria-selected={activeTab === 'readings'}
                 onClick={() => switchTab('readings')}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-[#005063] ${
                   activeTab === 'readings'
-                    ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500'
-                    : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50'
+                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                    : 'text-[#0d3950]/80 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
                 }`}
               >
                 <BookOpen className="size-3.5" aria-hidden="true" />
@@ -320,7 +320,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 id={taskSelectId}
                 value={selectedTaskId}
                 onChange={(e) => handleTaskChange(e.target.value)}
-                className="min-h-9 max-w-[200px] truncate rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-xs focus:border-indigo-600 focus:outline-hidden dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                className="min-h-9 max-w-[200px] truncate rounded-xl border border-slate-200/80 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-xs focus:border-[#005063] focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#081a26] dark:text-slate-100"
               >
                 <option value="">(Estudo Livre sem Tarefa)</option>
                 {tasks.map((task) => (
@@ -337,25 +337,25 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
 
         {/* Selected Task Details Banner */}
         {activeTask ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-3.5 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#005063]/20 bg-[#005063]/5 p-3.5 dark:border-[#005063]/30 dark:bg-[#081a26]">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#005063] dark:text-[#a8d5e5]">
                 Tarefa Vinculada
               </span>
-              <h2 className="text-sm font-black text-slate-900 dark:text-slate-100">
+              <h2 className="text-sm font-black text-[#0d3950] dark:text-white">
                 {activeTask.title} · {activeTask.subject_name}
               </h2>
             </div>
             <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 dark:text-slate-300">
               <span>
                 Estimado:{' '}
-                <strong className="text-slate-900 dark:text-slate-100">
+                <strong className="text-[#0d3950] dark:text-white">
                   {activeTask.estimated_minutes} min
                 </strong>
               </span>
               <span>
                 Realizado:{' '}
-                <strong className="text-indigo-600 dark:text-indigo-400">
+                <strong className="text-[#006768] dark:text-[#a8d5e5]">
                   {activeTask.actual_minutes} min
                 </strong>
               </span>
@@ -407,7 +407,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
             {/* Reading List Actions Header */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="text-lg font-black text-slate-950 dark:text-slate-50">
+                <h3 className="text-lg font-black text-[#0d3950] dark:text-white">
                   Leituras e Livros Vinculados a Provas
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -421,7 +421,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                   setEditingReading(null)
                   setReadingModalOpen(true)
                 }}
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
               >
                 <Plus className="size-4" aria-hidden="true" />
                 Nova Leitura
@@ -430,9 +430,9 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
 
             {/* Grid of Reading Cards */}
             {readings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white py-16 text-center dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white py-16 text-center dark:border-[#005063]/30 dark:bg-[#081a26]">
                 <span className="text-4xl">📚</span>
-                <h4 className="mt-3 text-base font-black text-slate-900 dark:text-slate-100">
+                <h4 className="mt-3 text-base font-black text-[#0d3950] dark:text-white">
                   Nenhuma leitura cadastrada
                 </h4>
                 <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
@@ -445,7 +445,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                     setEditingReading(null)
                     setReadingModalOpen(true)
                   }}
-                  className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white hover:bg-indigo-700 dark:bg-indigo-500"
+                  className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0d3950] px-4 text-xs font-bold text-white hover:bg-[#005063] dark:bg-[#005063]"
                 >
                   <Plus className="size-3.5" aria-hidden="true" />
                   Cadastrar primeira leitura

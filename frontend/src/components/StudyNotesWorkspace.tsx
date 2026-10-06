@@ -53,12 +53,12 @@ import {
 } from '../api/client'
 
 const FOLDER_COLORS = [
-  { label: 'Índigo', value: 'indigo', bg: 'bg-indigo-500' },
-  { label: 'Ciano', value: 'cyan', bg: 'bg-cyan-500' },
-  { label: 'Esmeralda', value: 'emerald', bg: 'bg-emerald-500' },
-  { label: 'Âmbar', value: 'amber', bg: 'bg-amber-500' },
-  { label: 'Rosa', value: 'rose', bg: 'bg-rose-500' },
-  { label: 'Roxo', value: 'purple', bg: 'bg-purple-500' },
+  { label: 'Azul Profundo', value: 'navy', bg: 'bg-[#0d3950]' },
+  { label: 'Petróleo', value: 'petrol', bg: 'bg-[#005063]' },
+  { label: 'Pinheiro', value: 'pine', bg: 'bg-[#006768]' },
+  { label: 'Ciano', value: 'cyan', bg: 'bg-cyan-600' },
+  { label: 'Esmeralda', value: 'emerald', bg: 'bg-emerald-600' },
+  { label: 'Âmbar', value: 'amber', bg: 'bg-amber-600' },
 ]
 
 export type FontFamilyChoice =
@@ -81,13 +81,13 @@ const FONT_OPTIONS: { id: FontFamilyChoice; label: string; className: string; ca
 ]
 
 const COLOR_PRESETS = [
-  { name: 'Índigo', hex: '#6366F1' },
+  { name: 'Azul Marinho', hex: '#0D3950' },
+  { name: 'Petróleo', hex: '#005063' },
+  { name: 'Pinheiro', hex: '#006768' },
   { name: 'Ciano', hex: '#06B6D4' },
   { name: 'Esmeralda', hex: '#10B981' },
   { name: 'Âmbar / Amarelo', hex: '#F59E0B' },
   { name: 'Laranja', hex: '#F97316' },
-  { name: 'Rosa', hex: '#EC4899' },
-  { name: 'Roxo', hex: '#8B5CF6' },
   { name: 'Vermelho', hex: '#EF4444' },
   { name: 'Grafite', hex: '#475569' },
 ]
@@ -132,7 +132,7 @@ export function StudyNotesWorkspace({
   const [viewMode, setViewMode] = useState<ViewModeChoice>('edit')
   const [colorPickerOpen, setColorPickerOpen] = useState(false)
   const [colorTarget, setColorTarget] = useState<'text' | 'highlight'>('text')
-  const [customColor, setCustomColor] = useState('#6366F1')
+  const [customColor, setCustomColor] = useState('#006768')
   const [calloutMenuOpen, setCalloutMenuOpen] = useState(false)
   const [copiedCodeIndex, setCopiedCodeIndex] = useState<number | null>(null)
 
@@ -151,7 +151,7 @@ export function StudyNotesWorkspace({
   // Modals
   const [folderModalOpen, setFolderModalOpen] = useState(false)
   const [folderName, setFolderName] = useState('')
-  const [folderColor, setFolderColor] = useState('indigo')
+  const [folderColor, setFolderColor] = useState('navy')
   const [folderIcon, setFolderIcon] = useState('folder')
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null)
 
@@ -580,7 +580,7 @@ export function StudyNotesWorkspace({
           )
         } else if (full.startsWith('`') && full.endsWith('`')) {
           parts.push(
-            <code key={match.index} className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-indigo-600 dark:bg-slate-800 dark:text-indigo-400">
+            <code key={match.index} className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-[#005063] dark:bg-[#040f17] dark:text-[#006768]">
               {full.slice(1, -1)}
             </code>
           )
@@ -617,8 +617,8 @@ export function StudyNotesWorkspace({
           const codeText = codeBlockContent.join('\n')
           const blockIdx = elements.length
           elements.push(
-            <div key={`code-${blockIdx}`} className="relative my-4 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-slate-50 font-mono text-xs">
-              <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-4 py-1.5 text-[11px] text-slate-400">
+            <div key={`code-${blockIdx}`} className="relative my-4 overflow-hidden rounded-2xl border border-slate-800 bg-[#040f17] text-slate-50 font-mono text-xs">
+              <div className="flex items-center justify-between border-b border-slate-800 bg-[#081a26] px-4 py-1.5 text-[11px] text-slate-400">
                 <span>{codeBlockLang || 'código'}</span>
                 <button
                   type="button"
@@ -671,8 +671,8 @@ export function StudyNotesWorkspace({
 
         if (quoteContent.startsWith('[!NOTE]')) {
           elements.push(
-            <div key={`callout-note-${i}`} className="my-3 flex items-start gap-2.5 rounded-xl border border-indigo-200 bg-indigo-50/70 p-3.5 text-xs text-indigo-950 dark:border-indigo-900/60 dark:bg-indigo-950/30 dark:text-indigo-200">
-              <Info className="size-4 shrink-0 text-indigo-600 dark:text-indigo-400 mt-0.5" />
+            <div key={`callout-note-${i}`} className="my-3 flex items-start gap-2.5 rounded-xl border border-[#005063]/20 bg-[#dce6ef]/40 p-3.5 text-xs text-[#0d3950] dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-slate-200">
+              <Info className="size-4 shrink-0 text-[#005063] dark:text-[#006768] mt-0.5" />
               <div className="flex-1 font-medium">{parseInlineFormatting(quoteContent.replace('[!NOTE]', '').trim())}</div>
             </div>
           )
@@ -704,7 +704,7 @@ export function StudyNotesWorkspace({
         }
 
         elements.push(
-          <blockquote key={`quote-${i}`} className="my-3 border-l-4 border-indigo-500 pl-4 py-1 italic text-slate-700 dark:text-slate-300 text-sm bg-slate-50 dark:bg-slate-900/50 rounded-r-lg">
+          <blockquote key={`quote-${i}`} className="my-3 border-l-4 border-[#006768] pl-4 py-1 italic text-slate-700 dark:text-slate-300 text-sm bg-slate-50 dark:bg-[#040f17] rounded-r-lg">
             {parseInlineFormatting(quoteContent)}
           </blockquote>
         )
@@ -719,7 +719,7 @@ export function StudyNotesWorkspace({
         const taskText = line.replace(/^-\s*\[([ xX])\]\s+/, '')
         elements.push(
           <div key={`check-${i}`} className="my-1.5 flex items-center gap-2 text-sm">
-            <span className={`flex size-4 items-center justify-center rounded border ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700'}`}>
+            <span className={`flex size-4 items-center justify-center rounded border ${isChecked ? 'bg-[#006768] border-[#006768] text-white' : 'border-slate-300 dark:border-slate-700'}`}>
               {isChecked && <Check className="size-3" />}
             </span>
             <span className={isChecked ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'}>
@@ -745,11 +745,11 @@ export function StudyNotesWorkspace({
 
       // Headings
       if (line.startsWith('# ')) {
-        elements.push(<h1 key={`h1-${i}`} className="mt-6 mb-3 text-2xl font-black tracking-tight text-slate-950 dark:text-slate-50 border-b border-slate-200 dark:border-slate-800 pb-1.5">{parseInlineFormatting(line.slice(2))}</h1>)
+        elements.push(<h1 key={`h1-${i}`} className="mt-6 mb-3 text-2xl font-black tracking-tight text-[#0d3950] dark:text-slate-50 border-b border-slate-200 dark:border-slate-800 pb-1.5">{parseInlineFormatting(line.slice(2))}</h1>)
       } else if (line.startsWith('## ')) {
-        elements.push(<h2 key={`h2-${i}`} className="mt-5 mb-2.5 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{parseInlineFormatting(line.slice(3))}</h2>)
+        elements.push(<h2 key={`h2-${i}`} className="mt-5 mb-2.5 text-xl font-bold tracking-tight text-[#0d3950] dark:text-slate-100">{parseInlineFormatting(line.slice(3))}</h2>)
       } else if (line.startsWith('### ')) {
-        elements.push(<h3 key={`h3-${i}`} className="mt-4 mb-2 text-base font-bold text-slate-800 dark:text-slate-200">{parseInlineFormatting(line.slice(4))}</h3>)
+        elements.push(<h3 key={`h3-${i}`} className="mt-4 mb-2 text-base font-bold text-[#005063] dark:text-slate-200">{parseInlineFormatting(line.slice(4))}</h3>)
       } else if (line.startsWith('#### ')) {
         elements.push(<h4 key={`h4-${i}`} className="mt-3 mb-1.5 text-sm font-bold text-slate-700 dark:text-slate-300">{parseInlineFormatting(line.slice(5))}</h4>)
       } else if (line.startsWith('---')) {
@@ -767,33 +767,33 @@ export function StudyNotesWorkspace({
   return (
     <section
       aria-label="Caderno de Anotações e Workspace de Estudo"
-      className="flex w-full flex-col rounded-3xl border border-slate-200 bg-white shadow-sm transition dark:border-slate-800 dark:bg-slate-900"
+      className="flex w-full flex-col rounded-3xl border border-slate-200 bg-white shadow-sm transition dark:border-[#005063]/30 dark:bg-[#081a26]"
     >
       {/* Top Header of the Notebook with Sidebar Drawer Toggle, Fonts & View Modes */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-[#005063]/30 sm:px-6">
         <div className="flex items-center gap-3">
           {/* Explicit Sidebar Drawer Button */}
           <button
             type="button"
             onClick={() => setSidebarOpen((prev) => !prev)}
             aria-label={sidebarOpen ? 'Recolher menu de pastas' : 'Expandir menu de pastas'}
-            className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-[#005063] dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200 dark:hover:bg-[#081a26]"
           >
             {sidebarOpen ? (
               <>
-                <SidebarClose className="size-4 text-indigo-600 dark:text-indigo-400" />
+                <SidebarClose className="size-4 text-[#005063] dark:text-[#006768]" />
                 <span className="hidden sm:inline">Recolher Pastas</span>
               </>
             ) : (
               <>
-                <SidebarOpen className="size-4 text-indigo-600 dark:text-indigo-400" />
+                <SidebarOpen className="size-4 text-[#005063] dark:text-[#006768]" />
                 <span>Pastas & Notas ({notes.length})</span>
               </>
             )}
           </button>
 
           <div>
-            <h3 className="text-sm font-black tracking-tight text-slate-950 dark:text-slate-50 sm:text-base">
+            <h3 className="text-sm font-black tracking-tight text-[#0d3950] dark:text-slate-50 sm:text-base">
               Caderno de Anotações (Textbook)
             </h3>
           </div>
@@ -806,16 +806,16 @@ export function StudyNotesWorkspace({
             <button
               type="button"
               onClick={() => setFontMenuOpen((prev) => !prev)}
-              className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-100"
               title="Escolher fonte tipográfica"
             >
-              <Type className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+              <Type className="size-3.5 text-[#005063] dark:text-[#006768]" />
               <span>{FONT_OPTIONS.find((f) => f.id === selectedFont)?.label || 'Fonte'}</span>
               <ChevronDown className="size-3 text-slate-400" />
             </button>
 
             {fontMenuOpen ? (
-              <div className="absolute right-0 top-9.5 z-40 w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+              <div className="absolute right-0 top-9.5 z-40 w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
                 <span className="block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   Tipografia de Estudo
                 </span>
@@ -832,15 +832,15 @@ export function StudyNotesWorkspace({
                         }}
                         className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs transition ${
                           isSelected
-                            ? 'bg-indigo-50 font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300'
-                            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                            ? 'bg-[#005063]/10 font-bold text-[#0d3950] dark:bg-[#005063]/30 dark:text-slate-100'
+                            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#040f17]'
                         } ${f.className}`}
                       >
                         <div>
                           <div>{f.label}</div>
                           <span className="text-[10px] text-slate-400">{f.category}</span>
                         </div>
-                        {isSelected ? <Check className="size-3.5 text-indigo-600 dark:text-indigo-400" /> : null}
+                        {isSelected ? <Check className="size-3.5 text-[#006768] dark:text-[#005063]" /> : null}
                       </button>
                     )
                   })}
@@ -853,14 +853,14 @@ export function StudyNotesWorkspace({
           <div
             role="group"
             aria-label="Modo de visualização"
-            className="flex rounded-xl border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-800 dark:bg-slate-950"
+            className="flex rounded-xl border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-800 dark:bg-[#040f17]"
           >
             <button
               type="button"
               onClick={() => setViewMode('edit')}
               className={`inline-flex min-h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-bold transition ${
                 viewMode === 'edit'
-                  ? 'bg-white text-indigo-600 shadow-xs dark:bg-slate-800 dark:text-indigo-400'
+                  ? 'bg-white text-[#0d3950] shadow-xs dark:bg-[#081a26] dark:text-slate-100'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
               title="Modo Edição"
@@ -873,7 +873,7 @@ export function StudyNotesWorkspace({
               onClick={() => setViewMode('split')}
               className={`hidden md:inline-flex min-h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-bold transition ${
                 viewMode === 'split'
-                  ? 'bg-white text-indigo-600 shadow-xs dark:bg-slate-800 dark:text-indigo-400'
+                  ? 'bg-white text-[#0d3950] shadow-xs dark:bg-[#081a26] dark:text-slate-100'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
               title="Modo Dividido (Editor + Preview)"
@@ -886,7 +886,7 @@ export function StudyNotesWorkspace({
               onClick={() => setViewMode('preview')}
               className={`inline-flex min-h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-bold transition ${
                 viewMode === 'preview'
-                  ? 'bg-white text-indigo-600 shadow-xs dark:bg-slate-800 dark:text-indigo-400'
+                  ? 'bg-white text-[#0d3950] shadow-xs dark:bg-[#081a26] dark:text-slate-100'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
               title="Modo Leitura / Visualização"
@@ -901,7 +901,7 @@ export function StudyNotesWorkspace({
             <button
               type="button"
               onClick={() => setMobileView(mobileView === 'sidebar' ? 'editor' : 'sidebar')}
-              className="inline-flex min-h-8 items-center rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
+              className="inline-flex min-h-8 items-center rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
             >
               {mobileView === 'sidebar' ? 'Ver Anotação →' : '← Pastas'}
             </button>
@@ -920,7 +920,7 @@ export function StudyNotesWorkspace({
         {/* Left Sub-Column: Folders & Note List */}
         {sidebarOpen ? (
           <aside
-            className={`flex-col border-r border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/40 transition-all duration-300 w-full lg:w-72 xl:w-80 shrink-0 ${
+            className={`flex-col border-r border-slate-200 bg-slate-50/50 p-4 dark:border-[#005063]/30 dark:bg-[#040f17]/40 transition-all duration-300 w-full lg:w-72 xl:w-80 shrink-0 ${
               mobileView === 'editor' ? 'hidden sm:flex' : 'flex'
             }`}
           >
@@ -933,11 +933,11 @@ export function StudyNotesWorkspace({
                 type="button"
                 onClick={() => {
                   setFolderName('')
-                  setFolderColor('indigo')
+                  setFolderColor('navy')
                   setEditingFolderId(null)
                   setFolderModalOpen(true)
                 }}
-                className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-indigo-600 transition hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:text-indigo-400 dark:hover:bg-slate-800"
+                className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-[#006768] transition hover:bg-[#005063]/10 focus-visible:outline-2 focus-visible:outline-[#005063] dark:text-[#005063] dark:hover:bg-[#081a26]"
               >
                 <FolderPlus className="size-3.5" aria-hidden="true" />
                 <span>Nova pasta</span>
@@ -951,8 +951,8 @@ export function StudyNotesWorkspace({
                 onClick={() => setSelectedFolderId('all')}
                 className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
                   selectedFolderId === 'all'
-                    ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500'
-                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300 dark:hover:bg-[#040f17]'
                 }`}
               >
                 <span>Todas</span>
@@ -969,8 +969,8 @@ export function StudyNotesWorkspace({
                       onClick={() => setSelectedFolderId(f.id)}
                       className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
                         isSelected
-                          ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500'
-                          : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                          ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                          : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300 dark:hover:bg-[#040f17]'
                       }`}
                     >
                       <span>{f.name}</span>
@@ -1003,7 +1003,7 @@ export function StudyNotesWorkspace({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar anotação..."
-                className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-indigo-600 focus:outline-hidden dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-[#005063] focus:outline-hidden dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
               />
             </div>
 
@@ -1015,7 +1015,7 @@ export function StudyNotesWorkspace({
               <button
                 type="button"
                 onClick={() => void handleCreateNote()}
-                className="inline-flex min-h-7 items-center gap-1 rounded-lg bg-indigo-50 px-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
+                className="inline-flex min-h-7 items-center gap-1 rounded-lg bg-[#005063]/10 px-2 text-xs font-bold text-[#0d3950] transition hover:bg-[#005063]/20 dark:bg-[#005063]/30 dark:text-slate-200 dark:hover:bg-[#005063]/40"
               >
                 <Plus className="size-3.5" aria-hidden="true" />
                 <span>Nova nota</span>
@@ -1036,10 +1036,10 @@ export function StudyNotesWorkspace({
                       key={note.id}
                       type="button"
                       onClick={() => selectNote(note)}
-                      className={`flex w-full flex-col rounded-xl border p-2.5 text-left transition focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+                      className={`flex w-full flex-col rounded-xl border p-2.5 text-left transition focus-visible:outline-2 focus-visible:outline-[#005063] ${
                         isSelected
-                          ? 'border-indigo-600 bg-indigo-50/70 shadow-xs dark:border-indigo-400 dark:bg-indigo-950/40'
-                          : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/60'
+                          ? 'border-[#006768] bg-[#dce6ef]/50 shadow-xs dark:border-[#006768] dark:bg-[#081a26]'
+                          : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-[#040f17] dark:hover:bg-[#081a26]/60'
                       }`}
                     >
                       <div className="flex w-full items-center justify-between gap-2">
@@ -1059,12 +1059,12 @@ export function StudyNotesWorkspace({
                       {note.subject_name || note.reading_title ? (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {note.subject_name && (
-                            <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[9px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                            <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[9px] font-semibold text-slate-700 dark:bg-[#081a26] dark:text-slate-300">
                               {note.subject_name}
                             </span>
                           )}
                           {note.reading_title && (
-                            <span className="rounded bg-indigo-100/70 px-1.5 py-0.2 text-[9px] font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                            <span className="rounded bg-[#005063]/10 px-1.5 py-0.2 text-[9px] font-semibold text-[#005063] dark:bg-[#005063]/30 dark:text-slate-200">
                               📖 {note.reading_title}
                             </span>
                           )}
@@ -1323,24 +1323,24 @@ export function StudyNotesWorkspace({
                   <button
                     type="button"
                     onClick={() => setColorPickerOpen((prev) => !prev)}
-                    className="inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-[#081a26]"
                     title="Seletor de cores livre (Hex, Roda de Cores, Conta-gotas)"
                   >
-                    <Palette className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <Palette className="size-3.5 text-[#005063] dark:text-[#006768]" />
                     <span className="flex size-3 rounded-full border border-slate-300" style={{ backgroundColor: customColor }} />
                     <span>Cor & Realce</span>
                   </button>
 
                   {colorPickerOpen ? (
-                    <div className="absolute left-0 top-8.5 z-40 w-72 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+                    <div className="absolute left-0 top-8.5 z-40 w-72 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xl dark:border-[#005063]/30 dark:bg-[#081a26]">
                       {/* Target Selector (Texto ou Marca-Texto) */}
-                      <div className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
+                      <div className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-[#040f17]">
                         <button
                           type="button"
                           onClick={() => setColorTarget('text')}
                           className={`flex-1 rounded-lg py-1 text-center text-xs font-bold transition ${
                             colorTarget === 'text'
-                              ? 'bg-white text-indigo-600 shadow-xs dark:bg-slate-900 dark:text-indigo-400'
+                              ? 'bg-white text-[#0d3950] shadow-xs dark:bg-[#081a26] dark:text-slate-100'
                               : 'text-slate-600 dark:text-slate-400'
                           }`}
                         >
@@ -1351,7 +1351,7 @@ export function StudyNotesWorkspace({
                           onClick={() => setColorTarget('highlight')}
                           className={`flex-1 rounded-lg py-1 text-center text-xs font-bold transition ${
                             colorTarget === 'highlight'
-                              ? 'bg-white text-indigo-600 shadow-xs dark:bg-slate-900 dark:text-indigo-400'
+                              ? 'bg-white text-[#0d3950] shadow-xs dark:bg-[#081a26] dark:text-slate-100'
                               : 'text-slate-600 dark:text-slate-400'
                           }`}
                         >
@@ -1378,8 +1378,8 @@ export function StudyNotesWorkspace({
                             type="text"
                             value={customColor}
                             onChange={(e) => setCustomColor(e.target.value)}
-                            placeholder="#6366F1"
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs font-bold uppercase text-slate-800 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                            placeholder="#006768"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs font-bold uppercase text-slate-800 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-100"
                           />
                         </div>
 
@@ -1388,10 +1388,10 @@ export function StudyNotesWorkspace({
                           <button
                             type="button"
                             onClick={() => void handlePickColorFromScreen()}
-                            className="inline-flex size-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
+                            className="inline-flex size-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
                             title="Conta-gotas: capturar cor na tela"
                           >
-                            <Pipette className="size-4 text-indigo-600 dark:text-indigo-400" />
+                            <Pipette className="size-4 text-[#005063] dark:text-[#006768]" />
                           </button>
                         ) : null}
                       </div>
@@ -1427,7 +1427,7 @@ export function StudyNotesWorkspace({
                         <button
                           type="button"
                           onClick={handleApplyColor}
-                          className="rounded-xl bg-indigo-600 px-3 py-1 text-xs font-bold text-white hover:bg-indigo-700 dark:bg-indigo-500"
+                          className="rounded-xl bg-[#0d3950] px-3 py-1 text-xs font-bold text-white hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
                         >
                           Aplicar {colorTarget === 'text' ? 'no Texto' : 'no Realce'}
                         </button>
@@ -1473,7 +1473,7 @@ export function StudyNotesWorkspace({
                   <button
                     type="button"
                     onClick={() => setCalloutMenuOpen((prev) => !prev)}
-                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-indigo-700 hover:bg-white dark:text-indigo-300 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-[#005063] hover:bg-white dark:text-[#006768] dark:hover:bg-slate-800"
                     title="Blocos de Destaque / Callouts"
                   >
                     <Info className="size-3.5" />
@@ -1481,14 +1481,14 @@ export function StudyNotesWorkspace({
                   </button>
 
                   {calloutMenuOpen ? (
-                    <div className="absolute left-0 top-8 z-30 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-slate-900 space-y-1">
+                    <div className="absolute left-0 top-8 z-30 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26] space-y-1">
                       <button
                         type="button"
                         onClick={() => {
                           insertFormatting('> [!NOTE] ')
                           setCalloutMenuOpen(false)
                         }}
-                        className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-xs font-semibold text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/40"
+                        className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-xs font-semibold text-[#0d3950] hover:bg-[#005063]/10 dark:text-slate-200 dark:hover:bg-[#005063]/30"
                       >
                         <Info className="size-3.5" />
                         <span>Nota Informativa</span>
@@ -1573,7 +1573,7 @@ export function StudyNotesWorkspace({
               <div className="mt-3 flex flex-1 gap-4 overflow-hidden min-h-[440px]">
                 {/* Editor Textarea Pane */}
                 {(viewMode === 'edit' || viewMode === 'split') && (
-                  <div className="flex flex-col flex-1 rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/40 p-2 shadow-2xs">
+                  <div className="flex flex-col flex-1 rounded-2xl border border-slate-200 bg-white dark:border-[#005063]/30 dark:bg-[#040f17]/40 p-2 shadow-2xs">
                     <textarea
                       ref={textareaRef}
                       value={editorContent}
@@ -1591,7 +1591,7 @@ export function StudyNotesWorkspace({
 
                 {/* Rich Markdown Preview Pane */}
                 {(viewMode === 'preview' || viewMode === 'split') && (
-                  <div className={`flex flex-col flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-950/70 shadow-2xs ${activeFontClass}`}>
+                  <div className={`flex flex-col flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-[#005063]/30 dark:bg-[#040f17]/70 shadow-2xs ${activeFontClass}`}>
                     <div className="prose dark:prose-invert max-w-none text-slate-900 dark:text-slate-100">
                       {renderFormattedPreview(editorContent)}
                     </div>
@@ -1618,7 +1618,7 @@ export function StudyNotesWorkspace({
                 <div className="flex items-center gap-2">
                   <span aria-live="polite" className="font-semibold">
                     {saveStatus === 'saving' ? (
-                      <span className="text-indigo-600 dark:text-indigo-400">Salvando alterações...</span>
+                      <span className="text-[#005063] dark:text-[#006768]">Salvando alterações...</span>
                     ) : saveStatus === 'saved' ? (
                       <span className="text-emerald-600 dark:text-emerald-400">Salvo ✓</span>
                     ) : saveStatus === 'error' ? (
@@ -1633,7 +1633,7 @@ export function StudyNotesWorkspace({
           ) : (
             <div className="flex h-full flex-col items-center justify-center py-24 text-center">
               <span className="text-5xl">📝</span>
-              <h4 className="mt-4 text-xl font-black text-slate-900 dark:text-slate-100">
+              <h4 className="mt-4 text-xl font-black text-[#0d3950] dark:text-slate-100">
                 Seu Caderno de Estudo
               </h4>
               <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
@@ -1643,7 +1643,7 @@ export function StudyNotesWorkspace({
               <button
                 type="button"
                 onClick={() => void handleCreateNote()}
-                className="mt-5 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                className="mt-5 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-5 text-xs font-bold text-white shadow-sm hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
               >
                 <Plus className="size-4" aria-hidden="true" />
                 Criar primeira anotação
@@ -1653,7 +1653,6 @@ export function StudyNotesWorkspace({
         </main>
       </div>
 
-      {/* Folder Creation / Edit Modal */}
       {folderModalOpen ? (
         <div
           role="dialog"
@@ -1661,8 +1660,8 @@ export function StudyNotesWorkspace({
           aria-labelledby="folder-modal-title"
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
-            <h3 id="folder-modal-title" className="text-base font-black text-slate-950 dark:text-slate-50">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
+            <h3 id="folder-modal-title" className="text-base font-black text-[#0d3950] dark:text-slate-50">
               {editingFolderId ? 'Editar Pasta' : 'Nova Pasta'}
             </h3>
             <form onSubmit={handleSaveFolder} className="mt-4 space-y-3">
@@ -1680,7 +1679,7 @@ export function StudyNotesWorkspace({
                   value={folderName}
                   onChange={(e) => setFolderName(e.target.value)}
                   placeholder="Ex: Engenharia de Software"
-                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-100 dark:focus:border-[#006768]"
                 />
               </div>
 
@@ -1696,7 +1695,7 @@ export function StudyNotesWorkspace({
                       onClick={() => setFolderColor(c.value)}
                       className={`size-6 rounded-full ${c.bg} transition ${
                         folderColor === c.value
-                          ? 'ring-2 ring-indigo-600 ring-offset-2 dark:ring-offset-slate-900'
+                          ? 'ring-2 ring-[#006768] ring-offset-2 dark:ring-offset-slate-900'
                           : 'opacity-70 hover:opacity-100'
                       }`}
                       title={c.label}
@@ -1709,13 +1708,13 @@ export function StudyNotesWorkspace({
                 <button
                   type="button"
                   onClick={() => setFolderModalOpen(false)}
-                  className="min-h-9 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="min-h-9 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-[#040f17]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="min-h-9 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                  className="min-h-9 rounded-xl bg-[#0d3950] px-4 text-xs font-bold text-white hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
                 >
                   Salvar
                 </button>

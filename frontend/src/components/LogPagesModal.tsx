@@ -65,8 +65,8 @@ export function LogPagesModal({
       aria-labelledby="log-pages-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
     >
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
-        <h3 id="log-pages-modal-title" className="text-base font-black text-slate-950 dark:text-slate-50">
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
+        <h3 id="log-pages-modal-title" className="text-base font-black text-[#0d3950] dark:text-slate-50">
           Registrar Leitura
         </h3>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -95,7 +95,7 @@ export function LogPagesModal({
               required
               value={pages}
               onChange={(e) => setPages(Number(e.target.value))}
-              className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+              className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-100 dark:focus:border-[#006768]"
             />
           </div>
 
@@ -111,7 +111,7 @@ export function LogPagesModal({
               type="date"
               value={readDate}
               onChange={(e) => setReadDate(e.target.value)}
-              className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+              className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-100 dark:focus:border-[#006768]"
             />
           </div>
 
@@ -126,7 +126,7 @@ export function LogPagesModal({
             <button
               type="submit"
               disabled={loading}
-              className="min-h-9 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+              className="min-h-9 rounded-xl bg-[#0d3950] px-5 text-xs font-bold text-white hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#0d3950] dark:bg-[#005063] dark:hover:bg-[#006768]"
             >
               {loading ? 'Salvando...' : 'Confirmar'}
             </button>

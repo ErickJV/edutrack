@@ -58,6 +58,8 @@ htmlcov/
 # Frontend (Node / TypeScript / Vite / Playwright)
 # --------------------------------------------------
 node_modules/
+.pnpm-store/
+.pnpm/
 *.tsbuildinfo
 dist/
 frontend/dist/

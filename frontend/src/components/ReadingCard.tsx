@@ -28,7 +28,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   },
   READING: {
     label: 'Lendo',
-    color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300',
+    color: 'bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]',
   },
   COMPLETED: {
     label: 'Concluído',
@@ -59,14 +59,14 @@ export function ReadingCard({
   return (
     <article
       aria-label={`Leitura acadêmica: ${reading.title}`}
-      className="relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+      className="relative flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-[#005063]/30 dark:bg-[#081a26]"
     >
       <div>
         {/* Top Header: Subject & Status */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
             {reading.subject_name ? (
-              <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+              <span className="rounded-md bg-[#0d3950]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#0d3950] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
                 {reading.subject_name}
               </span>
             ) : null}
@@ -83,20 +83,20 @@ export function ReadingCard({
               type="button"
               onClick={() => setMenuOpen((prev) => !prev)}
               aria-label={`Opções da leitura ${reading.title}`}
-              className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-[#041019] dark:hover:text-slate-200"
             >
               <MoreVertical className="size-4" aria-hidden="true" />
             </button>
 
             {menuOpen ? (
-              <div className="absolute right-0 top-9 z-20 w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+              <div className="absolute right-0 top-9 z-20 w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-[#005063]/30 dark:bg-[#081a26]">
                 <button
                   type="button"
                   onClick={() => {
                     setMenuOpen(false)
                     onEdit(reading)
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-[#041019]"
                 >
                   <FileEdit className="size-3.5" aria-hidden="true" />
                   Editar leitura
@@ -107,7 +107,7 @@ export function ReadingCard({
                     setMenuOpen(false)
                     onLogCustomPages(reading)
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-[#041019]"
                 >
                   <BookOpen className="size-3.5" aria-hidden="true" />
                   Registrar páginas
@@ -118,7 +118,7 @@ export function ReadingCard({
                     setMenuOpen(false)
                     onCreateNote(reading)
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-[#041019]"
                 >
                   <FileEdit className="size-3.5" aria-hidden="true" />
                   Criar anotação
@@ -141,7 +141,7 @@ export function ReadingCard({
 
         {/* Book Title & Author */}
         <div className="mt-2.5">
-          <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 line-clamp-2">
+          <h4 className="text-sm font-black text-[#0d3950] dark:text-white line-clamp-2">
             {reading.title}
           </h4>
           {reading.author ? (
@@ -153,8 +153,8 @@ export function ReadingCard({
 
         {/* Exam Linkage Info */}
         {reading.exam_name ? (
-          <div className="mt-2.5 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-2 text-xs text-slate-600 dark:bg-slate-950/60 dark:text-slate-300">
-            <div className="flex items-center gap-1 font-bold text-indigo-700 dark:text-indigo-400">
+          <div className="mt-2.5 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-2 text-xs text-slate-600 dark:bg-[#041019] dark:text-slate-300">
+            <div className="flex items-center gap-1 font-bold text-[#005063] dark:text-[#a8d5e5]">
               <GraduationCap className="size-3.5" aria-hidden="true" />
               <span>{reading.exam_name}</span>
             </div>
@@ -178,7 +178,7 @@ export function ReadingCard({
             <span className="text-slate-600 dark:text-slate-300">
               {reading.current_page} de {reading.total_pages} páginas
             </span>
-            <span className="font-bold text-slate-900 dark:text-slate-100">
+            <span className="font-bold text-[#0d3950] dark:text-white">
               {reading.progress_percent}%
             </span>
           </div>
@@ -188,7 +188,7 @@ export function ReadingCard({
               className={`h-full transition-all duration-300 ${
                 reading.progress_percent >= 100
                   ? 'bg-emerald-500'
-                  : 'bg-indigo-600 dark:bg-indigo-500'
+                  : 'bg-[#006768] dark:bg-[#005063]'
               }`}
               style={{ width: `${reading.progress_percent}%` }}
             />
@@ -196,7 +196,7 @@ export function ReadingCard({
 
           {/* Suggested Daily Pace */}
           {reading.suggested_pages_per_day > 0 && reading.status !== 'COMPLETED' ? (
-            <p className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
+            <p className="text-[11px] font-semibold text-[#005063] dark:text-[#a8d5e5]">
               💡 Ritmo sugerido: ~{reading.suggested_pages_per_day} págs/dia
             </p>
           ) : null}
@@ -209,7 +209,7 @@ export function ReadingCard({
           <button
             type="button"
             onClick={() => onQuickLog10(reading)}
-            className="inline-flex min-h-8 flex-1 items-center justify-center gap-1 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white shadow-xs transition hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+            className="inline-flex min-h-8 flex-1 items-center justify-center gap-1 rounded-xl bg-[#0d3950] px-3 text-xs font-bold text-white shadow-xs transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
           >
             <Plus className="size-3.5" aria-hidden="true" />
             +10 págs
@@ -224,7 +224,7 @@ export function ReadingCard({
         <button
           type="button"
           onClick={() => onCreateNote(reading)}
-          className="inline-flex min-h-8 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700 transition hover:bg-white hover:text-slate-950 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="inline-flex min-h-8 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700 transition hover:bg-white hover:text-[#0d3950] dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-200 dark:hover:bg-[#081a26]"
           title="Criar anotação vinculada"
         >
           <FileEdit className="size-3.5" aria-hidden="true" />

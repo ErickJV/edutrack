@@ -115,17 +115,17 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
         className="relative flex flex-col w-full max-w-lg max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-950/20 dark:bg-slate-900 dark:border dark:border-slate-800"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="shrink-0 flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6 bg-white z-10 dark:border-slate-800 dark:bg-slate-900">
+        <header className="shrink-0 flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6 bg-white z-10 dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">Personalização</p>
-            <h2 id="subject-edit-title" className="mt-1 text-xl font-black tracking-tight text-slate-950 dark:text-slate-50">
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#006768] dark:text-[#005063]">Personalização</p>
+            <h2 id="subject-edit-title" className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-slate-50">
               Editar disciplina
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid size-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 dark:focus-visible:outline-indigo-400"
+            className="grid size-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:text-slate-400 dark:hover:bg-[#040f17] dark:hover:text-slate-100 dark:focus-visible:outline-[#006768]"
             aria-label="Fechar modal"
           >
             <X size={18} aria-hidden="true" />
@@ -136,9 +136,9 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-4">
             {error ? <Alert>{error}</Alert> : null}
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-[#005063]/30 dark:bg-[#040f17]">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Disciplina da matriz</p>
-              <p className="mt-1 text-base font-extrabold text-slate-950 dark:text-slate-50">{enrollment.subject.name}</p>
+              <p className="mt-1 text-base font-extrabold text-[#0d3950] dark:text-slate-50">{enrollment.subject.name}</p>
               <p className="mt-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 {enrollment.subject.code || 'Sem código'} · Matriz oficial: {enrollment.subject.workload_hours}h
               </p>
@@ -151,7 +151,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
                   <button
                     type="button"
                     onClick={() => setIsCreatingNew(true)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#006768] hover:underline dark:text-[#005063]"
                   >
                     <Plus size={14} aria-hidden="true" /> Cadastrar novo
                   </button>
@@ -181,9 +181,9 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
                 ) : null}
               </div>
             ) : (
-              <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3.5 dark:border-indigo-900/50 dark:bg-indigo-950/30 space-y-2">
+              <div className="rounded-xl border border-[#005063]/20 bg-[#dce6ef]/40 p-3.5 dark:border-[#005063]/40 dark:bg-[#040f17] space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-extrabold uppercase tracking-wide text-indigo-700 dark:text-indigo-400">
+                  <span className="text-xs font-extrabold uppercase tracking-wide text-[#0d3950] dark:text-slate-200">
                     Novo professor
                   </span>
                   <button
@@ -224,11 +224,11 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
             />
           </div>
 
-          <div className="shrink-0 border-t border-slate-200 bg-slate-50/80 backdrop-blur-xs px-5 py-4 sm:px-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end dark:border-slate-800 dark:bg-slate-900/90">
+          <div className="shrink-0 border-t border-slate-200 bg-slate-50/80 backdrop-blur-xs px-5 py-4 sm:px-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end dark:border-[#005063]/30 dark:bg-[#081a26]/90">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-11 rounded-xl border border-slate-300 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="min-h-11 rounded-xl border border-slate-300 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
             >
               Cancelar
             </button>

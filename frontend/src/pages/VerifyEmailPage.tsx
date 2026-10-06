@@ -62,25 +62,63 @@ export function VerifyEmailPage() {
   }
 
   return (
-    <AuthShell eyebrow="Última etapa" title="Confirme seu e-mail" description="Digite o código de seis dígitos que enviamos para seu endereço institucional.">
+    <AuthShell
+      title="Verificação de e-mail"
+      description="Digite o código de 6 dígitos enviado para seu e-mail institucional."
+    >
       <div className="space-y-6">
-        <div className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-indigo-900 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-200">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white text-indigo-600 shadow-sm dark:bg-slate-800 dark:text-indigo-400"><MailCheck size={22} aria-hidden="true" /></span>
-          <div className="min-w-0"><p className="text-xs font-bold uppercase tracking-wider text-indigo-500 dark:text-indigo-400">Código enviado para</p><p className="truncate font-bold">{email}</p></div>
+        <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3.5 text-[#0d3950]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[#006768] text-white shadow-sm">
+            <MailCheck size={20} aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-arial text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Código enviado para
+            </p>
+            <p className="truncate font-semibold text-[#0d3950]">{email}</p>
+          </div>
         </div>
         {error ? <Alert>{error}</Alert> : null}
         {message ? <Alert tone="success">{message}</Alert> : null}
         <form className="space-y-5" onSubmit={submit}>
-          <Input ref={inputRef} label="Código de verificação" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength={6} placeholder="000000" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} className="text-center text-2xl font-black tracking-[0.45em]" autoFocus required />
-          <PrimaryButton loading={loading} type="submit">Confirmar e continuar</PrimaryButton>
+          <Input
+            ref={inputRef}
+            label="Código de verificação"
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9]*"
+            maxLength={6}
+            placeholder="000000"
+            value={code}
+            onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+            className="text-center font-montserrat text-2xl font-bold tracking-[0.35em]"
+            autoFocus
+            required
+          />
+          <PrimaryButton loading={loading} type="submit">
+            Confirmar código
+          </PrimaryButton>
         </form>
-        <div className="text-center text-sm text-slate-600 dark:text-slate-400">
+        <div className="text-center font-arial text-sm text-slate-600">
           Não recebeu?{' '}
-          <button type="button" disabled={seconds > 0} onClick={() => void resend()} className="min-h-11 px-1 font-extrabold text-indigo-600 hover:underline disabled:text-slate-400 dark:text-indigo-400 dark:disabled:text-slate-600">
+          <button
+            type="button"
+            disabled={seconds > 0}
+            onClick={() => void resend()}
+            className="min-h-10 px-1 font-bold text-[#005063] underline transition-colors hover:text-[#0d3950] disabled:text-slate-400 disabled:no-underline"
+          >
             {seconds > 0 ? `Reenviar em ${seconds}s` : 'Reenviar código'}
           </button>
         </div>
-        <p className="text-center text-sm"><Link to="/cadastro" className="font-bold text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400">Usar outro e-mail</Link></p>
+        <p className="text-center font-arial text-sm">
+          <Link
+            to="/cadastro"
+            className="font-semibold text-slate-600 transition-colors hover:text-[#0d3950] hover:underline"
+          >
+            Usar outro e-mail
+          </Link>
+        </p>
       </div>
     </AuthShell>
   )

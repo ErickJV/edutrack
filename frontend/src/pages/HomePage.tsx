@@ -61,8 +61,8 @@ export function HomePage() {
   }
 
   return (
-    <main className="min-h-dvh bg-slate-50 dark:bg-slate-950">
-      <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
+      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
         <div className="mx-auto max-w-6xl px-5 py-4 sm:px-8">
           <div className="flex items-center justify-between gap-4">
             <Brand />
@@ -73,7 +73,7 @@ export function HomePage() {
                 aria-label="Sair"
                 onClick={() => void leave()}
                 disabled={leaving}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 dark:focus-visible:outline-indigo-400"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-[#0d3950]/80 transition hover:bg-slate-100 hover:text-[#0d3950] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] disabled:opacity-50 dark:text-slate-300 dark:hover:bg-[#041019] dark:hover:text-white dark:focus-visible:outline-[#006768]"
               >
                 <LogOut size={18} aria-hidden="true" />
                 <span className="hidden sm:inline">{leaving ? 'Saindo…' : 'Sair'}</span>
@@ -87,26 +87,26 @@ export function HomePage() {
       </header>
 
       <div className="mx-auto max-w-6xl px-5 py-9 sm:px-8 sm:py-14">
-        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900" aria-labelledby="upcoming-tasks">
+        <section className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]" aria-labelledby="upcoming-tasks">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="grid size-11 place-items-center rounded-2xl bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+              <div className="grid size-11 place-items-center rounded-2xl bg-[#0d3950]/10 text-[#0d3950] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
                 <Clock3 size={22} aria-hidden="true" />
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-400">Próximas entregas</p>
-                <h1 id="upcoming-tasks" className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-slate-50">Itens urgentes das próximas 48 horas</h1>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">Próximas entregas</p>
+                <h1 id="upcoming-tasks" className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-white">Itens urgentes das próximas 48 horas</h1>
               </div>
             </div>
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-              Olá, <span className="font-bold text-slate-900 dark:text-slate-100">{firstName}</span>.
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+              Olá, <span className="font-bold text-[#0d3950] dark:text-white">{firstName}</span>.
             </p>
           </div>
 
           {summaryLoading ? (
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {Array.from({ length: 2 }).map((_, index) => (
-                <article key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
+                <article key={index} className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
                   <div className="h-4 w-24 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
                   <div className="mt-4 h-6 w-48 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
                   <div className="mt-3 h-3 w-32 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
@@ -114,7 +114,7 @@ export function HomePage() {
               ))}
             </div>
           ) : summary && summary.upcoming_tasks.length === 0 ? (
-            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
+            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-6 text-sm text-slate-600 dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-300">
               Nenhuma entrega urgente encontrada no momento.
             </p>
           ) : (
@@ -122,13 +122,13 @@ export function HomePage() {
               {(summary?.upcoming_tasks ?? []).map((task) => {
                 const due = formatDueLabel(task.due_date)
                 return (
-                  <article key={task.id} className={`rounded-3xl border p-5 shadow-sm ${due.urgent ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60'}`}>
+                  <article key={task.id} className={`rounded-3xl border p-5 shadow-sm ${due.urgent ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200/80 bg-slate-50/80 dark:border-[#005063]/20 dark:bg-[#041019]'}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{task.subject_name}</p>
-                        <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-slate-50">{task.title}</h3>
+                        <h3 className="mt-1 text-lg font-black tracking-tight text-[#0d3950] dark:text-white">{task.title}</h3>
                       </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${due.urgent ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300'}`}>
+                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${due.urgent ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300' : 'bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/40 dark:text-[#a8d5e5]'}`}>
                         {due.urgent ? 'Menos de 48h' : 'Próxima'}
                       </span>
                     </div>
@@ -143,21 +143,21 @@ export function HomePage() {
 
         {summaryError ? <div className="mt-6"><Alert>{summaryError}</Alert></div> : null}
 
-        <section className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900" aria-labelledby="dashboard-summary">
+        <section className="mt-6 rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]" aria-labelledby="dashboard-summary">
           <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+            <div className="grid size-11 place-items-center rounded-2xl bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
               <GraduationCap size={22} aria-hidden="true" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-400">Painel acadêmico</p>
-              <h2 id="dashboard-summary" className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-slate-50">Métricas ativas da sua rotina</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">Painel acadêmico</p>
+              <h2 id="dashboard-summary" className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-white">Métricas ativas da sua rotina</h2>
             </div>
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {summaryLoading ? (
               Array.from({ length: 6 }).map((_, index) => (
-                <article key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
+                <article key={index} className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
                   <div className="h-4 w-28 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
                   <div className="mt-4 h-9 w-20 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
                   <div className="mt-3 h-3 w-36 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
@@ -165,34 +165,34 @@ export function HomePage() {
               ))
             ) : (
               <>
-                <article className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <article className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Disciplinas ativas</p>
-                  <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{summary?.subjects_count ?? 0}</p>
+                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{summary?.subjects_count ?? 0}</p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Matérias acompanhadas no período atual.</p>
                 </article>
-                <article className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <article className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas pendentes</p>
-                  <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{summary?.pending_tasks_count ?? 0}</p>
+                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{summary?.pending_tasks_count ?? 0}</p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Próximas entregas e revisões em aberto.</p>
                 </article>
-                <article className={`rounded-3xl border p-5 shadow-sm ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60'}`}>
+                <article className={`rounded-3xl border p-5 shadow-sm ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200/80 bg-slate-50/80 dark:border-[#005063]/20 dark:bg-[#041019]'}`}>
                   <p className={`text-sm font-semibold ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-slate-500 dark:text-slate-400'}`}>Tarefas vencidas</p>
-                  <p className={`mt-2 text-3xl font-black ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-slate-950 dark:text-slate-50'}`}>{summary?.overdue_tasks_count ?? 0}</p>
+                  <p className={`mt-2 text-3xl font-black ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-[#0d3950] dark:text-white'}`}>{summary?.overdue_tasks_count ?? 0}</p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Itens com prazo expirado não concluídos.</p>
                 </article>
-                <article className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <article className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas concluídas</p>
-                  <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{summary?.completed_tasks_count ?? 0}</p>
+                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{summary?.completed_tasks_count ?? 0}</p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Itens já finalizados na sua rotina.</p>
                 </article>
-                <article className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <article className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Progresso ponderado</p>
-                  <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{summary?.weighted_progress_percent ?? 0}%</p>
+                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{summary?.weighted_progress_percent ?? 0}%</p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Desempenho geral das disciplinas ativas.</p>
                 </article>
-                <article className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <article className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tempo de estudo</p>
-                  <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{summary?.actual_minutes_total ?? 0} min</p>
+                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{summary?.actual_minutes_total ?? 0} min</p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                     Planejado {summary?.planned_minutes_total ?? 0} min
                   </p>
@@ -202,35 +202,35 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900" aria-labelledby="progress-subjects">
+        <section className="mt-6 rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]" aria-labelledby="progress-subjects">
           <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-400">
+            <div className="grid size-11 place-items-center rounded-2xl bg-[#006768]/10 text-[#006768] dark:bg-[#006768]/30 dark:text-[#a8d5e5]">
               <BookOpenCheck size={22} aria-hidden="true" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-400">Desempenho por disciplina</p>
-              <h2 id="progress-subjects" className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-slate-50">Gráfico de progresso por disciplina</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#006768] dark:text-[#a8d5e5]">Desempenho por disciplina</p>
+              <h2 id="progress-subjects" className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-white">Gráfico de progresso por disciplina</h2>
             </div>
           </div>
 
           {activeSubjects.length === 0 ? (
-            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
+            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-6 text-sm text-slate-600 dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-300">
               Nenhuma disciplina ativa encontrada para exibir o gráfico.
             </p>
           ) : (
             <div className="mt-6 grid gap-4 xl:grid-cols-2">
               {activeSubjects.map((subject) => (
-                <article key={subject.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <article key={subject.id} className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{subject.subject.semester}º semestre</p>
-                      <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-slate-50">{subject.subject.name}</h3>
+                      <h3 className="mt-1 text-lg font-black tracking-tight text-[#0d3950] dark:text-white">{subject.subject.name}</h3>
                     </div>
-                    <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">{subject.progress_percent}%</span>
+                    <span className="rounded-full bg-[#005063]/10 px-3 py-1 text-xs font-bold text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">{subject.progress_percent}%</span>
                   </div>
                   <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-cyan-500"
+                      className="h-full rounded-full bg-[#006768] dark:bg-[#005063]"
                       style={{ width: `${subject.progress_percent}%` }}
                       role="progressbar"
                       aria-label={`${subject.subject.name}: ${subject.progress_percent}% concluído`}
@@ -248,24 +248,24 @@ export function HomePage() {
           )}
         </section>
 
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900" aria-labelledby="academic-profile">
+        <section className="mt-6 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]" aria-labelledby="academic-profile">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.14em] text-indigo-600 dark:text-indigo-400">Seu perfil</p>
-              <h2 id="academic-profile" className="mt-2 text-xl font-black text-slate-950 dark:text-slate-50">Informações acadêmicas</h2>
+              <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#005063] dark:text-[#a8d5e5]">Seu perfil</p>
+              <h2 id="academic-profile" className="mt-2 text-xl font-black text-[#0d3950] dark:text-white">Informações acadêmicas</h2>
             </div>
-            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
               <GraduationCap size={24} aria-hidden="true" />
             </span>
           </div>
           <dl className="mt-7 grid gap-6 sm:grid-cols-3 sm:gap-8">
             <div>
               <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Graduação</dt>
-              <dd className="mt-1 font-bold leading-6 text-slate-900 dark:text-slate-100">{user?.course_offering?.course_name}</dd>
+              <dd className="mt-1 font-bold leading-6 text-[#0d3950] dark:text-white">{user?.course_offering?.course_name}</dd>
             </div>
             <div>
               <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Modalidade</dt>
-              <dd className="mt-1 font-bold text-slate-900 dark:text-slate-100">{user?.course_offering?.modality_label}</dd>
+              <dd className="mt-1 font-bold text-[#0d3950] dark:text-white">{user?.course_offering?.modality_label}</dd>
             </div>
             <div>
               <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Vínculo</dt>

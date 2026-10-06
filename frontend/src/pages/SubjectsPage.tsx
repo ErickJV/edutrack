@@ -51,8 +51,8 @@ export function SubjectsPage() {
   if (loading) return <PageLoader />
 
   return (
-    <main className="min-h-dvh bg-slate-50 dark:bg-slate-950">
-      <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
+      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
         <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
           <div className="flex items-center justify-between gap-4">
             <Brand />
@@ -61,7 +61,7 @@ export function SubjectsPage() {
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 text-sm font-bold text-white transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
               >
                 <Plus size={18} aria-hidden="true" />
                 Configurar semestre
@@ -75,13 +75,13 @@ export function SubjectsPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
-        <section className="rounded-[2rem] bg-gradient-to-br from-indigo-700 via-indigo-700 to-cyan-600 px-6 py-8 text-white shadow-2xl shadow-indigo-950/15 sm:px-10 sm:py-10">
+        <section className="rounded-[2rem] bg-[#0d3950] border border-[#005063]/40 px-6 py-8 text-white shadow-xl sm:px-10 sm:py-10 dark:bg-[#081a26] dark:border-[#005063]/50">
           <div className="max-w-3xl space-y-4">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-indigo-50">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white">
               <BookOpen size={14} aria-hidden="true" /> Minhas disciplinas
             </p>
-            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Acompanhe sua matriz curricular e o progresso de cada disciplina.</h1>
-            <p className="max-w-2xl text-base leading-7 text-indigo-100">
+            <h1 className="text-3xl font-black tracking-tight sm:text-4xl text-white">Acompanhe sua matriz curricular e o progresso de cada disciplina.</h1>
+            <p className="max-w-2xl text-base leading-7 text-[#dce6ef]/90">
               Selecione as matérias que está cursando neste semestre e acompanhe o avanço individual de cada disciplina.
             </p>
           </div>
@@ -90,30 +90,30 @@ export function SubjectsPage() {
         {error ? <div className="mt-6"><Alert>{error}</Alert></div> : null}
 
         <section className="mt-6 grid gap-4 sm:grid-cols-3">
-          <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Disciplinas ativas</p>
-            <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{activeSubjects.length}</p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{activeSubjects.length}</p>
           </article>
-          <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Média de progresso</p>
-            <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{progressAverage}%</p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{progressAverage}%</p>
           </article>
-          <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Carga horária ativa</p>
-            <p className="mt-2 text-3xl font-black text-slate-950 dark:text-slate-50">{totalHours}h</p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{totalHours}h</p>
           </article>
         </section>
 
-        <section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+        <section className="mt-8 rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-400">Disciplinas ativas</p>
-              <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-slate-50">Progresso por matéria</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">Disciplinas ativas</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-white">Progresso por matéria</h2>
             </div>
             <button
               type="button"
               onClick={() => setModalOpen(true)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200 px-4 text-sm font-bold text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950/40"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#005063]/30 px-4 text-sm font-bold text-[#005063] transition hover:bg-[#005063]/10 dark:border-[#005063]/50 dark:text-[#a8d5e5] dark:hover:bg-[#005063]/30"
             >
               <ClipboardList size={17} aria-hidden="true" />
               Ajustar seleção
@@ -121,16 +121,16 @@ export function SubjectsPage() {
           </div>
 
           {activeSubjects.length === 0 ? (
-            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center dark:border-slate-700 dark:bg-slate-900/60">
+            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-8 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
               <LoaderCircle className="mx-auto text-slate-400 dark:text-slate-500" size={28} aria-hidden="true" />
-              <p className="mt-4 text-lg font-black text-slate-950 dark:text-slate-50">Nenhuma disciplina ativa ainda</p>
+              <p className="mt-4 text-lg font-black text-[#0d3950] dark:text-white">Nenhuma disciplina ativa ainda</p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Configure seu semestre para visualizar o progresso e começar a acompanhar sua rotina.
               </p>
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 text-sm font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
               >
                 <Plus size={17} aria-hidden="true" />
                 Selecionar matérias
@@ -139,11 +139,11 @@ export function SubjectsPage() {
           ) : (
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               {activeSubjects.map((item) => (
-                <article key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
+                <article key={item.id} className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{toSemesterLabel(item.subject.semester)}</p>
-                      <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950 dark:text-slate-50">{item.subject.name}</h3>
+                      <h3 className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-white">{item.subject.name}</h3>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
@@ -160,16 +160,16 @@ export function SubjectsPage() {
                     </div>
                   </div>
                   <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true">
-                    <div className="h-full rounded-full bg-indigo-600 dark:bg-indigo-500" style={{ width: `${item.progress_percent}%` }} />
+                    <div className="h-full rounded-full bg-[#006768] dark:bg-[#005063]" style={{ width: `${item.progress_percent}%` }} />
                   </div>
                   <dl className="mt-4 grid gap-3 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
                     <div>
                       <dt className="font-semibold text-slate-500 dark:text-slate-400">Carga horária</dt>
-                      <dd className="mt-1 font-bold text-slate-950 dark:text-slate-50">{item.custom_workload_hours != null ? `${item.custom_workload_hours}h (declarada)` : `${item.subject.workload_hours}h`}</dd>
+                      <dd className="mt-1 font-bold text-[#0d3950] dark:text-white">{item.custom_workload_hours != null ? `${item.custom_workload_hours}h (declarada)` : `${item.subject.workload_hours}h`}</dd>
                     </div>
                     <div>
                       <dt className="font-semibold text-slate-500 dark:text-slate-400">Professor</dt>
-                      <dd className="mt-1 font-bold text-slate-950 dark:text-slate-50">{item.professor_name || 'Não definido'}</dd>
+                      <dd className="mt-1 font-bold text-[#0d3950] dark:text-white">{item.professor_name || 'Não definido'}</dd>
                     </div>
                   </dl>
                 </article>

@@ -30,7 +30,7 @@ export function ReadingStreakTracker({ summary }: ReadingStreakTrackerProps) {
   return (
     <section
       aria-label="Acompanhamento de Sequência e Meta de Leitura"
-      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5"
+      className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26] sm:p-5"
     >
       {/* Top Banner: Streak & Today Goal */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4 dark:border-slate-800">
@@ -40,7 +40,7 @@ export function ReadingStreakTracker({ summary }: ReadingStreakTrackerProps) {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xl font-black text-slate-950 dark:text-slate-50 sm:text-2xl">
+              <span className="text-xl font-black text-[#0d3950] dark:text-white sm:text-2xl">
                 {summary.active_streak} {summary.active_streak === 1 ? 'dia' : 'dias'}
               </span>
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-800 dark:bg-amber-950 dark:text-amber-300">
@@ -58,9 +58,9 @@ export function ReadingStreakTracker({ summary }: ReadingStreakTrackerProps) {
         {/* Daily Goal Card */}
         <div className="flex flex-col items-end">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
-            <Trophy className="size-3.5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+            <Trophy className="size-3.5 text-[#006768] dark:text-[#a8d5e5]" aria-hidden="true" />
             <span>Meta de hoje:</span>
-            <strong className="text-slate-950 dark:text-slate-50">
+            <strong className="text-[#0d3950] dark:text-white">
               {summary.today_pages_read} / {summary.daily_goal} págs
             </strong>
           </div>
@@ -69,7 +69,7 @@ export function ReadingStreakTracker({ summary }: ReadingStreakTrackerProps) {
               className={`h-full transition-all duration-300 ${
                 todayProgressPercent >= 100
                   ? 'bg-emerald-500'
-                  : 'bg-indigo-600 dark:bg-indigo-500'
+                  : 'bg-[#006768] dark:bg-[#005063]'
               }`}
               style={{ width: `${todayProgressPercent}%` }}
             />
@@ -85,7 +85,7 @@ export function ReadingStreakTracker({ summary }: ReadingStreakTrackerProps) {
       {/* 14-Day History Bar Chart */}
       <div className="mt-4">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-slate-700 dark:text-slate-300">
+          <span className="font-bold text-[#0d3950] dark:text-slate-300">
             Histórico dos Últimos 14 Dias
           </span>
           <span className="text-[11px] text-slate-400 dark:text-slate-500">
@@ -108,7 +108,7 @@ export function ReadingStreakTracker({ summary }: ReadingStreakTrackerProps) {
               y2={goalY}
               stroke="currentColor"
               strokeDasharray="3 3"
-              className="text-indigo-400/60 dark:text-indigo-500/50"
+              className="text-[#005063]/40 dark:text-[#005063]/60"
               strokeWidth="1.5"
             />
 
@@ -131,10 +131,10 @@ export function ReadingStreakTracker({ summary }: ReadingStreakTrackerProps) {
                     className={`transition-colors ${
                       item.goalMet
                         ? isToday
-                          ? 'fill-indigo-600 dark:fill-indigo-400'
+                          ? 'fill-[#006768] dark:fill-[#005063]'
                           : 'fill-emerald-500 dark:fill-emerald-400'
                         : item.pages > 0
-                          ? 'fill-cyan-500/70 dark:fill-cyan-400/70'
+                          ? 'fill-[#005063]/60 dark:fill-[#005063]/80'
                           : 'fill-slate-200 dark:fill-slate-800'
                     }`}
                   />
@@ -145,7 +145,7 @@ export function ReadingStreakTracker({ summary }: ReadingStreakTrackerProps) {
                     textAnchor="middle"
                     className={`text-[8px] font-semibold ${
                       isToday
-                        ? 'fill-indigo-600 font-bold dark:fill-indigo-400'
+                        ? 'fill-[#006768] font-bold dark:fill-[#a8d5e5]'
                         : 'fill-slate-400 dark:fill-slate-500'
                     }`}
                   >

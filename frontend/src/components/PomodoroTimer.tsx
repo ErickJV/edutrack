@@ -217,24 +217,24 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
   return (
     <section
       aria-label="Temporizador Pomodoro"
-      className="relative flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+      className="relative flex flex-col rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
     >
       {/* Header / Mode Segmented Bar */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
         <div
           role="tablist"
           aria-label="Modo do Pomodoro"
-          className="grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950 flex-1 max-w-[240px]"
+          className="grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-[#005063]/30 dark:bg-[#041019] flex-1 max-w-[240px]"
         >
           <button
             type="button"
             role="tab"
             aria-selected={mode === 'focus'}
             onClick={() => switchMode('focus')}
-            className={`min-h-8 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+            className={`min-h-8 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] ${
               mode === 'focus'
-                ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
-                : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50'
+                ? 'bg-[#0d3950] text-white shadow-sm dark:bg-[#005063]'
+                : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
             }`}
           >
             Foco
@@ -244,10 +244,10 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
             role="tab"
             aria-selected={mode === 'short_break'}
             onClick={() => switchMode('short_break')}
-            className={`min-h-8 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+            className={`min-h-8 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] ${
               mode === 'short_break'
-                ? 'bg-cyan-600 text-white shadow-sm dark:bg-cyan-500'
-                : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50'
+                ? 'bg-[#006768] text-white shadow-sm dark:bg-[#006768]'
+                : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
             }`}
           >
             Curta
@@ -257,10 +257,10 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
             role="tab"
             aria-selected={mode === 'long_break'}
             onClick={() => switchMode('long_break')}
-            className={`min-h-8 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+            className={`min-h-8 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] ${
               mode === 'long_break'
                 ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500'
-                : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50'
+                : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
             }`}
           >
             Longa
@@ -274,7 +274,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
             setSettingsOpen(true)
           }}
           aria-label="Configurar tempos do Pomodoro"
-          className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-[#0d3950] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:border-[#005063]/30 dark:text-slate-400 dark:hover:bg-[#041019] dark:hover:text-white"
           title="Configurações"
         >
           <Settings2 className="size-4" aria-hidden="true" />
@@ -286,7 +286,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
         <div
           role="timer"
           aria-label={`Tempo de ${mode === 'focus' ? 'Foco' : 'Pausa'}: ${formattedTime}`}
-          className="font-mono text-4xl font-black tracking-tight text-slate-950 dark:text-slate-50"
+          className="font-mono text-4xl font-black tracking-tight text-[#0d3950] dark:text-white"
         >
           {formattedTime}
         </div>
@@ -296,7 +296,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
           <div
             className={`h-full transition-all duration-300 ease-linear ${
               mode === 'focus'
-                ? 'bg-indigo-600 dark:bg-indigo-500'
+                ? 'bg-[#006768] dark:bg-[#005063]'
                 : mode === 'short_break'
                   ? 'bg-cyan-500 dark:bg-cyan-400'
                   : 'bg-emerald-500 dark:bg-emerald-400'
@@ -311,7 +311,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
             {mode === 'focus' ? 'Ciclo de Foco' : mode === 'short_break' ? 'Pausa Curta' : 'Pausa Longa'}
           </span>
           {activeTask ? (
-            <span className="max-w-[120px] truncate rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+            <span className="max-w-[120px] truncate rounded bg-[#005063]/10 px-1.5 py-0.5 text-[10px] font-bold text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
               {activeTask.title}
             </span>
           ) : null}
@@ -322,7 +322,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
       {syncNotice ? (
         <div
           role="status"
-          className="mb-2 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-center text-[11px] font-bold text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
+          className="mb-2 rounded-lg border border-[#005063]/30 bg-[#005063]/10 px-2.5 py-1 text-center text-[11px] font-bold text-[#005063] dark:border-[#005063]/50 dark:bg-[#005063]/30 dark:text-[#a8d5e5]"
         >
           {syncNotice}
         </div>
@@ -336,7 +336,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
           className={`inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-black transition focus-visible:outline-2 focus-visible:outline-offset-2 shadow-sm ${
             isRunning
               ? 'bg-amber-500 text-white hover:bg-amber-600 focus-visible:outline-amber-600'
-              : 'bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-600'
+              : 'bg-[#006768] text-white hover:bg-[#005063] focus-visible:outline-[#006768] dark:bg-[#006768] dark:hover:bg-[#005063]'
           }`}
         >
           {isRunning ? (
@@ -354,7 +354,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
           type="button"
           onClick={skipInterval}
           aria-label="Pular intervalo"
-          className="inline-flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-white hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="inline-flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-white hover:text-[#0d3950] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-200 dark:hover:bg-[#081a26]"
           title="Pular intervalo"
         >
           <SkipForward className="size-4" aria-hidden="true" />
@@ -364,7 +364,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
           type="button"
           onClick={resetTimer}
           aria-label="Reiniciar temporizador"
-          className="inline-flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-white hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="inline-flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-white hover:text-[#0d3950] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-200 dark:hover:bg-[#081a26]"
           title="Reiniciar"
         >
           <RotateCcw className="size-4" aria-hidden="true" />
@@ -417,7 +417,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
                   onChange={(e) =>
                     setTempSettings({ ...tempSettings, focusMinutes: Number(e.target.value) || 25 })
                   }
-                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
                 />
               </div>
 
@@ -440,7 +440,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
                       shortBreakMinutes: Number(e.target.value) || 5,
                     })
                   }
-                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
                 />
               </div>
 
@@ -463,7 +463,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
                       longBreakMinutes: Number(e.target.value) || 15,
                     })
                   }
-                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
                 />
               </div>
 
@@ -486,7 +486,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
                       longBreakInterval: Number(e.target.value) || 4,
                     })
                   }
-                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:bg-white focus:outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-indigo-400"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
                 />
               </div>
 
@@ -498,7 +498,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
                   onChange={(e) =>
                     setTempSettings({ ...tempSettings, soundEnabled: e.target.checked })
                   }
-                  className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-950"
+                  className="size-4 rounded border-slate-300 text-[#006768] focus:ring-[#006768] dark:border-slate-700 dark:bg-[#041019]"
                 />
                 <label
                   htmlFor="sound-enabled-checkbox"
@@ -518,7 +518,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
                 </button>
                 <button
                   type="submit"
-                  className="min-h-9 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                  className="min-h-9 rounded-xl bg-[#0d3950] px-4 text-xs font-bold text-white hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
                 >
                   Salvar
                 </button>

@@ -17,7 +17,7 @@ const METHODOLOGIES: MethodologyInfo[] = [
     key: 'feynman',
     title: 'Método Feynman',
     subtitle: 'Aprenda explicando com máxima simplicidade',
-    badgeColor: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300',
+    badgeColor: 'bg-[#0d3950]/10 text-[#0d3950] dark:bg-[#005063]/30 dark:text-[#a8d5e5]',
     description:
       'Técnica baseada no princípio de que você só domina um assunto quando é capaz de explicá-lo sem rodeios para um iniciante.',
     steps: [
@@ -152,17 +152,17 @@ export function MethodologySelector({
   return (
     <section
       aria-label="Metodologias de Estudo Ativo"
-      className="flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition dark:border-slate-800 dark:bg-slate-900"
+      className="flex h-full flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-sm transition dark:border-[#005063]/30 dark:bg-[#081a26]"
     >
       <div>
         {/* Header with Title and Toggle */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
               <BookOpen className="size-4" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-xs font-black tracking-tight text-slate-950 dark:text-slate-50">
+              <h3 className="text-xs font-black tracking-tight text-[#0d3950] dark:text-white">
                 Metodologia de Estudo
               </h3>
               <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
@@ -195,10 +195,10 @@ export function MethodologySelector({
                     type="button"
                     aria-label={`Selecionar ${m.title}`}
                     onClick={() => onSelectMethodology(m.key)}
-                    className={`inline-flex min-h-7 items-center justify-center gap-1 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+                    className={`inline-flex min-h-7 items-center justify-center gap-1 rounded-lg px-2 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-[#005063] ${
                       isSelected
-                        ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500'
-                        : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-300 dark:hover:bg-slate-800'
+                        ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                        : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#041019] dark:text-slate-300 dark:hover:bg-slate-800'
                     }`}
                   >
                     <span>{m.title}</span>
@@ -208,7 +208,7 @@ export function MethodologySelector({
             </div>
 
             {/* Active Guide Card */}
-            <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800/80 dark:bg-slate-950/40">
+            <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-[#005063]/20 dark:bg-[#041019]">
               <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
                 {current.description}
               </p>
@@ -216,7 +216,7 @@ export function MethodologySelector({
               <div className="mt-2.5 grid grid-cols-1 gap-2 border-t border-slate-200/60 pt-2 dark:border-slate-800/60 sm:grid-cols-2">
                 {current.steps.map((step, idx) => (
                   <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
-                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[9px] font-black text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-[#005063]/10 text-[9px] font-black text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
                       {idx + 1}
                     </span>
                     <span className="leading-tight">{step}</span>
@@ -232,7 +232,7 @@ export function MethodologySelector({
                   type="button"
                   onClick={() => onInsertTemplate(current.template)}
                   aria-label="Inserir roteiro na anotação"
-                  className="inline-flex min-h-8 w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-indigo-600 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white"
+                  className="inline-flex min-h-8 w-full items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
                 >
                   <Sparkles className="size-3.5 text-amber-400 dark:text-amber-500" aria-hidden="true" />
                   <span>Inserir roteiro na anotação</span>

@@ -24,18 +24,46 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell eyebrow="Recupere o acesso" title="Esqueceu sua senha?" description="Informe seu e-mail institucional. Se houver uma conta, enviaremos um link válido por uma hora.">
+    <AuthShell
+      title="Recuperar senha"
+      description="Informe seu e-mail institucional para receber o link de redefinição."
+    >
       {sent ? (
         <div className="space-y-6">
-          <div className="grid size-14 place-items-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"><Mail size={28} aria-hidden="true" /></div>
-          <Alert tone="success">Confira sua caixa de entrada e também a pasta de spam. Por segurança, mostramos esta mensagem mesmo quando o endereço não está cadastrado.</Alert>
-          <Link to="/entrar" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-extrabold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"><ArrowLeft size={19} /> Voltar para o login</Link>
+          <div className="grid size-12 place-items-center rounded-xl bg-[#006768]/10 text-[#006768]">
+            <Mail size={24} aria-hidden="true" />
+          </div>
+          <Alert tone="success">
+            Se o endereço estiver cadastrado, você receberá um link com as instruções para definir uma nova senha.
+          </Alert>
+          <Link
+            to="/entrar"
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 font-arial font-semibold text-[#0d3950] shadow-xs transition-colors hover:bg-slate-50"
+          >
+            <ArrowLeft size={18} /> Voltar para o login
+          </Link>
         </div>
       ) : (
         <form className="space-y-5" onSubmit={submit}>
-          <Input label="E-mail institucional" name="email" type="email" autoComplete="email" placeholder="seu.nome@aluno.impacta.edu.br" value={email} onChange={(event) => setEmail(event.target.value)} required />
-          <PrimaryButton loading={loading} type="submit">Enviar link de recuperação</PrimaryButton>
-          <Link to="/entrar" className="flex min-h-11 items-center justify-center gap-2 text-sm font-bold text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"><ArrowLeft size={17} /> Voltar para o login</Link>
+          <Input
+            label="E-mail institucional"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="seu.nome@aluno.impacta.edu.br"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
+          <PrimaryButton loading={loading} type="submit">
+            Enviar instruções
+          </PrimaryButton>
+          <Link
+            to="/entrar"
+            className="flex min-h-11 items-center justify-center gap-2 font-arial text-sm font-semibold text-[#005063] transition-colors hover:text-[#0d3950] hover:underline"
+          >
+            <ArrowLeft size={16} /> Voltar para o login
+          </Link>
         </form>
       )}
     </AuthShell>

@@ -18,7 +18,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     <div
       role="radiogroup"
       aria-label="Preferência de tema de aparência"
-      className={`inline-flex items-center rounded-2xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900 ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white/90 p-1 shadow-md shadow-slate-400/20 backdrop-blur-md dark:border-[#005063]/60 dark:bg-[#091e2b]/90 dark:shadow-black/60 ${className}`}
     >
       {THEME_OPTIONS.map((option) => {
         const Icon = option.icon
@@ -30,16 +30,15 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
             role="radio"
             aria-checked={isSelected}
             onClick={() => setPreference(option.value)}
-            className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:focus-visible:outline-indigo-400 ${
+            className={`grid size-8 place-items-center rounded-full transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#006768] ${
               isSelected
-                ? 'bg-white text-indigo-600 shadow-sm dark:bg-slate-800 dark:text-indigo-400'
-                : 'text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-slate-100'
+                ? 'bg-[#006768] text-white shadow-xs'
+                : 'text-slate-500 hover:text-[#0d3950] dark:text-white/60 dark:hover:text-white'
             }`}
             title={`Tema ${option.label} (atualmente ${resolvedTheme === 'dark' ? 'escuro' : 'claro'})`}
+            aria-label={`Tema ${option.label}`}
           >
-            <Icon size={16} aria-hidden="true" />
-            <span className="hidden sm:inline">{option.label}</span>
-            <span className="sr-only">Tema {option.label}</span>
+            <Icon size={15} strokeWidth={2.2} aria-hidden="true" />
           </button>
         )
       })}

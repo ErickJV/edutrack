@@ -22,14 +22,14 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "unsafe-local-development-key")
 DEBUG = env_bool("DJANGO_DEBUG", True)
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,host.docker.internal,0.0.0.0,*").split(",")
     if host.strip()
 ]
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
         "DJANGO_CSRF_TRUSTED_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://host.docker.internal:5173,http://host.docker.internal:8000",
     ).split(",")
     if origin.strip()
 ]
@@ -90,12 +90,32 @@ TEMPLATES = [
     }
 ]
 
-DB_ENGINE = os.getenv("DB_ENGINE", "postgresql").lower()
+DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
 if DB_ENGINE == "sqlite":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+elif DB_ENGINE == "mssql":
+    trust_certificate = "yes" if env_bool("DB_TRUST_SERVER_CERTIFICATE", True) else "no"
+    encrypt = "yes" if env_bool("DB_ENCRYPT", True) else "no"
+    DATABASES = {
+        "default": {
+            "ENGINE": "mssql",
+            "NAME": os.getenv("DB_NAME", "edutrack"),
+            "USER": os.getenv("DB_USER", "sa"),
+            "PASSWORD": os.getenv("DB_PASSWORD", "EduTrack_local_2026!"),
+            "HOST": os.getenv("DB_HOST", "db"),
+            "PORT": os.getenv("DB_PORT", "1433"),
+            "OPTIONS": {
+                "driver": os.getenv("DB_DRIVER", "ODBC Driver 18 for SQL Server"),
+                "extra_params": (
+                    f"Encrypt={encrypt};TrustServerCertificate={trust_certificate};"
+                    "Connection Timeout=30"
+                ),
+            },
         }
     }
 else:
