@@ -11,10 +11,20 @@ class SecurityHeadersMiddleware:
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         response = self.get_response(request)
-        response.headers.setdefault(
-            "Content-Security-Policy",
-            "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
-        )
+        if request.path.startswith(("/api/docs", "/api/schema")):
+            swagger_csp = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "img-src 'self' data: https://cdn.jsdelivr.net; "
+                "connect-src 'self' https://cdn.jsdelivr.net"
+            )
+            response.headers.setdefault("Content-Security-Policy", swagger_csp)
+        else:
+            response.headers.setdefault(
+                "Content-Security-Policy",
+                "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+            )
         response.headers.setdefault(
             "Permissions-Policy",
             "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
