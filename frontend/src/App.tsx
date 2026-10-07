@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ProfessorsPage } from './pages/ProfessorsPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { PrintsPage } from './pages/PrintsPage'
 import { ProfileCompletionPage } from './pages/ProfileCompletionPage'
 import { SubjectsPage } from './pages/SubjectsPage'
 import { TasksPage } from './pages/TasksPage'
@@ -39,6 +40,7 @@ export function App() {
       </Route>
       <Route path="/termos" element={<LegalPage kind="terms" />} />
       <Route path="/privacidade" element={<LegalPage kind="privacy" />} />
+      <Route path="/prints" element={<PrintsPage />} />
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
