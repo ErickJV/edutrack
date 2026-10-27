@@ -8,6 +8,7 @@ from .serializers import (
     HealthSerializer,
     ProfileCompletionSerializer,
     ProfileSerializer,
+    ProfileUpdateSerializer,
     SessionPreferenceSerializer,
 )
 
@@ -23,6 +24,13 @@ class ProfileView(generics.GenericAPIView):
     @extend_schema(request=ProfileCompletionSerializer, responses=ProfileSerializer)
     def put(self, request):
         serializer = ProfileCompletionSerializer(instance=request.user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(ProfileSerializer(user).data)
+
+    @extend_schema(request=ProfileUpdateSerializer, responses=ProfileSerializer)
+    def patch(self, request):
+        serializer = ProfileUpdateSerializer(instance=request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(ProfileSerializer(user).data)

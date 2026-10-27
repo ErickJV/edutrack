@@ -10,6 +10,7 @@ import { ProfessorsPage } from './pages/ProfessorsPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { PrintsPage } from './pages/PrintsPage'
 import { ProfileCompletionPage } from './pages/ProfileCompletionPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { SubjectsPage } from './pages/SubjectsPage'
 import { TasksPage } from './pages/TasksPage'
 import { StudySessionPage } from './pages/StudySessionPage'
@@ -37,6 +38,7 @@ export function App() {
         <Route path="/tarefas" element={<TasksPage />} />
         <Route path="/estudo" element={<StudySessionPage />} />
         <Route path="/estudo/:taskId" element={<StudySessionPage />} />
+        <Route path="/perfil" element={<ProfilePage />} />
       </Route>
       <Route path="/termos" element={<LegalPage kind="terms" />} />
       <Route path="/privacidade" element={<LegalPage kind="privacy" />} />

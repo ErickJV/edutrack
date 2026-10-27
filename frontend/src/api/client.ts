@@ -16,6 +16,7 @@ import type {
   DashboardSummary,
   Professor,
   ProfilePayload,
+  ProfileUpdatePayload,
   ReadingLog,
   ReadingLogPayload,
   StudentSubject,
@@ -155,7 +156,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  await request(
+  return request(
     '/_allauth/browser/v1/auth/password/request',
     { method: 'POST', body: JSON.stringify({ email }) },
     [401],
@@ -176,6 +177,10 @@ export async function listCourseOfferings(): Promise<CourseOffering[]> {
 
 export async function completeProfile(payload: ProfilePayload): Promise<AuthUser> {
   return request<AuthUser>('/api/v1/profile', { method: 'PUT', body: JSON.stringify(payload) })
+}
+
+export async function updateProfile(payload: ProfileUpdatePayload): Promise<AuthUser> {
+  return request<AuthUser>('/api/v1/profile', { method: 'PATCH', body: JSON.stringify(payload) })
 }
 
 export async function listCurriculum(): Promise<AcademicSubject[]> {
@@ -436,4 +441,3 @@ export async function recordAttendance(
     { method: 'PUT', body: JSON.stringify({ status }) },
   )
 }
-

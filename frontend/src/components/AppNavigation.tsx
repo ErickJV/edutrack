@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
 
 const NAV_ITEMS = [
-  { to: '/home', label: 'Home' },
+  { to: '/home', label: 'Início' },
   { to: '/disciplinas', label: 'Disciplinas' },
   { to: '/professores', label: 'Professores' },
   { to: '/tarefas', label: 'Tarefas' },
   { to: '/estudo', label: 'Estudo' },
+  { to: '/perfil', label: 'Meu Perfil' },
 ] as const
 
 export function AppNavigation() {

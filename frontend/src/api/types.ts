@@ -37,6 +37,11 @@ export type ProfilePayload = {
   password?: string
 }
 
+export type ProfileUpdatePayload = {
+  full_name?: string
+  course_offering_id: string
+}
+
 export type AcademicSubject = {
   id: string
   course: string

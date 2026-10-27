@@ -83,6 +83,40 @@ class ProfileCompletionSerializer(serializers.Serializer):
         raise NotImplementedError
 
 
+class ProfileUpdateSerializer(serializers.Serializer):
+    full_name = serializers.CharField(
+        min_length=3, max_length=160, trim_whitespace=True, required=False
+    )
+    course_offering_id = serializers.UUIDField(required=True)
+
+    def validate_full_name(self, value: str) -> str:
+        return " ".join(value.split())
+
+    def validate_course_offering_id(self, value):
+        try:
+            return CourseOffering.objects.select_related("course").get(
+                id=value, active=True, course__active=True
+            )
+        except CourseOffering.DoesNotExist as exc:
+            raise serializers.ValidationError("Selecione uma graduação ativa.") from exc
+
+    @transaction.atomic
+    def update(self, instance: User, validated_data):
+        update_fields = ["course_offering"]
+        instance.course_offering = validated_data["course_offering_id"]
+        if "full_name" in validated_data:
+            instance.full_name = validated_data["full_name"]
+            update_fields.append("full_name")
+        if not instance.profile_completed_at:
+            instance.profile_completed_at = timezone.now()
+            update_fields.append("profile_completed_at")
+        instance.save(update_fields=tuple(update_fields))
+        return instance
+
+    def create(self, validated_data):
+        raise NotImplementedError
+
+
 class HealthSerializer(serializers.Serializer):
     status = serializers.CharField()
 

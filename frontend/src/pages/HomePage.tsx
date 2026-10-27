@@ -7,6 +7,7 @@ import { AppNavigation } from '../components/AppNavigation'
 import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
 import { ThemeToggle } from '../components/ThemeToggle'
+
 function formatDueLabel(value: string | null): { label: string; urgent: boolean } {
   if (!value) return { label: 'Sem prazo definido', urgent: false }
   const due = new Date(value)
@@ -20,7 +21,6 @@ function formatDueLabel(value: string | null): { label: string; urgent: boolean 
   return { label: `Em ${daysRemaining} dia${daysRemaining === 1 ? '' : 's'}`, urgent: hoursRemaining < 48 }
 }
 
-
 export function HomePage() {
   const { user, signOut } = useAuth()
   const [leaving, setLeaving] = useState(false)
@@ -29,6 +29,7 @@ export function HomePage() {
   const [summaryLoading, setSummaryLoading] = useState(true)
   const [summaryError, setSummaryError] = useState('')
   const firstName = user?.full_name.trim().split(/\s+/)[0] || 'estudante'
+
   useEffect(() => {
     let alive = true
     async function loadDashboard() {
@@ -246,32 +247,6 @@ export function HomePage() {
               ))}
             </div>
           )}
-        </section>
-
-        <section className="mt-6 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]" aria-labelledby="academic-profile">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#005063] dark:text-[#a8d5e5]">Seu perfil</p>
-              <h2 id="academic-profile" className="mt-2 text-xl font-black text-[#0d3950] dark:text-white">Informações acadêmicas</h2>
-            </div>
-            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
-              <GraduationCap size={24} aria-hidden="true" />
-            </span>
-          </div>
-          <dl className="mt-7 grid gap-6 sm:grid-cols-3 sm:gap-8">
-            <div>
-              <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Graduação</dt>
-              <dd className="mt-1 font-bold leading-6 text-[#0d3950] dark:text-white">{user?.course_offering?.course_name}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Modalidade</dt>
-              <dd className="mt-1 font-bold text-[#0d3950] dark:text-white">{user?.course_offering?.modality_label}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Vínculo</dt>
-              <dd className="mt-1 font-bold text-emerald-700 dark:text-emerald-400">Verificado</dd>
-            </div>
-          </dl>
         </section>
       </div>
     </main>
