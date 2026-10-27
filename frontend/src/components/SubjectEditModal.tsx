@@ -1,10 +1,16 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { Plus, UserCheck, X } from 'lucide-react'
+import { Edit2, Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { createProfessor, listProfessors, updateStudentSubject } from '../api/client'
+import {
+  createProfessor,
+  deleteProfessor,
+  listProfessors,
+  updateProfessor,
+  updateStudentSubject,
+} from '../api/client'
 import type { Professor, StudentSubject } from '../api/types'
 import { Alert } from './Feedback'
 import { Input, PrimaryButton, Select } from './FormControls'
@@ -27,6 +33,13 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
   const [termId, setTermId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Estado do popup de edição/remoção de professor
+  const [profPopupOpen, setProfPopupOpen] = useState(false)
+  const [editingProfId, setEditingProfId] = useState<string>('')
+  const [editingProfName, setEditingProfName] = useState('')
+  const [profActionSaving, setProfActionSaving] = useState(false)
+  const [profPopupError, setProfPopupError] = useState('')
 
   useEffect(() => {
     if (!enrollment || !open) return
@@ -56,10 +69,81 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
     )
     setIsCreatingNew(false)
     setNewProfName('')
+    setProfPopupOpen(false)
+    setProfPopupError('')
     setTermId(enrollment.term?.id ?? null)
     setError('')
   }, [enrollment, open])
+
   if (!open || !enrollment) return null
+
+  function openEditProfessorPopup() {
+    if (professors.length === 0) return
+    const initialProf =
+      professors.find((p) => p.id === selectedProfId) ?? professors[0]
+    setEditingProfId(initialProf.id)
+    setEditingProfName(initialProf.name)
+    setProfPopupError('')
+    setProfPopupOpen(true)
+  }
+
+  function handleSelectProfToEdit(id: string) {
+    setEditingProfId(id)
+    const found = professors.find((p) => p.id === id)
+    setEditingProfName(found ? found.name : '')
+    setProfPopupError('')
+  }
+
+  async function handleUpdateProfessor() {
+    if (!editingProfId || !editingProfName.trim()) {
+      setProfPopupError('Informe o nome do professor.')
+      return
+    }
+    setProfActionSaving(true)
+    setProfPopupError('')
+    try {
+      const updated = await updateProfessor(editingProfId, { name: editingProfName.trim() })
+      setProfessors((current) =>
+        current
+          .map((p) => (p.id === updated.id ? updated : p))
+          .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+      )
+      setProfPopupOpen(false)
+    } catch (reason) {
+      setProfPopupError(
+        reason instanceof Error ? reason.message : 'Não foi possível atualizar o professor.',
+      )
+    } finally {
+      setProfActionSaving(false)
+    }
+  }
+
+  async function handleDeleteProfessor() {
+    if (!editingProfId) return
+    setProfActionSaving(true)
+    setProfPopupError('')
+    try {
+      await deleteProfessor(editingProfId)
+      const remaining = professors.filter((p) => p.id !== editingProfId)
+      setProfessors(remaining)
+      if (selectedProfId === editingProfId) {
+        setSelectedProfId('')
+      }
+      if (remaining.length === 0) {
+        setProfPopupOpen(false)
+      } else {
+        setEditingProfId(remaining[0].id)
+        setEditingProfName(remaining[0].name)
+        setProfPopupOpen(false)
+      }
+    } catch (reason) {
+      setProfPopupError(
+        reason instanceof Error ? reason.message : 'Não foi possível remover o professor.',
+      )
+    } finally {
+      setProfActionSaving(false)
+    }
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -148,13 +232,24 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Professor responsável</span>
-                  <button
-                    type="button"
-                    onClick={() => setIsCreatingNew(true)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#006768] hover:underline dark:text-[#005063]"
-                  >
-                    <Plus size={14} aria-hidden="true" /> Cadastrar novo
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingNew(true)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-[#006768] hover:underline dark:text-[#a8d5e5]"
+                    >
+                      <Plus size={14} aria-hidden="true" /> Cadastrar novo
+                    </button>
+                    {professors.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={openEditProfessorPopup}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[#0d3950] hover:underline dark:text-slate-300"
+                      >
+                        <Edit2 size={13} aria-hidden="true" /> Editar
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
                 <Select
                   label=""
@@ -194,14 +289,47 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
                     Cancelar cadastro inline
                   </button>
                 </div>
-                <Input
-                  label="Nome do novo professor"
-                  name="new_professor_name"
-                  placeholder="Ex.: Prof. Alan Turing"
-                  value={newProfName}
-                  onChange={(e) => setNewProfName(e.target.value)}
-                  autoFocus
-                />
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <Input
+                      label="Nome do novo professor"
+                      name="new_professor_name"
+                      placeholder="Ex.: Prof. Alan Turing"
+                      value={newProfName}
+                      onChange={(e) => setNewProfName(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!newProfName.trim() || profActionSaving}
+                    onClick={async () => {
+                      if (!newProfName.trim()) return
+                      setProfActionSaving(true)
+                      setError('')
+                      try {
+                        const created = await createProfessor({ name: newProfName.trim() })
+                        setProfessors((current) =>
+                          [...current, created].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+                        )
+                        setSelectedProfId(created.id)
+                        setNewProfName('')
+                        setIsCreatingNew(false)
+                      } catch (reason) {
+                        setError(
+                          reason instanceof Error
+                            ? reason.message
+                            : 'Não foi possível cadastrar o professor.',
+                        )
+                      } finally {
+                        setProfActionSaving(false)
+                      }
+                    }}
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-[#006768] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#005063] disabled:opacity-50"
+                  >
+                    {profActionSaving ? 'Salvando…' : 'Cadastrar'}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -237,6 +365,97 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
             </PrimaryButton>
           </div>
         </form>
+
+        {profPopupOpen ? (
+          <div
+            className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+            role="presentation"
+            onClick={() => setProfPopupOpen(false)}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="prof-popup-title"
+              className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-[#005063]/40 dark:bg-[#081a26]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#006768] dark:text-[#a8d5e5]">
+                    Gerenciar professor
+                  </p>
+                  <h3 id="prof-popup-title" className="mt-1 text-lg font-black text-[#0d3950] dark:text-white">
+                    Editar ou remover professor
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setProfPopupOpen(false)}
+                  className="grid size-9 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-[#041019] dark:hover:text-white"
+                  aria-label="Fechar popup de professor"
+                >
+                  <X size={17} aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                {profPopupError ? <Alert>{profPopupError}</Alert> : null}
+
+                <Select
+                  label="Professor cadastrado"
+                  name="popup_professor_select"
+                  value={editingProfId}
+                  onChange={(e) => handleSelectProfToEdit(e.target.value)}
+                >
+                  {professors.map((prof) => (
+                    <option key={prof.id} value={prof.id}>
+                      {prof.name}
+                    </option>
+                  ))}
+                </Select>
+
+                <Input
+                  label="Novo nome do professor"
+                  name="popup_professor_name"
+                  placeholder="Ex.: Prof. Carlos Santos"
+                  value={editingProfName}
+                  onChange={(e) => setEditingProfName(e.target.value)}
+                  autoFocus
+                />
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+                  <button
+                    type="button"
+                    disabled={profActionSaving || !editingProfId}
+                    onClick={() => void handleDeleteProfessor()}
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/70"
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                    Remover
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setProfPopupOpen(false)}
+                      className="min-h-10 rounded-xl border border-slate-300 px-4 text-xs font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#041019]"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={profActionSaving || !editingProfName.trim()}
+                      onClick={() => void handleUpdateProfessor()}
+                      className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[#006768] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#005063] disabled:opacity-50"
+                    >
+                      {profActionSaving ? 'Salvando…' : 'Salvar nome'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )
