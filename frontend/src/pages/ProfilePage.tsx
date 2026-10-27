@@ -104,7 +104,7 @@ export function ProfilePage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#005063] dark:text-[#a8d5e5]">
-                Meu Perfil
+                Perfil
               </p>
               <h1 id="academic-profile" className="mt-2 text-2xl font-black text-[#0d3950] dark:text-white">
                 Informações pessoais e acadêmicas
