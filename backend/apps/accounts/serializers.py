@@ -1,3 +1,5 @@
+from allauth.account.models import EmailAddress
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -7,6 +9,7 @@ from apps.catalog.serializers import CourseOfferingSerializer
 from apps.legal.services import has_current_acceptances, record_current_acceptances
 
 from .models import User
+from .validators import normalize_and_validate_institutional_email
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -87,10 +90,25 @@ class ProfileUpdateSerializer(serializers.Serializer):
     full_name = serializers.CharField(
         min_length=3, max_length=160, trim_whitespace=True, required=False
     )
-    course_offering_id = serializers.UUIDField(required=True)
+    email = serializers.EmailField(required=False)
+    course_offering_id = serializers.UUIDField(required=False)
 
     def validate_full_name(self, value: str) -> str:
         return " ".join(value.split())
+
+    def validate_email(self, value: str) -> str:
+        try:
+            normalized = normalize_and_validate_institutional_email(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages[0]) from exc
+
+        user = self.instance
+        qs = User.objects.filter(email__iexact=normalized)
+        if user is not None:
+            qs = qs.exclude(pk=user.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Este e-mail já está em uso por outra conta.")
+        return normalized
 
     def validate_course_offering_id(self, value):
         try:
@@ -102,15 +120,34 @@ class ProfileUpdateSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: User, validated_data):
-        update_fields = ["course_offering"]
-        instance.course_offering = validated_data["course_offering_id"]
+        update_fields: list[str] = []
+        old_email = instance.email
+
         if "full_name" in validated_data:
             instance.full_name = validated_data["full_name"]
             update_fields.append("full_name")
-        if not instance.profile_completed_at:
+
+        if "email" in validated_data and validated_data["email"] != old_email:
+            new_email = validated_data["email"]
+            instance.email = new_email
+            update_fields.append("email")
+            EmailAddress.objects.filter(user=instance).exclude(email__iexact=new_email).delete()
+            EmailAddress.objects.update_or_create(
+                user=instance,
+                email=new_email,
+                defaults={"verified": True, "primary": True},
+            )
+
+        if "course_offering_id" in validated_data:
+            instance.course_offering = validated_data["course_offering_id"]
+            update_fields.append("course_offering")
+
+        if not instance.profile_completed_at and instance.full_name and instance.course_offering_id:
             instance.profile_completed_at = timezone.now()
             update_fields.append("profile_completed_at")
-        instance.save(update_fields=tuple(update_fields))
+
+        if update_fields:
+            instance.save(update_fields=tuple(update_fields))
         return instance
 
     def create(self, validated_data):

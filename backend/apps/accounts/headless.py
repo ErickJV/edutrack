@@ -16,6 +16,7 @@ class EduTrackHeadlessAdapter(DefaultHeadlessAdapter):
                     {
                         "id": str(offering.id),
                         "course_name": offering.course.name,
+                        "course_slug": offering.course.slug,
                         "degree_type": offering.course.degree_type,
                         "degree_type_label": offering.course.get_degree_type_display(),
                         "modality": offering.modality,
