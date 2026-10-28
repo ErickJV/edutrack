@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
+import { ClippitFloatingWidget } from '../components/clippit/ClippitFloatingWidget'
 import { PageLoader } from '../components/Feedback'
 import { useAuth } from './AuthContext'
 
@@ -9,7 +10,12 @@ export function ProtectedRoute() {
   if (loading) return <PageLoader />
   if (!user) return <Navigate to="/entrar" replace state={{ from: location.pathname }} />
   if (!user.profile_complete) return <Navigate to="/completar-perfil" replace />
-  return <Outlet />
+  return (
+    <>
+      <Outlet />
+      <ClippitFloatingWidget />
+    </>
+  )
 }
 
 export function ProfileCompletionRoute() {

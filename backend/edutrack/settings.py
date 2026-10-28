@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "apps.accounts.apps.AccountsConfig",
     "apps.legal.apps.LegalConfig",
     "apps.academic.apps.AcademicConfig",
+    "apps.assistant.apps.AssistantConfig",
 ]
 
 MIDDLEWARE = [

@@ -24,6 +24,10 @@ import type {
   StudyFolderPayload,
   StudyNote,
   StudyNotePayload,
+  AssistantChatRequest,
+  AssistantChatResponse,
+  AssistantStatus,
+  AssistantStudentContext,
 } from './types'
 
 const API_ORIGIN = (import.meta.env.VITE_API_ORIGIN || '').replace(/\/$/, '')
@@ -440,4 +444,58 @@ export async function recordAttendance(
     `/api/v1/class-occurrences/${occurrenceId}/attendance`,
     { method: 'PUT', body: JSON.stringify({ status }) },
   )
+}
+
+// Clippit Assistant (Gemini 3.8 Flash via Antigravity OAuth)
+export const ANTIGRAVITY_TOKEN_STORAGE_KEY = 'edutrack_antigravity_token'
+
+export function getStoredAntigravityToken(): string {
+  try {
+    return localStorage.getItem(ANTIGRAVITY_TOKEN_STORAGE_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+export function setStoredAntigravityToken(token: string): void {
+  try {
+    const trimmed = token.trim()
+    if (trimmed) {
+      localStorage.setItem(ANTIGRAVITY_TOKEN_STORAGE_KEY, trimmed)
+    } else {
+      localStorage.removeItem(ANTIGRAVITY_TOKEN_STORAGE_KEY)
+    }
+  } catch {
+    // Silencioso em caso de restrição de storage
+  }
+}
+
+export async function sendAssistantChat(
+  payload: AssistantChatRequest,
+  customToken?: string,
+): Promise<AssistantChatResponse> {
+  const token = customToken !== undefined ? customToken : getStoredAntigravityToken()
+  const headers: Record<string, string> = {}
+  if (token) headers['X-Antigravity-Token'] = token
+
+  return request<AssistantChatResponse>('/api/v1/assistant/chat', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers,
+  })
+}
+
+export async function getAssistantContext(): Promise<AssistantStudentContext> {
+  return request<AssistantStudentContext>('/api/v1/assistant/context')
+}
+
+export async function getAssistantStatus(customToken?: string): Promise<AssistantStatus> {
+  const token = customToken !== undefined ? customToken : getStoredAntigravityToken()
+  const headers: Record<string, string> = {}
+  if (token) headers['X-Antigravity-Token'] = token
+
+  return request<AssistantStatus>('/api/v1/assistant/status', {
+    method: 'GET',
+    headers,
+  })
 }

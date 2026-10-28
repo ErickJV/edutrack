@@ -308,3 +308,74 @@ export type ClassOccurrence = {
   created_at: string
   updated_at: string
 }
+
+export type AssistantChatMessage = {
+  role: 'user' | 'assistant'
+  content: string
+  timestamp?: string
+  animation?: string
+}
+
+export type AssistantChatRequest = {
+  message: string
+  history?: Array<{ role: string; content: string }>
+}
+
+export type AssistantChatResponse = {
+  reply: string
+  animation: string
+  timestamp: string
+}
+
+export type AssistantStatus = {
+  configured: boolean
+  mode: string
+  model: string
+}
+
+export type AssistantStudentContext = {
+  generated_at: string
+  student: {
+    full_name: string
+    email: string
+    course: string
+    degree_type: string
+    modality: string
+  }
+  subjects: Array<{
+    id: string
+    name: string
+    code: string
+    semester: number
+    professor: string
+    workload_hours: number
+    period: string
+    faltas: number
+    aulas_registradas: number
+    tarefas_total: number
+    tarefas_concluidas: number
+  }>
+  tasks: {
+    overdue: Array<{ id: string; title: string; subject: string; status: string; due_date: string | null }>
+    pending: Array<{ id: string; title: string; subject: string; status: string; due_date: string | null }>
+    completed_recent: Array<{ id: string; title: string; subject: string; status: string }>
+  }
+  upcoming_events: Array<{
+    id: string
+    title: string
+    kind: string
+    subject: string
+    starts_at: string
+    all_day: boolean
+    room: string
+  }>
+  readings: Array<{
+    id: string
+    title: string
+    author: string
+    subject: string
+    current_page: number
+    total_pages: number
+    progress_percent: number
+  }>
+}
