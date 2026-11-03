@@ -81,15 +81,10 @@ export const ClippitFloatingWidget: React.FC<ClippitFloatingWidgetProps> = ({
           <div className="p-1 rounded-full bg-white/20 backdrop-blur-xs transition-all duration-200 group-hover:scale-105 group-hover:bg-white/40">
             <ClippitAnimation
               animation={isOpen ? 'restpose' : widgetAnimation}
-              size={76}
+              size={96}
               className="drop-shadow-xl"
             />
           </div>
-          {/* Badge de status IA */}
-          <span className="absolute bottom-1 right-1 flex h-3.5 w-3.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-blue-600 border-2 border-white" />
-          </span>
         </div>
       </div>
 

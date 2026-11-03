@@ -13,7 +13,7 @@ from apps.academic.models import (
     StudentSubject,
     Subject,
 )
-from apps.assistant.antigravity import AntigravityClient
+from apps.assistant.antigravity import AntigravityClient, load_omp_antigravity_credentials
 from apps.assistant.context import format_academic_context_for_prompt, get_student_academic_context
 from apps.catalog.models import Course, CourseOffering
 
@@ -152,33 +152,54 @@ class AssistantContextAndChatTestCase(TestCase):
         self.assertIn("mode", data)
         self.assertIn("model", data)
 
-    def test_assistant_chat_unconfigured_fallback(self):
-        """Quando não há credenciais, responde educadamente com mensagem do Clippit."""
-        resp = self.client1.post(
-            "/api/v1/assistant/chat",
-            {"message": "O que devo estudar hoje?"},
-            format="json",
-        )
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertIn("Clippit", data["reply"])
-        self.assertEqual(data["animation"], "alert")
+    @patch("apps.assistant.antigravity.load_omp_antigravity_credentials")
+    def test_assistant_chat_unconfigured_fallback(self, mock_omp):
+        """Quando não há credenciais no omp ou .env, responde educadamente com mensagem do Clippit."""
+        mock_omp.return_value = None
+        client = AntigravityClient()
+        client.omp_creds = None
+        client.env_access_token = ""
+        client.refresh_token = ""
+        client.gemini_api_key = ""
+
+        with patch("apps.assistant.views.AntigravityClient") as mock_client_cls:
+            mock_client_cls.return_value = client
+            resp = self.client1.post(
+                "/api/v1/assistant/chat",
+                {"message": "O que devo estudar hoje?"},
+                format="json",
+            )
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            self.assertIn("Clippit", data["reply"])
+            self.assertEqual(data["animation"], "alert")
 
     @patch("apps.assistant.antigravity.requests.post")
-    def test_assistant_chat_with_antigravity_token(self, mock_post):
-        """Quando token é fornecido via header X-Antigravity-Token, chama o gateway Antigravity."""
+    @patch("apps.assistant.antigravity.load_omp_antigravity_credentials")
+    def test_assistant_chat_with_omp_credentials(self, mock_omp, mock_post):
+        """Quando credenciais são encontradas no .omp, chama o Antigravity automaticamente sem header."""
+        mock_omp.return_value = {
+            "access_token": "mock-omp-token-abc",
+            "project_id": "aicode-consumers",
+            "refresh_token": "mock-refresh",
+            "expires": 1799999999,
+        }
+
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "candidates": [
-                {
-                    "content": {
-                        "parts": [
-                            {"text": "Parece que você tem a tarefa Modelagem ER da Biblioteca para entregar!"}
-                        ]
+            "response": {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {"thought": True, "text": "pensando..."},
+                                {"text": "Olá! Notei que você tem tarefas de Banco de Dados para entregar."},
+                            ]
+                        }
                     }
-                }
-            ]
+                ]
+            }
         }
         mock_post.return_value = mock_response
 
@@ -188,15 +209,16 @@ class AssistantContextAndChatTestCase(TestCase):
                 "message": "Quais tarefas eu tenho pendentes?",
                 "history": [],
             },
-            HTTP_X_ANTIGRAVITY_TOKEN="mock-antigravity-token-12345",
             format="json",
         )
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
-        self.assertIn("Modelagem ER", data["reply"])
-        self.assertEqual(data["animation"], "writing")
+        self.assertIn("Banco de Dados", data["reply"])
+        self.assertEqual(data["animation"], "wave")
 
-        # Verifica cabeçalhos enviados ao gateway Antigravity
+        # Verifica cabeçalhos e payload enviados ao endpoint
         args, kwargs = mock_post.call_args
-        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer mock-antigravity-token-12345")
+        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer mock-omp-token-abc")
         self.assertIn("antigravity", kwargs["headers"]["User-Agent"])
+        self.assertEqual(kwargs["json"]["project"], "aicode-consumers")
+        self.assertIn("contents", kwargs["json"]["request"])
