@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
   Bold,
+  BookOpen,
   Brain,
   Check,
   CheckSquare,
@@ -26,6 +27,7 @@ import {
   Sparkles,
   Strikethrough,
   Table as TableIcon,
+  Timer,
   Trash2,
   Type,
   Underline,
@@ -163,6 +165,12 @@ export type StudyNotesWorkspaceProps = {
   readings?: AcademicReading[]
   externalTemplate?: string | null
   onClearExternalTemplate?: () => void
+  activeTab?: 'workspace' | 'readings'
+  onSwitchTab?: (tab: 'workspace' | 'readings') => void
+  showFocusTools?: boolean
+  onToggleFocusTools?: () => void
+  selectedTaskId?: string
+  onTaskChange?: (taskId: string) => void
 }
 
 function escapeHtml(raw: string): string {
@@ -291,6 +299,12 @@ export function StudyNotesWorkspace({
   readings = [],
   externalTemplate,
   onClearExternalTemplate,
+  activeTab = 'workspace',
+  onSwitchTab,
+  showFocusTools = false,
+  onToggleFocusTools,
+  selectedTaskId = '',
+  onTaskChange,
 }: StudyNotesWorkspaceProps) {
   const [folders, setFolders] = useState<StudyFolder[]>([])
   const [notes, setNotes] = useState<StudyNote[]>([])
@@ -754,7 +768,83 @@ export function StudyNotesWorkspace({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Alternador Anotações | Leituras dentro do Bloco de Anotações */}
+          {onSwitchTab && (
+            <div
+              role="tablist"
+              aria-label="Seção de Anotações"
+              className="flex rounded-xl border border-slate-200 bg-white p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'workspace'}
+                onClick={() => onSwitchTab('workspace')}
+                className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold transition ${
+                  activeTab === 'workspace'
+                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                    : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                <FileText className="size-3.5" aria-hidden="true" />
+                Anotações
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'readings'}
+                onClick={() => onSwitchTab('readings')}
+                className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold transition ${
+                  activeTab === 'readings'
+                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                    : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                <BookOpen className="size-3.5" aria-hidden="true" />
+                Leituras ({readings.length})
+              </button>
+            </div>
+          )}
+
+          {/* Botão Pomodoro & Metodologias dentro do Bloco de Anotações */}
+          {onToggleFocusTools && (
+            <button
+              type="button"
+              onClick={onToggleFocusTools}
+              className={`inline-flex min-h-8 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
+                showFocusTools
+                  ? 'border-[#006768] bg-[#0d3950] text-white dark:bg-[#005063]'
+                  : 'border-slate-200 bg-white text-[#0d3950] hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#081a26] dark:text-slate-200'
+              }`}
+            >
+              <Timer className="size-3.5" />
+              <span>{showFocusTools ? 'Ocultar Pomodoro' : 'Pomodoro & Metodologias'}</span>
+            </button>
+          )}
+
+          {/* Seletor de Foco dentro do Bloco de Anotações */}
+          {onTaskChange && (
+            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1 dark:border-[#005063]/30 dark:bg-[#081a26]">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                Foco:
+              </span>
+              <select
+                aria-label="Foco da sessão"
+                value={selectedTaskId}
+                onChange={(e) => onTaskChange(e.target.value)}
+                className="max-w-[155px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
+              >
+                <option value="">(Anotação Livre)</option>
+                {tasks.map((task) => (
+                  <option key={task.id} value={task.id}>
+                    {task.title} ({task.subject_name})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {activeNoteId && (
             <button
               type="button"
