@@ -165,8 +165,8 @@ export type StudyNotesWorkspaceProps = {
   readings?: AcademicReading[]
   externalTemplate?: string | null
   onClearExternalTemplate?: () => void
-  activeTab?: 'workspace' | 'readings'
-  onSwitchTab?: (tab: 'workspace' | 'readings') => void
+  activeTab?: 'workspace' | 'readings' | 'documents'
+  onSwitchTab?: (tab: 'workspace' | 'readings' | 'documents') => void
   showFocusTools?: boolean
   onToggleFocusTools?: () => void
   selectedTaskId?: string
@@ -834,6 +834,20 @@ export function StudyNotesWorkspace({
               >
                 <BookOpen className="size-3.5" aria-hidden="true" />
                 Leituras ({readings.length})
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'documents'}
+                onClick={() => onSwitchTab('documents')}
+                className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold transition ${
+                  activeTab === 'documents'
+                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                    : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                <Sparkles className="size-3.5 text-amber-500" aria-hidden="true" />
+                Central de Documentos & IA
               </button>
             </div>
           )}

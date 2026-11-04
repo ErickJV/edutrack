@@ -13,8 +13,11 @@ from .models import (
     Professor,
     ReadingLog,
     StudentSubject,
+    StudyDocument,
+    StudyDocumentPage,
     StudyFolder,
     StudyNote,
+    StudyQuiz,
     Subject,
 )
 
@@ -1194,5 +1197,106 @@ class FlashcardSerializer(serializers.ModelSerializer):
         ):
             validated_data["deck_name"] = validated_data["student_subject"].subject.name
         return super().create(validated_data)
+
+
+class StudyDocumentPageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudyDocumentPage
+        fields = (
+            "id",
+            "page_number",
+            "content",
+            "token_count",
+            "created_at",
+        )
+
+
+class StudyDocumentSerializer(serializers.ModelSerializer):
+    pages = StudyDocumentPageSerializer(many=True, read_only=True)
+    pages_count = serializers.IntegerField(source="page_count", read_only=True)
+    student_subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
+    folder_name = serializers.CharField(source="folder.name", read_only=True)
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudyDocument
+        fields = (
+            "id",
+            "title",
+            "file",
+            "file_url",
+            "file_type",
+            "file_size",
+            "page_count",
+            "pages_count",
+            "student_subject",
+            "student_subject_name",
+            "folder",
+            "folder_name",
+            "topic",
+            "analysis_cache",
+            "pages",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("file_size", "page_count", "file_type", "analysis_cache", "created_at", "updated_at")
+
+    def get_file_url(self, obj) -> str | None:
+        if obj.file:
+            request = self.context.get("request")
+            if request is not None:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+
+    def validate_student_subject(self, value):
+        if value is None:
+            return None
+        user = self.context["request"].user
+        if isinstance(value, StudentSubject):
+            if value.user_id != user.id:
+                raise serializers.ValidationError("Disciplina não encontrada ou não pertence ao usuário.")
+            return value
+        enrollment = StudentSubject.objects.filter(id=value, user=user).first()
+        if enrollment is not None:
+            return enrollment
+        raise serializers.ValidationError("Disciplina não encontrada.")
+
+    def validate_folder(self, value):
+        if value is None:
+            return None
+        user = self.context["request"].user
+        if isinstance(value, StudyFolder):
+            if value.user_id != user.id:
+                raise serializers.ValidationError("Pasta inválida.")
+            return value
+        folder = StudyFolder.objects.filter(id=value, user=user).first()
+        if folder is not None:
+            return folder
+        raise serializers.ValidationError("Pasta não encontrada.")
+
+
+class StudyQuizSerializer(serializers.ModelSerializer):
+    document_title = serializers.CharField(source="document.title", read_only=True)
+    student_subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
+
+    class Meta:
+        model = StudyQuiz
+        fields = (
+            "id",
+            "title",
+            "document",
+            "document_title",
+            "student_subject",
+            "student_subject_name",
+            "questions",
+            "score",
+            "total_questions",
+            "completed_at",
+            "user_answers",
+            "created_at",
+        )
+        read_only_fields = ("created_at",)
+
 
 

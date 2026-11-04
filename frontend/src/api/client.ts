@@ -33,6 +33,10 @@ import type {
   StudyFolderPayload,
   StudyNote,
   StudyNotePayload,
+  StudyDocument,
+  StudyDocumentAnalysis,
+  StudyQuiz,
+  QuizSubmissionResult,
   AssistantChatRequest,
   AssistantChatResponse,
   AssistantStatus,
@@ -588,3 +592,85 @@ export async function getAssistantStatus(customToken?: string): Promise<Assistan
     headers,
   })
 }
+
+// ==========================================
+// Módulo de Estudo Multimodal & Simulados IA
+// ==========================================
+
+export async function listStudyDocuments(params?: {
+  subject?: string
+  folder?: string
+  search?: string
+}): Promise<StudyDocument[]> {
+  const query = new URLSearchParams()
+  if (params?.subject) query.set('subject', params.subject)
+  if (params?.folder) query.set('folder', params.folder)
+  if (params?.search) query.set('search', params.search)
+  const qs = query.toString()
+  return request<StudyDocument[]>(`/api/v1/academic/study-documents${qs ? `?${qs}` : ''}`)
+}
+
+export async function getStudyDocument(id: string): Promise<StudyDocument> {
+  return request<StudyDocument>(`/api/v1/academic/study-documents/${id}`)
+}
+
+export async function uploadStudyDocument(
+  file: File,
+  metadata?: {
+    title?: string
+    student_subject?: string
+    folder?: string
+    topic?: string
+  },
+): Promise<StudyDocument> {
+  const formData = new FormData()
+  formData.append('file', file)
+  if (metadata?.title) formData.append('title', metadata.title)
+  if (metadata?.student_subject) formData.append('student_subject', metadata.student_subject)
+  if (metadata?.folder) formData.append('folder', metadata.folder)
+  if (metadata?.topic) formData.append('topic', metadata.topic)
+
+  const response = await fetch(`${API_ORIGIN}/api/v1/academic/study-documents`, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new ApiError(errorData.detail || 'Erro ao enviar documento.', response.status)
+  }
+
+  return response.json()
+}
+
+export async function deleteStudyDocument(id: string): Promise<void> {
+  return request<void>(`/api/v1/academic/study-documents/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function analyzeStudyDocumentWithAI(id: string): Promise<StudyDocumentAnalysis> {
+  return request<StudyDocumentAnalysis>(`/api/v1/academic/study-documents/${id}/ai-analyze`, {
+    method: 'POST',
+  })
+}
+
+export async function generateStudyQuiz(documentId: string): Promise<StudyQuiz> {
+  return request<StudyQuiz>(`/api/v1/academic/study-documents/${documentId}/quiz`, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'generate' }),
+  })
+}
+
+export async function submitStudyQuiz(
+  documentId: string,
+  quizId: string,
+  answers: Record<string, number>,
+): Promise<QuizSubmissionResult> {
+  return request<QuizSubmissionResult>(`/api/v1/academic/study-documents/${documentId}/quiz`, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'submit', quiz_id: quizId, answers }),
+  })
+}
+

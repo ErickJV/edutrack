@@ -35,20 +35,24 @@ import { ReadingStreakTracker } from '../components/ReadingStreakTracker'
 import { StudyNotesWorkspace } from '../components/StudyNotesWorkspace'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { calculateReadingSummary } from '../utils/readingStats'
+import { StudyDocumentsHub } from '../components/StudyDocumentsHub'
+import { listStudyFolders } from '../api/client'
+import type { StudyFolder } from '../api/types'
 
 export function StudySessionPage() {
   const { signOut } = useAuth()
   const params = useParams<{ taskId?: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const taskIdFromQuery = params.taskId || searchParams.get('taskId') || ''
-  const tabFromQuery = (searchParams.get('tab') as 'workspace' | 'readings') || 'workspace'
+  const tabFromQuery = (searchParams.get('tab') as 'workspace' | 'readings' | 'documents') || 'workspace'
 
-  const [activeTab, setActiveTab] = useState<'workspace' | 'readings'>(tabFromQuery)
+  const [activeTab, setActiveTab] = useState<'workspace' | 'readings' | 'documents'>(tabFromQuery)
   const [showFocusTools, setShowFocusTools] = useState(false)
   const [tasks, setTasks] = useState<AcademicTask[]>([])
   const [subjects, setSubjects] = useState<StudentSubject[]>([])
   const [readings, setReadings] = useState<AcademicReading[]>([])
   const [readingLogs, setReadingLogs] = useState<ReadingLog[]>([])
+  const [folders, setFolders] = useState<StudyFolder[]>([])
   const [selectedTaskId, setSelectedTaskId] = useState<string>(taskIdFromQuery)
   const [selectedMethodology, setSelectedMethodology] = useState<StudyMethodologyKey | ''>(
     'feynman',
@@ -68,16 +72,18 @@ export function StudySessionPage() {
     setLoading(true)
     setError('')
     try {
-      const [loadedTasks, loadedSubjects, loadedReadings, loadedLogs] = await Promise.all([
+      const [loadedTasks, loadedSubjects, loadedReadings, loadedLogs, loadedFolders] = await Promise.all([
         listAcademicTasks(),
         listStudentSubjects(),
         listAcademicReadings(),
         listReadingLogs(),
+        listStudyFolders(),
       ])
       setTasks(loadedTasks)
       setSubjects(loadedSubjects)
       setReadings(loadedReadings)
       setReadingLogs(loadedLogs)
+      setFolders(loadedFolders)
 
       if (taskIdFromQuery && loadedTasks.some((t) => t.id === taskIdFromQuery)) {
         setSelectedTaskId(taskIdFromQuery)
@@ -131,7 +137,7 @@ export function StudySessionPage() {
     }
   }
 
-  const switchTab = (tab: 'workspace' | 'readings') => {
+  const switchTab = (tab: 'workspace' | 'readings' | 'documents') => {
     setActiveTab(tab)
     if (selectedTaskId) {
       setSearchParams({ taskId: selectedTaskId, tab })
@@ -389,6 +395,59 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ABA 3: CENTRAL DE DOCUMENTOS & IA COGNITIVA */}
+        {activeTab === 'documents' && (
+          <div className="flex flex-1 flex-col min-h-[680px]">
+            <div className="flex items-center justify-between pb-3">
+              <div
+                role="tablist"
+                aria-label="Seção de Anotações"
+                className="flex rounded-xl border border-slate-200 bg-white p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={false}
+                  onClick={() => switchTab('workspace')}
+                  className="inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold text-slate-600 transition hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white"
+                >
+                  <FileText className="size-3.5" aria-hidden="true" />
+                  Anotações
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={false}
+                  onClick={() => switchTab('readings')}
+                  className="inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold text-slate-600 transition hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white"
+                >
+                  <BookOpen className="size-3.5" aria-hidden="true" />
+                  Leituras ({readings.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={true}
+                  onClick={() => switchTab('documents')}
+                  className="inline-flex min-h-7 items-center gap-1.5 rounded-lg bg-[#0d3950] px-2.5 text-xs font-extrabold text-white shadow-xs dark:bg-[#005063]"
+                >
+                  <BookOpen className="size-3.5 text-amber-400" aria-hidden="true" />
+                  Central de Documentos & IA
+                </button>
+              </div>
+            </div>
+
+            <StudyDocumentsHub
+              subjects={subjects}
+              folders={folders}
+              onOpenNoteWithContent={(title, content) => {
+                setPendingTemplate(`# ${title}\n\n${content}`)
+                switchTab('workspace')
+              }}
+            />
           </div>
         )}
       </div>

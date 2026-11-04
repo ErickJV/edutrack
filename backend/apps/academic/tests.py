@@ -149,3 +149,77 @@ class FlashcardsAndNotesQualityTests(TestCase):
         cal_items = cal_resp.json()["items"]
         self.assertEqual(len(cal_items), 3)
 
+    def test_study_document_ai_cognitive_pipeline_and_quiz_citations(self):
+        from apps.academic.models import StudyDocument, StudyDocumentPage
+
+        doc = StudyDocument.objects.create(
+            user=self.user,
+            student_subject=self.student_subject,
+            title="Apresentação Normalização de Banco de Dados",
+            file_type="pdf",
+            page_count=3,
+        )
+
+        StudyDocumentPage.objects.create(
+            document=doc,
+            page_number=1,
+            content="Primeira Forma Normal (1FN): exige atomicidade de todos os atributos e ausência de vetores repetidos.",
+            token_count=18,
+        )
+        StudyDocumentPage.objects.create(
+            document=doc,
+            page_number=2,
+            content="Segunda Forma Normal (2FN): além da 1FN, nenhum atributo não chave pode depender parcialmente da chave primária.",
+            token_count=20,
+        )
+        StudyDocumentPage.objects.create(
+            document=doc,
+            page_number=3,
+            content="Terceira Forma Normal (3FN): requer ausência de dependência transitiva entre atributos não chave na relação.",
+            token_count=19,
+        )
+
+        # 1. Executa Análise Cognitiva com Citações Obrigatórias
+        analyze_resp = self.client.post(f"/api/v1/study-documents/{doc.id}/ai-analyze")
+        self.assertEqual(analyze_resp.status_code, 200)
+        data = analyze_resp.json()
+
+        # Valida que o resumo e tópicos complexos trazem a citação de página
+        self.assertIn("Pág.", data["summary"])
+        self.assertTrue(len(data["complex_topics"]) > 0)
+        self.assertIn("Pág.", data["complex_topics"][0]["citation"])
+        self.assertTrue(len(data["key_concepts"]) > 0)
+        self.assertIn("Pág.", data["key_concepts"][0]["citation"])
+        self.assertIn("graph TD", data["mental_map_mermaid"])
+        self.assertTrue(len(data["study_roadmap"]) >= 3)
+        self.assertTrue(len(data["reinforcement_topics"]) > 0)
+
+        # 2. Gera Simulado de 10 Questões aprofundadas com citações
+        quiz_resp = self.client.post(f"/api/v1/study-documents/{doc.id}/quiz")
+        self.assertEqual(quiz_resp.status_code, 201)
+        quiz_data = quiz_resp.json()
+        self.assertEqual(quiz_data["total_questions"], 10)
+        self.assertEqual(len(quiz_data["questions"]), 10)
+        self.assertIn("Pág.", quiz_data["questions"][0]["citation"])
+
+        # 3. Submete respostas do simulado e verifica pontuação e feedback
+        quiz_id = quiz_data["id"]
+        # Responde certo a primeira e a segunda pergunta
+        answers = {
+            "1": quiz_data["questions"][0]["correct_option_index"],
+            "2": quiz_data["questions"][1]["correct_option_index"],
+        }
+        submit_resp = self.client.post(
+            f"/api/v1/study-documents/{doc.id}/quiz",
+            {"action": "submit", "quiz_id": quiz_id, "answers": answers},
+            format="json",
+        )
+        self.assertEqual(submit_resp.status_code, 200)
+        submit_data = submit_resp.json()
+        self.assertEqual(submit_data["score"], 2)
+        self.assertEqual(submit_data["total_questions"], 10)
+        self.assertEqual(submit_data["percentage"], 20.0)
+        self.assertEqual(len(submit_data["feedback"]), 10)
+        self.assertTrue(submit_data["feedback"][0]["is_correct"])
+
+

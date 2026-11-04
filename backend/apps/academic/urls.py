@@ -32,6 +32,10 @@ from .views import (
     StudyFolderListCreateView,
     StudyNoteDetailView,
     StudyNoteListCreateView,
+    StudyDocumentListCreateView,
+    StudyDocumentDetailView,
+    StudyDocumentAIAnalyzeView,
+    StudyDocumentQuizView,
 )
 
 urlpatterns = [
@@ -150,5 +154,9 @@ urlpatterns = [
     ),
     path("flashcards/<uuid:pk>", FlashcardDetailView.as_view(), name="flashcard-detail"),
     path("flashcards/<uuid:pk>/review", FlashcardReviewView.as_view(), name="flashcard-review"),
+    path("study-documents", StudyDocumentListCreateView.as_view(), name="study-document-list-create"),
+    path("study-documents/<uuid:pk>", StudyDocumentDetailView.as_view(), name="study-document-detail"),
+    path("study-documents/<uuid:pk>/ai-analyze", StudyDocumentAIAnalyzeView.as_view(), name="study-document-ai-analyze"),
+    path("study-documents/<uuid:pk>/quiz", StudyDocumentQuizView.as_view(), name="study-document-quiz"),
 ]
 
