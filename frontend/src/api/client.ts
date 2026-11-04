@@ -1,4 +1,6 @@
 import type {
+  AcademicEvent,
+  AcademicEventPayload,
   AcademicReading,
   AcademicReadingPayload,
   AcademicSubject,
@@ -9,6 +11,8 @@ import type {
   AcademicTermPayload,
   AuthResponse,
   AuthUser,
+  CalendarItem,
+  CalendarItemKind,
   ClassOccurrence,
   ClassSchedule,
   ClassSchedulePayload,
@@ -444,6 +448,33 @@ export async function recordAttendance(
     `/api/v1/class-occurrences/${occurrenceId}/attendance`,
     { method: 'PUT', body: JSON.stringify({ status }) },
   )
+}
+
+// Calendar & Academic Events
+export async function listCalendarItems(params: {
+  from: string
+  to: string
+  student_subject_id?: string
+  kind?: CalendarItemKind
+}): Promise<CalendarItem[]> {
+  const search = new URLSearchParams()
+  search.set('from', params.from)
+  search.set('to', params.to)
+  if (params.student_subject_id) search.set('student_subject_id', params.student_subject_id)
+  if (params.kind) search.set('kind', params.kind)
+  const res = await request<{ items: CalendarItem[] }>(`/api/v1/calendar?${search.toString()}`)
+  return res.items
+}
+
+export async function createAcademicEvent(payload: AcademicEventPayload): Promise<AcademicEvent> {
+  return request<AcademicEvent>('/api/v1/academic-events', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, [201])
+}
+
+export async function deleteAcademicEvent(id: string): Promise<void> {
+  await request(`/api/v1/academic-events/${id}`, { method: 'DELETE' }, [204])
 }
 
 // Clippit Assistant (Gemini 3.8 Flash via Antigravity OAuth)

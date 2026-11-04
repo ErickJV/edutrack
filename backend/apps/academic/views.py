@@ -908,7 +908,9 @@ class CalendarView(generics.GenericAPIView):
         # 2. Academic events
         if not kind_filter or kind_filter in ("exam", "assignment", "other"):
             from django.db.models import Q
-            event_qs = AcademicEvent.objects.filter(
+            event_qs = AcademicEvent.objects.select_related(
+                "student_subject__subject"
+            ).filter(
                 user=user,
                 starts_at__lt=to_dt,
             ).filter(
@@ -925,11 +927,12 @@ class CalendarView(generics.GenericAPIView):
                     "source_type": "event",
                     "source_id": str(ev.id),
                     "title": ev.title,
+                    "description": ev.description,
                     "starts_at": ev.starts_at.isoformat(),
                     "ends_at": ev.ends_at.isoformat() if ev.ends_at else None,
                     "room": ev.room,
                     "student_subject_id": str(ev.student_subject_id) if ev.student_subject_id else None,
-                    "subject_name": None,
+                    "subject_name": ev.student_subject.subject.name if ev.student_subject else None,
                     "cancelled": False,
                     "attendance_status": None,
                     "all_day": ev.all_day,
@@ -954,6 +957,7 @@ class CalendarView(generics.GenericAPIView):
                     "source_type": "task",
                     "source_id": str(task.id),
                     "title": task.title,
+                    "description": task.description,
                     "starts_at": task.due_date.isoformat(),
                     "ends_at": task.due_date.isoformat(),
                     "room": "",
@@ -964,6 +968,75 @@ class CalendarView(generics.GenericAPIView):
                     "all_day": False,
                     "kind": "task",
                     "task_status": task.status,
+                })
+
+        # 4. Study readings & reading increments (no kind filter or kind in reading/exam)
+        from_date = from_dt.date()
+        to_date = to_dt.date()
+        if not kind_filter or kind_filter in ("reading", "exam"):
+            reading_qs = AcademicReading.objects.select_related(
+                "student_subject__subject"
+            ).filter(
+                user=user,
+                exam_date__isnull=False,
+                exam_date__gte=from_date,
+                exam_date__lte=to_date,
+            )
+            if ss_id:
+                reading_qs = reading_qs.filter(student_subject_id=ss_id)
+            for r in reading_qs:
+                exam_iso = r.exam_date.isoformat()
+                label_prefix = r.exam_name.strip() if r.exam_name.strip() else "Meta/Prova de Leitura"
+                items.append({
+                    "id": f"reading-exam:{r.id}",
+                    "source_type": "reading",
+                    "source_id": str(r.id),
+                    "title": f"{label_prefix}: {r.title}",
+                    "description": f"Progresso: {r.current_page}/{r.total_pages} págs ({r.progress_percent}%)",
+                    "starts_at": f"{exam_iso}T12:00:00+00:00",
+                    "ends_at": f"{exam_iso}T13:00:00+00:00",
+                    "room": "",
+                    "student_subject_id": str(r.student_subject_id) if r.student_subject_id else None,
+                    "subject_name": r.student_subject.subject.name if r.student_subject else None,
+                    "cancelled": False,
+                    "attendance_status": None,
+                    "all_day": True,
+                    "kind": "reading",
+                    "reading_progress": r.progress_percent,
+                    "reading_pages": f"{r.current_page}/{r.total_pages} págs",
+                })
+
+        if not kind_filter or kind_filter == "reading":
+            log_qs = ReadingLog.objects.select_related(
+                "reading__student_subject__subject"
+            ).filter(
+                user=user,
+                pages_read__gt=0,
+                date__gte=from_date,
+                date__lte=to_date,
+            )
+            if ss_id:
+                log_qs = log_qs.filter(reading__student_subject_id=ss_id)
+            for log in log_qs:
+                log_iso = log.date.isoformat()
+                r = log.reading
+                items.append({
+                    "id": f"reading-log:{log.id}",
+                    "source_type": "reading",
+                    "source_id": str(r.id),
+                    "title": f"Leitura (+{log.pages_read} págs): {r.title}",
+                    "description": f"Acumulado: {r.current_page}/{r.total_pages} págs ({r.progress_percent}%)",
+                    "starts_at": f"{log_iso}T12:00:00+00:00",
+                    "ends_at": f"{log_iso}T13:00:00+00:00",
+                    "room": "",
+                    "student_subject_id": str(r.student_subject_id) if r.student_subject_id else None,
+                    "subject_name": r.student_subject.subject.name if r.student_subject else None,
+                    "cancelled": False,
+                    "attendance_status": None,
+                    "all_day": True,
+                    "kind": "reading",
+                    "reading_progress": r.progress_percent,
+                    "reading_pages": f"{r.current_page}/{r.total_pages} págs",
                 })
 
         # Sort by starts_at then id

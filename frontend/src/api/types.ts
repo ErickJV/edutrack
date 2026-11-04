@@ -309,6 +309,56 @@ export type ClassOccurrence = {
   updated_at: string
 }
 
+export type AcademicEventKind = 'exam' | 'assignment' | 'other'
+
+export type AcademicEvent = {
+  id: string
+  title: string
+  kind: AcademicEventKind
+  starts_at: string
+  ends_at: string | null
+  all_day: boolean
+  room: string
+  description: string
+  student_subject_id: string | null
+  subject_name?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type AcademicEventPayload = {
+  title: string
+  kind: AcademicEventKind
+  starts_at: string
+  ends_at?: string | null
+  all_day?: boolean
+  room?: string
+  description?: string
+  student_subject_id?: string | null
+}
+
+export type CalendarItemKind = 'class' | 'task' | 'exam' | 'assignment' | 'other' | 'reading'
+
+export type CalendarItem = {
+  id: string
+  source_type: 'class' | 'event' | 'task' | 'reading'
+  source_id: string
+  title: string
+  description?: string
+  starts_at: string
+  ends_at: string | null
+  room: string
+  student_subject_id: string | null
+  subject_name: string | null
+  cancelled: boolean
+  attendance_status: AttendanceStatus | null
+  all_day: boolean
+  kind: CalendarItemKind
+  task_status?: AcademicTaskStatus
+  reading_progress?: number
+  reading_pages?: string
+}
+
 export type AssistantChatMessage = {
   role: 'user' | 'assistant'
   content: string
