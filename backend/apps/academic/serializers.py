@@ -606,9 +606,7 @@ class DashboardSummarySerializer(serializers.Serializer):
 
 
 class AcademicTaskWriteSerializer(serializers.ModelSerializer):
-    student_subject = serializers.PrimaryKeyRelatedField(
-        queryset=StudentSubject.objects.select_related("subject")
-    )
+    student_subject = serializers.UUIDField()
 
     class Meta:
         model = AcademicTask
@@ -627,17 +625,44 @@ class AcademicTaskWriteSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "completed_at", "created_at", "updated_at")
 
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            mutable = dict(data)
+            raw_due = mutable.get("due_date")
+            if isinstance(raw_due, str) and len(raw_due.strip()) == 10:
+                mutable["due_date"] = f"{raw_due.strip()}T12:00:00"
+            data = mutable
+        return super().to_internal_value(data)
+
     def validate_student_subject(self, value):
         request = self.context["request"]
-        if value.user_id != request.user.id:
-            raise serializers.ValidationError(
-                "A disciplina selecionada não pertence ao estudante autenticado."
+        user = request.user
+        enrollment = (
+            StudentSubject.objects.select_related("subject")
+            .filter(id=value, user=user)
+            .first()
+        )
+        if enrollment is not None:
+            if enrollment.status != StudentSubject.Status.ACTIVE:
+                enrollment.status = StudentSubject.Status.ACTIVE
+                enrollment.save(update_fields=("status", "updated_at"))
+            return enrollment
+
+        subj = Subject.objects.filter(id=value).first()
+        if subj is not None:
+            enrollment, _ = StudentSubject.objects.get_or_create(
+                user=user,
+                subject=subj,
+                defaults={"status": StudentSubject.Status.ACTIVE},
             )
-        if value.status != StudentSubject.Status.ACTIVE:
-            raise serializers.ValidationError(
-                "Não é possível vincular tarefas a uma disciplina arquivada."
-            )
-        return value
+            if enrollment.status != StudentSubject.Status.ACTIVE:
+                enrollment.status = StudentSubject.Status.ACTIVE
+                enrollment.save(update_fields=("status", "updated_at"))
+            return enrollment
+
+        raise serializers.ValidationError(
+            "Selecione uma disciplina válida do seu curso."
+        )
 
     def create(self, validated_data):
         if validated_data.get("status") == AcademicTask.Status.COMPLETED and not validated_data.get(
@@ -936,6 +961,21 @@ class AcademicReadingSerializer(serializers.ModelSerializer):
         if remaining <= 0:
             return 0
         return max(1, (remaining + days - 1) // days)
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            mutable = dict(data)
+            raw_status = mutable.get("status")
+            if isinstance(raw_status, str):
+                norm = raw_status.strip().lower()
+                if norm in ("not_started", "reading"):
+                    mutable["status"] = AcademicReading.Status.READING
+                elif norm == "completed":
+                    mutable["status"] = AcademicReading.Status.COMPLETED
+                elif norm in ("paused", "dropped"):
+                    mutable["status"] = AcademicReading.Status.DROPPED
+            data = mutable
+        return super().to_internal_value(data)
 
     def validate_student_subject(self, value):
         if value is not None:

@@ -3,8 +3,8 @@
 import { X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
-import { createAcademicTask, updateAcademicTask } from '../api/client'
-import type { AcademicTask, AcademicTaskStatus, StudentSubject } from '../api/types'
+import { ApiError, createAcademicTask, listCurriculum, updateAcademicTask } from '../api/client'
+import type { AcademicSubject, AcademicTask, AcademicTaskStatus, StudentSubject } from '../api/types'
 import { Alert } from './Feedback'
 import { Input, PrimaryButton, Select } from './FormControls'
 
@@ -44,11 +44,15 @@ function formatNumberInput(value: number): string {
   return Number.isFinite(value) ? String(value) : '0'
 }
 
-function buildValues(initialTask: AcademicTask | null | undefined, subjects: StudentSubject[]): TaskFormValues {
+function buildValues(
+  initialTask: AcademicTask | null | undefined,
+  subjects: StudentSubject[],
+  curriculum: AcademicSubject[],
+): TaskFormValues {
   if (!initialTask) {
     return {
       ...EMPTY_VALUES,
-      student_subject: subjects[0]?.id || '',
+      student_subject: subjects[0]?.id || curriculum[0]?.id || '',
     }
   }
 
@@ -63,8 +67,17 @@ function buildValues(initialTask: AcademicTask | null | undefined, subjects: Stu
   }
 }
 
-export function TaskFormModal({ open, subjects, initialTask = null, onClose, onSaved }: TaskFormModalProps) {
-  const [values, setValues] = useState<TaskFormValues>(() => buildValues(initialTask, subjects))
+export function TaskFormModal({
+  open,
+  subjects,
+  initialTask = null,
+  onClose,
+  onSaved,
+}: TaskFormModalProps) {
+  const [curriculum, setCurriculum] = useState<AcademicSubject[]>([])
+  const [values, setValues] = useState<TaskFormValues>(() =>
+    buildValues(initialTask, subjects, []),
+  )
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof TaskFormValues, string>>>({})
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -74,13 +87,42 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
 
   useEffect(() => {
     if (!open) return
-    setValues(buildValues(initialTask, subjects))
+    let alive = true
+    listCurriculum()
+      .then((items) => {
+        if (!alive) return
+        setCurriculum(items)
+        setValues((prev) => {
+          if (prev.student_subject) return prev
+          const fallbackId = subjects[0]?.id || items[0]?.id || ''
+          return fallbackId ? { ...prev, student_subject: fallbackId } : prev
+        })
+      })
+      .catch(() => {
+        // Silencioso: usa subjects ativos já carregados
+      })
+    return () => {
+      alive = false
+    }
+  }, [open, subjects])
+
+  useEffect(() => {
+    if (!open) return
+    setValues(buildValues(initialTask, subjects, curriculum))
     setFieldErrors({})
     setError('')
     setSaving(false)
-  }, [open, initialTask, subjects])
+  }, [open, initialTask, subjects, curriculum])
 
-  const subjectOptions = useMemo(() => subjects, [subjects])
+  const enrolledSubjectIds = useMemo(
+    () => new Set(subjects.map((s) => s.subject.id)),
+    [subjects],
+  )
+
+  const extraCurriculumSubjects = useMemo(
+    () => curriculum.filter((item) => !enrolledSubjectIds.has(item.id)),
+    [curriculum, enrolledSubjectIds],
+  )
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -114,12 +156,15 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
         estimated_minutes: estimatedMinutes,
         actual_minutes: actualMinutes,
       }
-      const savedTask = isEditing && initialTask
-        ? await updateAcademicTask(initialTask.id, payload)
-        : await createAcademicTask(payload)
+      const savedTask =
+        isEditing && initialTask
+          ? await updateAcademicTask(initialTask.id, payload)
+          : await createAcademicTask(payload)
       onSaved(savedTask)
-    } catch {
-      setError('Não foi possível salvar a tarefa.')
+    } catch (reason) {
+      setError(
+        reason instanceof ApiError ? reason.message : 'Não foi possível salvar a tarefa.',
+      )
     } finally {
       setSaving(false)
     }
@@ -129,7 +174,7 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-xs sm:p-4"
       role="presentation"
       onClick={onClose}
     >
@@ -137,13 +182,20 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-form-title"
-        className="relative flex flex-col w-full max-w-2xl max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-950/30 dark:bg-[#081a26] dark:border dark:border-[#005063]/30"
+        className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-950/30 sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl dark:border dark:border-[#005063]/30 dark:bg-[#081a26]"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="shrink-0 flex items-start justify-between border-b border-slate-200 p-5 sm:px-6 sm:py-5 bg-white z-10 dark:border-[#005063]/30 dark:bg-[#081a26]">
+        <header className="z-10 flex shrink-0 items-start justify-between border-b border-slate-200 bg-white p-5 sm:px-6 sm:py-5 dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#006768] dark:text-[#005063]">Gestão de tarefas</p>
-            <h2 id="task-form-title" className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-slate-50">{title}</h2>
+            <p className="text-xs font-bold tracking-[0.16em] text-[#006768] uppercase dark:text-[#005063]">
+              Gestão de tarefas
+            </p>
+            <h2
+              id="task-form-title"
+              className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-slate-50"
+            >
+              {title}
+            </h2>
           </div>
           <button
             type="button"
@@ -155,38 +207,63 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
           </button>
         </header>
 
-        <form className="flex flex-col flex-1 min-h-0 overflow-hidden" onSubmit={handleSubmit}>
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-4">
-            {error ? <div className="mb-4"><Alert>{error}</Alert></div> : null}
+        <form className="flex min-h-0 flex-1 flex-col overflow-hidden" onSubmit={handleSubmit}>
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5 sm:p-6">
+            {error ? (
+              <div className="mb-4">
+                <Alert>{error}</Alert>
+              </div>
+            ) : null}
 
             <Select
-              label="Disciplina"
+              label="Disciplina vinculada"
               value={values.student_subject}
-              onChange={(event) => setValues((current) => ({ ...current, student_subject: event.target.value }))}
+              onChange={(event) =>
+                setValues((current) => ({ ...current, student_subject: event.target.value }))
+              }
               error={fieldErrors.student_subject}
             >
               <option value="">Selecione uma disciplina</option>
-              {subjectOptions.map((subject) => (
-                <option key={subject.id} value={subject.id}>
-                  {subject.subject.name} · {subject.subject.semester}º semestre
-                </option>
-              ))}
+              {subjects.length > 0 && (
+                <optgroup label="Disciplinas ativas no semestre">
+                  {subjects.map((subject) => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.subject.name} · {subject.subject.semester}º semestre
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {extraCurriculumSubjects.length > 0 && (
+                <optgroup label="Outras disciplinas da matriz do curso (ativa automaticamente)">
+                  {extraCurriculumSubjects.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} · {item.semester}º semestre
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </Select>
 
             <Input
               label="Título"
               name="title"
               value={values.title}
-              onChange={(event) => setValues((current) => ({ ...current, title: event.target.value }))}
+              onChange={(event) =>
+                setValues((current) => ({ ...current, title: event.target.value }))
+              }
               error={fieldErrors.title}
               placeholder="Ex.: Exercícios da lista 3"
             />
 
             <label className="block">
-              <span className="mb-2 block text-sm font-bold text-slate-800 dark:text-slate-200">Descrição</span>
+              <span className="mb-2 block text-sm font-bold text-slate-800 dark:text-slate-200">
+                Descrição
+              </span>
               <textarea
                 value={values.description}
-                onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, description: event.target.value }))
+                }
                 rows={4}
                 className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-[#005063] focus:ring-2 focus:ring-[#005063]/20 dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-[#006768]"
                 placeholder="Detalhe o objetivo ou instruções da tarefa"
@@ -199,12 +276,19 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
                 name="due_date"
                 type="date"
                 value={values.due_date}
-                onChange={(event) => setValues((current) => ({ ...current, due_date: event.target.value }))}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, due_date: event.target.value }))
+                }
               />
               <Select
                 label="Status"
                 value={values.status}
-                onChange={(event) => setValues((current) => ({ ...current, status: event.target.value as AcademicTaskStatus }))}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    status: event.target.value as AcademicTaskStatus,
+                  }))
+                }
               >
                 <option value="pending">Pendente</option>
                 <option value="in_progress">Em andamento</option>
@@ -219,7 +303,9 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
                 type="number"
                 min={0}
                 value={values.estimated_minutes}
-                onChange={(event) => setValues((current) => ({ ...current, estimated_minutes: event.target.value }))}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, estimated_minutes: event.target.value }))
+                }
                 error={fieldErrors.estimated_minutes}
               />
               <Input
@@ -228,13 +314,15 @@ export function TaskFormModal({ open, subjects, initialTask = null, onClose, onS
                 type="number"
                 min={0}
                 value={values.actual_minutes}
-                onChange={(event) => setValues((current) => ({ ...current, actual_minutes: event.target.value }))}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, actual_minutes: event.target.value }))
+                }
                 error={fieldErrors.actual_minutes}
               />
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-slate-200 bg-slate-50/80 backdrop-blur-xs px-5 py-4 sm:px-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+          <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/80 px-5 py-4 backdrop-blur-xs sm:flex-row sm:justify-end sm:px-6 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
             <button
               type="button"
               onClick={onClose}

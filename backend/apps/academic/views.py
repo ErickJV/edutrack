@@ -101,13 +101,34 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = cast(User, self.request.user)
-        if not user.course_offering_id:
+        if not user.course_offering_id or user.course_offering is None:
             raise PermissionDenied(
                 "Complete seu perfil acadêmico antes de selecionar matérias ativas."
             )
+        current_course = user.course_offering.course
+        course_enrollments = StudentSubject.objects.filter(
+            user=user,
+            subject__course=current_course,
+            subject__active=True,
+            status=StudentSubject.Status.ACTIVE,
+        )
+        if not course_enrollments.exists():
+            first_sem_subjects = Subject.objects.filter(
+                course=current_course, semester=1, active=True
+            )
+            for subj in first_sem_subjects:
+                enrollment, _ = StudentSubject.objects.get_or_create(
+                    user=user,
+                    subject=subj,
+                    defaults={"status": StudentSubject.Status.ACTIVE},
+                )
+                if enrollment.status != StudentSubject.Status.ACTIVE:
+                    enrollment.status = StudentSubject.Status.ACTIVE
+                    enrollment.save(update_fields=("status", "updated_at"))
+
         queryset = (
             StudentSubject.objects.select_related("subject", "subject__course")
-            .filter(user=user)
+            .filter(user=user, subject__course=current_course, subject__active=True)
             .order_by("subject__semester", "subject__name")
         )
         status_param = self.request.query_params.get("status")

@@ -133,6 +133,9 @@ export function TasksPage() {
       const next = current.some((item) => item.id === task.id) ? current.map((item) => (item.id === task.id ? task : item)) : [task, ...current]
       return next.sort(sortTasks)
     })
+    if (!subjects.some((s) => s.id === task.student_subject)) {
+      void listStudentSubjects().then(setSubjects).catch(() => {})
+    }
     setModalOpen(false)
     setEditingTask(null)
   }
