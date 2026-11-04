@@ -87,3 +87,170 @@ select {
   color: #ffffff;
   background: #006768;
 }
+
+/* ==========================================================================
+   BLOCO DE ANOTAÇÕES — FOLHA PAUTADA, PONTILHADA E LIMPA ALINHADA (32px)
+   ========================================================================== */
+.notebook-editor {
+  line-height: 32px !important;
+  padding-top: 6px !important;
+  padding-bottom: 32px !important;
+  background-attachment: local;
+  word-break: break-word;
+}
+
+.notebook-paper-lined {
+  background-color: #fcfbf7;
+  background-image:
+    linear-gradient(90deg, transparent 43px, rgba(244, 63, 94, 0.28) 43px, rgba(244, 63, 94, 0.28) 45px, transparent 45px),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 31px,
+      rgba(100, 116, 139, 0.26) 31px,
+      rgba(100, 116, 139, 0.26) 32px
+    );
+  background-size: 100% 100%, 100% 32px;
+  background-position: 0 0, 0 0;
+  background-attachment: local;
+  padding-left: 58px !important;
+  padding-right: 28px !important;
+}
+
+html.dark .notebook-paper-lined {
+  background-color: #05131d;
+  background-image:
+    linear-gradient(90deg, transparent 43px, rgba(6, 182, 212, 0.25) 43px, rgba(6, 182, 212, 0.25) 45px, transparent 45px),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 31px,
+      rgba(148, 163, 184, 0.16) 31px,
+      rgba(148, 163, 184, 0.16) 32px
+    );
+  background-size: 100% 100%, 100% 32px;
+  background-position: 0 0, 0 0;
+  background-attachment: local;
+}
+
+.notebook-paper-dotted {
+  background-color: #fcfbf7;
+  background-image: radial-gradient(rgba(100, 116, 139, 0.35) 1.25px, transparent 1.25px);
+  background-size: 24px 32px;
+  background-position: 0 6px;
+  background-attachment: local;
+  padding-left: 32px !important;
+  padding-right: 28px !important;
+}
+
+html.dark .notebook-paper-dotted {
+  background-color: #05131d;
+  background-image: radial-gradient(rgba(148, 163, 184, 0.24) 1.25px, transparent 1.25px);
+  background-size: 24px 32px;
+  background-position: 0 6px;
+  background-attachment: local;
+}
+
+.notebook-paper-clean {
+  background-color: #fcfbf7;
+  padding-left: 32px !important;
+  padding-right: 28px !important;
+}
+
+html.dark .notebook-paper-clean {
+  background-color: #05131d;
+}
+
+/* Garante que todos os blocos internos respeitem múltiplos exatos de 32px */
+.notebook-editor p,
+.notebook-editor div,
+.notebook-editor ul,
+.notebook-editor ol,
+.notebook-editor li,
+.notebook-editor blockquote {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 32px !important;
+}
+
+.notebook-editor ul {
+  padding-left: 1.5rem !important;
+  list-style-type: disc !important;
+}
+
+.notebook-editor ol {
+  padding-left: 1.5rem !important;
+  list-style-type: decimal !important;
+}
+
+.notebook-editor h1,
+.notebook-editor h2 {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  font-size: 1.25rem !important;
+  font-weight: 800 !important;
+  line-height: 32px !important;
+}
+
+.notebook-editor h3,
+.notebook-editor h4 {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  font-size: 1.08rem !important;
+  font-weight: 700 !important;
+  line-height: 32px !important;
+}
+
+.notebook-editor hr {
+  margin: 0 !important;
+  height: 32px !important;
+  border: 0 !important;
+  border-bottom: 2px dashed rgba(148, 163, 184, 0.35) !important;
+}
+
+/* ==========================================================================
+   FLASHCARDS ANKI — ANIMAÇÃO 3D FLIPPING SEM COLAPSO OU SOBREPOSIÇÃO
+   ========================================================================== */
+.anki-flip-scene {
+  perspective: 1400px;
+  -webkit-perspective: 1400px;
+}
+
+.anki-flip-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  min-height: 370px;
+  position: relative;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.anki-flip-card.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.anki-flip-face {
+  grid-area: 1 / 1 / 2 / 2;
+  width: 100%;
+  min-height: 370px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.anki-flip-face-front {
+  transform: rotateY(0deg) translateZ(2px);
+  -webkit-transform: rotateY(0deg) translateZ(2px);
+}
+
+.anki-flip-face-back {
+  transform: rotateY(180deg) translateZ(2px);
+  -webkit-transform: rotateY(180deg) translateZ(2px);
+}

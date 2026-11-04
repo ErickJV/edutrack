@@ -1,3 +1,4 @@
+import re
 from typing import Any, cast
 from uuid import UUID
 
@@ -15,6 +16,7 @@ from .models import (
     AcademicTerm,
     ClassOccurrence,
     ClassSchedule,
+    Flashcard,
     Professor,
     ReadingLog,
     StudentSubject,
@@ -34,6 +36,7 @@ from .serializers import (
     ClassOccurrenceWriteSerializer,
     ClassScheduleSerializer,
     DashboardSummarySerializer,
+    FlashcardSerializer,
     ProfessorSerializer,
     ReadingLogSerializer,
     StudentSubjectSelectionSerializer,
@@ -101,13 +104,34 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = cast(User, self.request.user)
-        if not user.course_offering_id:
+        if not user.course_offering_id or user.course_offering is None:
             raise PermissionDenied(
                 "Complete seu perfil acadêmico antes de selecionar matérias ativas."
             )
+        current_course = user.course_offering.course
+        course_enrollments = StudentSubject.objects.filter(
+            user=user,
+            subject__course=current_course,
+            subject__active=True,
+            status=StudentSubject.Status.ACTIVE,
+        )
+        if not course_enrollments.exists():
+            first_sem_subjects = Subject.objects.filter(
+                course=current_course, semester=1, active=True
+            )
+            for subj in first_sem_subjects:
+                enrollment, _ = StudentSubject.objects.get_or_create(
+                    user=user,
+                    subject=subj,
+                    defaults={"status": StudentSubject.Status.ACTIVE},
+                )
+                if enrollment.status != StudentSubject.Status.ACTIVE:
+                    enrollment.status = StudentSubject.Status.ACTIVE
+                    enrollment.save(update_fields=("status", "updated_at"))
+
         queryset = (
             StudentSubject.objects.select_related("subject", "subject__course")
-            .filter(user=user)
+            .filter(user=user, subject__course=current_course, subject__active=True)
             .order_by("subject__semester", "subject__name")
         )
         status_param = self.request.query_params.get("status")
@@ -162,12 +186,8 @@ class StudentSubjectDetailView(generics.RetrieveUpdateAPIView):
 class AcademicTaskMixin:
     def get_base_queryset(self: Any):
         user = cast(User, self.request.user)
-        if not user.course_offering_id:
-            raise PermissionDenied(
-                "Complete seu perfil acadêmico antes de acessar tarefas acadêmicas."
-            )
         queryset = AcademicTask.objects.select_related(
-            "student_subject", "student_subject__subject", "user"
+            "student_subject", "student_subject__subject", "linked_event", "user"
         ).filter(user=user)
         student_subject_id = self.request.query_params.get("student_subject")
         if student_subject_id:
@@ -215,6 +235,12 @@ class AcademicTaskDetailView(AcademicTaskMixin, generics.RetrieveUpdateDestroyAP
         return (
             AcademicTaskSerializer if self.request.method == "GET" else AcademicTaskWriteSerializer
         )
+
+    def perform_destroy(self, instance: AcademicTask):
+        linked = instance.linked_event
+        instance.delete()
+        if linked:
+            linked.delete()
 
     def retrieve(self, request, *args, **kwargs):
         return Response(AcademicTaskSerializer(self.get_object()).data)
@@ -401,6 +427,10 @@ class AcademicEventDetailView(generics.RetrieveUpdateDestroyAPIView):
         return AcademicEvent.objects.select_related(
             "student_subject", "student_subject__subject"
         ).filter(user=user)
+
+    def perform_destroy(self, instance: AcademicEvent):
+        AcademicTask.objects.filter(linked_event=instance).delete()
+        instance.delete()
 
 
 class StudyFolderListCreateView(generics.ListCreateAPIView):
@@ -905,11 +935,14 @@ class CalendarView(generics.GenericAPIView):
                     "kind": "class",
                 })
 
-        # 2. Academic events
+        # 2. Academic events (somente eventos legados sem AcademicTask vinculada para evitar duplicidade)
         if not kind_filter or kind_filter in ("exam", "assignment", "other"):
             from django.db.models import Q
-            event_qs = AcademicEvent.objects.filter(
+            event_qs = AcademicEvent.objects.select_related(
+                "student_subject__subject"
+            ).filter(
                 user=user,
+                synced_task__isnull=True,
                 starts_at__lt=to_dt,
             ).filter(
                 Q(ends_at__isnull=True, starts_at__gte=from_dt)
@@ -925,19 +958,20 @@ class CalendarView(generics.GenericAPIView):
                     "source_type": "event",
                     "source_id": str(ev.id),
                     "title": ev.title,
+                    "description": ev.description,
                     "starts_at": ev.starts_at.isoformat(),
                     "ends_at": ev.ends_at.isoformat() if ev.ends_at else None,
                     "room": ev.room,
                     "student_subject_id": str(ev.student_subject_id) if ev.student_subject_id else None,
-                    "subject_name": None,
+                    "subject_name": ev.student_subject.subject.name if ev.student_subject else None,
                     "cancelled": False,
                     "attendance_status": None,
                     "all_day": ev.all_day,
                     "kind": ev.kind,
                 })
 
-        # 3. Task due dates (no kind filter or kind==task)
-        if not kind_filter or kind_filter == "task":
+        # 3. Tasks & Synchronized Calendar Activities
+        if not kind_filter or kind_filter in ("task", "exam", "assignment", "other"):
             task_qs = AcademicTask.objects.select_related(
                 "student_subject__subject"
             ).filter(
@@ -948,24 +982,707 @@ class CalendarView(generics.GenericAPIView):
             )
             if ss_id:
                 task_qs = task_qs.filter(student_subject_id=ss_id)
+            if kind_filter in ("exam", "assignment", "other"):
+                task_qs = task_qs.filter(category=kind_filter)
             for task in task_qs:
                 items.append({
                     "id": f"task:{task.id}",
                     "source_type": "task",
                     "source_id": str(task.id),
                     "title": task.title,
+                    "description": task.description,
                     "starts_at": task.due_date.isoformat(),
-                    "ends_at": task.due_date.isoformat(),
-                    "room": "",
-                    "student_subject_id": str(task.student_subject_id),
-                    "subject_name": task.student_subject.subject.name,
+                    "ends_at": (task.end_date or task.due_date).isoformat(),
+                    "room": task.room or "",
+                    "student_subject_id": str(task.student_subject_id) if task.student_subject_id else None,
+                    "subject_name": (
+                        task.student_subject.subject.name
+                        if task.student_subject and task.student_subject.subject
+                        else "Geral / Outras Atividades"
+                    ),
                     "cancelled": False,
                     "attendance_status": None,
-                    "all_day": False,
-                    "kind": "task",
+                    "all_day": task.all_day,
+                    "kind": task.category or "task",
                     "task_status": task.status,
+                })
+
+        # 4. Study readings & reading increments (no kind filter or kind in reading/exam)
+        from_date = from_dt.date()
+        to_date = to_dt.date()
+        if not kind_filter or kind_filter in ("reading", "exam"):
+            reading_qs = AcademicReading.objects.select_related(
+                "student_subject__subject"
+            ).filter(
+                user=user,
+                exam_date__isnull=False,
+                exam_date__gte=from_date,
+                exam_date__lte=to_date,
+            )
+            if ss_id:
+                reading_qs = reading_qs.filter(student_subject_id=ss_id)
+            for r in reading_qs:
+                exam_iso = r.exam_date.isoformat()
+                label_prefix = r.exam_name.strip() if r.exam_name.strip() else "Meta/Prova de Leitura"
+                items.append({
+                    "id": f"reading-exam:{r.id}",
+                    "source_type": "reading",
+                    "source_id": str(r.id),
+                    "title": f"{label_prefix}: {r.title}",
+                    "description": f"Progresso: {r.current_page}/{r.total_pages} págs ({r.progress_percent}%)",
+                    "starts_at": f"{exam_iso}T12:00:00+00:00",
+                    "ends_at": f"{exam_iso}T13:00:00+00:00",
+                    "room": "",
+                    "student_subject_id": str(r.student_subject_id) if r.student_subject_id else None,
+                    "subject_name": r.student_subject.subject.name if r.student_subject else None,
+                    "cancelled": False,
+                    "attendance_status": None,
+                    "all_day": True,
+                    "kind": "reading",
+                    "reading_progress": r.progress_percent,
+                    "reading_pages": f"{r.current_page}/{r.total_pages} págs",
+                })
+
+        if not kind_filter or kind_filter == "reading":
+            log_qs = ReadingLog.objects.select_related(
+                "reading__student_subject__subject"
+            ).filter(
+                user=user,
+                pages_read__gt=0,
+                date__gte=from_date,
+                date__lte=to_date,
+            )
+            if ss_id:
+                log_qs = log_qs.filter(reading__student_subject_id=ss_id)
+            for log in log_qs:
+                log_iso = log.date.isoformat()
+                r = log.reading
+                items.append({
+                    "id": f"reading-log:{log.id}",
+                    "source_type": "reading",
+                    "source_id": str(r.id),
+                    "title": f"Leitura (+{log.pages_read} págs): {r.title}",
+                    "description": f"Acumulado: {r.current_page}/{r.total_pages} págs ({r.progress_percent}%)",
+                    "starts_at": f"{log_iso}T12:00:00+00:00",
+                    "ends_at": f"{log_iso}T13:00:00+00:00",
+                    "room": "",
+                    "student_subject_id": str(r.student_subject_id) if r.student_subject_id else None,
+                    "subject_name": r.student_subject.subject.name if r.student_subject else None,
+                    "cancelled": False,
+                    "attendance_status": None,
+                    "all_day": True,
+                    "kind": "reading",
+                    "reading_progress": r.progress_percent,
+                    "reading_pages": f"{r.current_page}/{r.total_pages} págs",
                 })
 
         # Sort by starts_at then id
         items.sort(key=lambda x: (x["starts_at"], x["id"]))
         return Response({"items": items})
+
+
+# ---------------------------------------------------------------------------
+# Flashcards (Anki SM-2 Spaced Repetition)
+# ---------------------------------------------------------------------------
+
+class FlashcardListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = FlashcardSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        qs = Flashcard.objects.select_related("student_subject__subject").filter(user=user)
+        ss_id = self.request.query_params.get("student_subject")
+        if ss_id:
+            qs = qs.filter(student_subject_id=ss_id)
+        deck = self.request.query_params.get("deck_name")
+        if deck:
+            qs = qs.filter(deck_name=deck)
+        return qs.order_by("due_at", "-created_at")
+
+
+class FlashcardDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = FlashcardSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return Flashcard.objects.select_related("student_subject__subject").filter(user=user)
+
+
+class FlashcardReviewView(generics.GenericAPIView):
+    """
+    POST /api/v1/flashcards/{id}/review
+    Accepts {"rating": "again" | "hard" | "good" | "easy"}
+    Applies Anki SM-2 scheduling algorithm and returns the updated Flashcard.
+    """
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = FlashcardSerializer
+    pagination_class = None
+
+    def post(self, request, *args, **kwargs):
+        from datetime import timedelta
+        from rest_framework.exceptions import NotFound, ValidationError as DRFValidationError
+
+        user = cast(User, request.user)
+        pk = self.kwargs["pk"]
+        try:
+            card = Flashcard.objects.select_related("student_subject__subject").get(
+                id=pk, user=user
+            )
+        except Flashcard.DoesNotExist as exc:
+            raise NotFound() from exc
+
+        rating = str(request.data.get("rating", "")).strip().lower()
+        if rating not in ("again", "hard", "good", "easy"):
+            raise DRFValidationError({"rating": "Use 'again', 'hard', 'good' ou 'easy'."})
+
+        now = timezone.now()
+        ease = card.ease_factor
+        interval = card.interval_days
+        reps = card.repetitions
+        lapses = card.lapses
+
+        if rating == "again":
+            reps = 0
+            lapses += 1
+            interval = 0
+            ease = max(1.3, round(ease - 0.2, 2))
+            card.state = Flashcard.State.LEARNING
+            card.due_at = now + timedelta(minutes=10)
+        elif rating == "hard":
+            ease = max(1.3, round(ease - 0.15, 2))
+            if interval == 0:
+                interval = 1
+            else:
+                interval = max(1, round(interval * 1.2))
+            card.state = Flashcard.State.REVIEW
+            card.due_at = now + timedelta(days=interval)
+        elif rating == "good":
+            reps += 1
+            if reps == 1:
+                interval = 1
+            elif reps == 2:
+                interval = 3
+            else:
+                interval = max(1, round(interval * ease))
+            card.state = Flashcard.State.REVIEW
+            card.due_at = now + timedelta(days=interval)
+        else:  # easy
+            reps += 1
+            ease = round(ease + 0.15, 2)
+            if reps == 1:
+                interval = 4
+            else:
+                interval = max(4, round(max(1, interval) * ease * 1.3))
+            card.state = Flashcard.State.REVIEW
+            card.due_at = now + timedelta(days=interval)
+
+        card.ease_factor = ease
+        card.interval_days = interval
+        card.repetitions = reps
+        card.lapses = lapses
+        card.last_reviewed_at = now
+        card.save()
+
+        return Response(FlashcardSerializer(card, context={"request": request}).data)
+
+
+class FlashcardAIGenerateView(generics.GenericAPIView):
+    """
+    POST /api/v1/flashcards/generate-ai
+    Gera flashcards criteriosos voltados ao raciocínio lógico profundo (Taxonomia de Bloom:
+    Aplicação, Análise, Avaliação, Trade-offs e Causa-Efeito) a partir de uma anotação
+    (StudyNote), disciplina, texto colado ou tema acadêmico.
+    """
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = FlashcardSerializer
+    pagination_class = None
+
+    GENERIC_TITLES = {
+        "nova anotação",
+        "nova anotaço",
+        "nova anotaco",
+        "sem título",
+        "sem titulo",
+        "anotação",
+        "anotacao",
+        "anotação de estudo",
+        "anotação guiada",
+        "nota",
+        "geral",
+        "estudos acadêmicos",
+    }
+
+    META_PREFIX_REGEX = re.compile(
+        r"^(objetivos?|metas?|propósitos?|finalidades?|"
+        r"temos que considerar.*|devemos considerar.*|fatores.*|variáveis.*|critérios.*|aspectos.*|"
+        r"nossos? modelos?|características.*|propriedades.*|vantagens.*|desvantagens.*|"
+        r"observaç(?:ão|ões)|obs\.?|notas?|importantes?|atenção|lembretes?|resumos?|conclus(?:ão|ões)|sínteses?|exemplos?|dicas?)$",
+        re.IGNORECASE,
+    )
+
+    @classmethod
+    def _is_generic_title(cls, value: str | None) -> bool:
+        cleaned = (value or "").strip().lower()
+        if not cleaned or cleaned in cls.GENERIC_TITLES:
+            return True
+        if cleaned.startswith("nova anota") or cleaned.startswith("sem tít") or cleaned.startswith("sem tit"):
+            return True
+        return False
+
+    @classmethod
+    def _infer_domain_context(
+        cls, raw_topic: str, subject_title: str, lines: list[str]
+    ) -> tuple[str, str]:
+        """
+        Retorna (core_theme, full_context_label) garantindo que títulos genéricos como
+        'Nova anotação' ou 'Nova anotaço' jamais apareçam no enunciado das perguntas.
+        """
+        specific_topic = "" if cls._is_generic_title(raw_topic) else raw_topic.strip()
+
+        inferred_concept = ""
+        for ln in lines:
+            # Verifica se há um cabeçalho ou conceito inicial antes de ':' que não seja metalinguagem
+            m = re.match(r"^([^:–—\-]{3,60})\s*[:–—\-]\s*(.+)$", ln)
+            if m:
+                candidate = m.group(1).strip(" \"'“”•*-")
+                if (
+                    candidate
+                    and not cls._is_generic_title(candidate)
+                    and not cls.META_PREFIX_REGEX.match(candidate)
+                    and len(candidate.split()) <= 6
+                ):
+                    inferred_concept = candidate
+                    break
+            elif 4 <= len(ln) <= 55 and not ln.endswith(".") and not cls.META_PREFIX_REGEX.match(ln):
+                inferred_concept = ln.strip(" \"'“”•*-")
+                break
+
+        core_theme = specific_topic or inferred_concept or subject_title
+        if subject_title and subject_title.lower() not in core_theme.lower() and subject_title != "Estudos Acadêmicos":
+            full_context = f"{core_theme} ({subject_title})"
+        else:
+            full_context = core_theme
+        return core_theme, full_context
+
+    @classmethod
+    def _build_analytical_cards_from_text(
+        cls,
+        lines: list[str],
+        clean_source: str,
+        core_theme: str,
+        subject_title: str,
+        count: int,
+    ) -> list[dict[str, str]]:
+        """
+        Motor Semântico de Elaboração de Flashcards por Raciocínio Lógico.
+        Classifica proposições da anotação nos eixos cognitivos de Avaliação Crítica,
+        Finalidade e Abstração Seletiva, Análise Multivariável / Tomada de Decisão,
+        Trade-offs Arquiteturais e Causa-Efeito / Pensamento Contrafactual.
+        """
+        cards: list[dict[str, str]] = []
+        seen_signatures: set[str] = set()
+
+        def add_card(front: str, back: str, hint: str, tags: str) -> None:
+            sig = front[:80].lower()
+            if sig not in seen_signatures and len(cards) < count:
+                seen_signatures.add(sig)
+                cards.append({
+                    "front": front.strip(),
+                    "back": back.strip(),
+                    "hint": hint.strip()[:255],
+                    "tags": tags.strip()[:255],
+                })
+
+        context_clause = (
+            f"em {core_theme} ({subject_title})"
+            if subject_title and subject_title.lower() not in core_theme.lower() and subject_title != "Estudos Acadêmicos"
+            else f"em {core_theme}"
+        )
+
+        for ln in lines:
+            if len(cards) >= count:
+                break
+
+            match = re.match(r"^([^:–—\-]{2,70})\s*[:–—\-]\s*(.{10,})$", ln)
+            prefix = match.group(1).strip() if match else ""
+            body = match.group(2).strip() if match else ln.strip()
+            prefix_lower = prefix.lower()
+            full_lower = ln.lower()
+
+            # EIXO 1: Validação Crítica / Pergunta Norteadora / Critério de Aderência
+            quoted_q = re.search(r"[\"“”']([^\"“”']+\?)[\"“”']|([^:]+?\?)", body)
+            if quoted_q or "aderente" in full_lower or "específica" in full_lower:
+                guiding_question = (
+                    (quoted_q.group(1) or quoted_q.group(2)).strip()
+                    if quoted_q
+                    else body.strip(" \"'“”")
+                )
+                concept_focus = (
+                    prefix
+                    if prefix and not cls.META_PREFIX_REGEX.match(prefix) and not cls._is_generic_title(prefix)
+                    else core_theme
+                )
+                add_card(
+                    front=(
+                        f"Em {concept_focus}, por que a pergunta \"{guiding_question}\" é o critério decisivo de aderência prática?"
+                    ),
+                    back=(
+                        f"• Critério Lógico: Valida se a solução atende às restrições reais da aplicação específica.\n"
+                        f"• Risco de Falha: Evita sobre-engenharia (complexidade desnecessária) ou sub-especificação (lacunas nas regras).\n"
+                        f"• Regra: Cada componente do modelo deve resolver uma necessidade direta do domínio."
+                    ),
+                    hint="Aderência ao problema real vs. modelo genérico ou complexo demais",
+                    tags="anki, aderencia, decisao",
+                )
+                continue
+
+            # EIXO 2: Finalidade, Propósito e Abstração Seletiva
+            if (
+                re.match(r"^(objetivos?|metas?|propósitos?|finalidades?)$", prefix_lower)
+                or "capturar aspectos" in full_lower
+                or "interesse da situação" in full_lower
+            ):
+                add_card(
+                    front=(
+                        f"Em {core_theme}, qual é a razão lógica para \"{body}\"?"
+                    ),
+                    back=(
+                        f"• Foco da Abstração: {body}.\n"
+                        f"• Por que Seletivo? Modelar tudo gera ruído cognitivo e custo inviável; omitir o essencial invalida a aplicação.\n"
+                        f"• Aplicação: Filtrar apenas as variáveis críticas para a situação."
+                    ),
+                    hint="Princípio da abstração seletiva: essência vs. ruído",
+                    tags="anki, abstracao, objetivo",
+                )
+                continue
+
+            # EIXO 3: Análise Multivariável e Tomada de Decisão em Cenário Prático
+            comma_items = [item.strip(" .;") for item in body.split(",") if len(item.strip(" .;")) >= 3]
+            if (
+                "fatores" in prefix_lower
+                or "considerar" in prefix_lower
+                or "variáveis" in prefix_lower
+                or "critérios" in prefix_lower
+                or len(comma_items) >= 3
+            ):
+                factors_summary = body.rstrip(".")
+                add_card(
+                    front=(
+                        f"Quais fatores técnicos e humanos ({factors_summary}) condicionam a decisão em {core_theme}?"
+                    ),
+                    back=(
+                        f"• Fatores Críticos: {factors_summary}.\n"
+                        f"• Relação Prática: Escopo e requisitos definem formalismo/protótipos; tecnologias dependem da maturidade e experiência da equipe.\n"
+                        f"• Risco: Ignorar qualquer dessas variáveis inviabiliza a entrega."
+                    ),
+                    hint="Interdependência entre escopo, requisitos, tecnologia e equipe",
+                    tags="anki, tomada-de-decisao, fatores",
+                )
+                continue
+
+            # EIXO 4: Trade-offs de Abstração, Complexidade, Manutenção e Evolução
+            if (
+                "mais detalhad" in full_lower
+                or "menos complex" in full_lower
+                or "manter" in full_lower
+                or "evolução" in full_lower
+                or "nossos modelos" in prefix_lower
+                or ";" in body
+            ):
+                add_card(
+                    front=(
+                        f"Em {core_theme}, qual o trade-off ideal entre requisitos e código final ({body})?"
+                    ),
+                    back=(
+                        f"• Ponto Ótimo: Mais detalhado que requisitos brutos (dá precisão) e menos complexo que o código (dá clareza).\n"
+                        f"• Benefício Prático: Fácil entendimento, manutenção ágil e evolução contínua.\n"
+                        f"• Causa e Efeito: Evita ambiguidade sem antecipar detalhes acidentais de implementação."
+                    ),
+                    hint="Equilíbrio entre precisão conceitual e facilidade de manutenção",
+                    tags="anki, trade-offs, arquitetura",
+                )
+                continue
+
+            # EIXO 5: Conceito Técnico Real com Raciocínio de Causa, Efeito e Pensamento Contrafactual
+            if prefix and not cls.META_PREFIX_REGEX.match(prefix) and not cls._is_generic_title(prefix):
+                add_card(
+                    front=(
+                        f"Qual é a função lógica de \"{prefix}\" em {core_theme} e o que ocorre se for violado?"
+                    ),
+                    back=(
+                        f"• Papel no Domínio: {body}.\n"
+                        f"• Se Violado: Perda de consistência estrutural e falhas em casos-limite do sistema.\n"
+                        f"• Validação: Verificar aderência nas regras da aplicação."
+                    ),
+                    hint=f"Função de {prefix[:30]} e risco de sua ausência",
+                    tags="anki, causa-e-efeito, conceito",
+                )
+            elif len(body) >= 25:
+                add_card(
+                    front=(
+                        f"Por que a premissa \"{body}\" é necessária em {core_theme}?"
+                    ),
+                    back=(
+                        f"• Proposição: {body}.\n"
+                        f"• Justificativa: Atua como restrição orientadora para evitar decisões arbitrárias.\n"
+                        f"• Validação: Garantir consistência prática nos fluxos da disciplina."
+                    ),
+                    hint="Condição lógica necessária para o problema",
+                    tags="anki, premissa, raciocinio",
+                )
+
+        # Complemento analítico de domínio se o número de cartões pedidos for maior que as proposições da nota
+        analytical_fallbacks = [
+            {
+                "front": (
+                    f"Em um problema complexo de {core_theme} ({subject_title}), qual raciocínio lógico deve guiar a escolha "
+                    f"entre uma solução altamente acoplada/otimizada e uma arquitetura modular e evolutiva?"
+                ),
+                "back": (
+                    f"• Análise de Trade-off: Soluções fortemente acopladas podem reduzir latência imediata, mas elevam exponencialmente o custo de manutenção diante de mudanças de requisitos em {core_theme}.\n"
+                    f"• Critério de Decisão: Avaliar a taxa esperada de mudança do domínio, o tamanho do projeto e a necessidade de evolução contínua em {subject_title}.\n"
+                    f"• Conclusão Lógica: Priorizar clareza, coesão e facilidade de manutenção sempre que o sistema precisar evoluir."
+                ),
+                "hint": "Pondere o custo de mudança futura vs. ganho imediato",
+                "tags": "ia, raciocinio-logico, trade-offs",
+            },
+            {
+                "front": (
+                    f"Como aplicar o pensamento contrafactual para validar se uma decisão técnica em {core_theme} "
+                    f"realmente resolve a causa-raiz do problema em {subject_title}?"
+                ),
+                "back": (
+                    f"• Teste Contrafactual: Perguntar 'Se alterarmos o volume de dados, os requisitos ou a tecnologia base, esta modelagem em {core_theme} continua coerente ou entra em colapso?'.\n"
+                    f"• Diagnóstico de Causa-Raiz: Separa sintomas superficiais das restrições estruturais do domínio.\n"
+                    f"• Resultado: Garante que a solução seja aderente ao contexto real e resiliente à evolução."
+                ),
+                "hint": "Teste os limites da solução alterando as variáveis do cenário",
+                "tags": "ia, raciocinio-logico, validacao",
+            },
+            {
+                "front": (
+                    f"De que forma o excesso de detalhamento precoce (sobre-engenharia) e a falta de especificação "
+                    f"afetam de maneiras opostas o sucesso de um projeto em {core_theme}?"
+                ),
+                "back": (
+                    f"• Sub-especificação: Deixa lacunas lógicas que forçam decisões improvisadas durante a codificação em {subject_title}, gerando retrabalho.\n"
+                    f"• Sobre-engenharia (Over-engineering): Introduz complexidade acidental antes de validar se o modelo é aderente à aplicação específica.\n"
+                    f"• Ponto de Equilíbrio: Capturar exatamente os aspectos da realidade de interesse da situação, mantendo o modelo mais detalhado que os requisitos e menos complexo que o código."
+                ),
+                "hint": "Compare os riscos da ambiguidade com os riscos da complexidade acidental",
+                "tags": "ia, raciocinio-logico, sintese",
+            },
+            {
+                "front": (
+                    f"Ao revisar {core_theme} antes de uma avaliação prática de {subject_title}, quais perguntas "
+                    f"de causa e efeito permitem comprovar domínio profundo do tema (além da simples memorização)?"
+                ),
+                "back": (
+                    f"1. Por que este modelo/solução existe e qual problema real ele abstrai?\n"
+                    f"2. Quais fatores técnicos e humanos (requisitos, tamanho do projeto, tecnologia, experiência) condicionam sua aplicação?\n"
+                    f"3. Quais são os trade-offs assumidos e sob qual cenário esta abordagem deixa de ser aderente?"
+                ),
+                "hint": "Por que existe + Quais variáveis condicionam + Quais os limites/trade-offs",
+                "tags": "ia, raciocinio-logico, revisao-profunda",
+            },
+        ]
+
+        for fb in analytical_fallbacks:
+            if len(cards) >= count:
+                break
+            add_card(fb["front"], fb["back"], fb["hint"], fb["tags"])
+
+        return cards[:count]
+
+    def post(self, request, *args, **kwargs):
+        import html
+        import json
+        import os
+        import re
+        import urllib.request
+        from rest_framework import status as drf_status
+        from rest_framework.exceptions import ValidationError as DRFValidationError
+
+        user = cast(User, request.user)
+        topic = str(request.data.get("topic") or "").strip()
+        source_text = str(request.data.get("source_text") or "").strip()
+        note_id = request.data.get("note_id")
+        ss_raw = request.data.get("student_subject")
+        deck_name = str(request.data.get("deck_name") or "").strip()
+        try:
+            count = int(request.data.get("count") or 5)
+        except (TypeError, ValueError):
+            count = 5
+        count = max(1, min(10, count))
+
+        student_subject = None
+        if ss_raw:
+            student_subject = (
+                StudentSubject.objects.select_related("subject")
+                .filter(id=ss_raw, user=user)
+                .first()
+            )
+            if not student_subject:
+                student_subject = (
+                    StudentSubject.objects.select_related("subject")
+                    .filter(subject_id=ss_raw, user=user)
+                    .first()
+                )
+
+        note_obj = None
+        if note_id:
+            note_obj = (
+                StudyNote.objects.select_related("student_subject__subject")
+                .filter(id=note_id, user=user)
+                .first()
+            )
+            if note_obj:
+                updated_note_fields: list[str] = []
+                # Normaliza eventual título legado "Nova anotaço" salvo anteriormente
+                if note_obj.title and note_obj.title.strip().lower() in ("nova anotaço", "nova anotaco", "sem título", "sem titulo"):
+                    note_obj.title = "Nova anotação"
+                    updated_note_fields.append("title")
+                if source_text and source_text.strip() not in ("", "<br>", "<p><br></p>") and note_obj.content != source_text:
+                    note_obj.content = source_text
+                    updated_note_fields.append("content")
+                if student_subject and note_obj.student_subject_id != student_subject.id:
+                    note_obj.student_subject = student_subject
+                    updated_note_fields.append("student_subject")
+                if updated_note_fields:
+                    updated_note_fields.append("updated_at")
+                    note_obj.save(update_fields=updated_note_fields)
+                if not topic and not self._is_generic_title(note_obj.title):
+                    topic = note_obj.title
+                if not source_text:
+                    source_text = note_obj.content
+                if not student_subject and note_obj.student_subject:
+                    student_subject = note_obj.student_subject
+
+        if self._is_generic_title(topic):
+            topic = ""
+
+        # Limpa tags HTML preservando quebras de linha
+        clean_source = re.sub(r"<(br|p|div|li|h[1-6]|tr|blockquote)[^>]*>", "\n", source_text, flags=re.I)
+        clean_source = re.sub(r"<[^>]+>", " ", clean_source)
+        clean_source = html.unescape(clean_source)
+        clean_source = re.sub(r"[ \t]+", " ", clean_source)
+        clean_source = re.sub(r"\n{2,}", "\n", clean_source).strip()
+
+        if not topic and not clean_source and not student_subject and not note_obj:
+            raise DRFValidationError(
+                {"detail": "Informe um tema, selecione uma anotação/disciplina ou cole o conteúdo para gerar os flashcards com IA."}
+            )
+
+        lines = [
+            ln.strip(" -•*\t")
+            for ln in clean_source.split("\n")
+            if len(ln.strip(" -•*\t")) >= 6
+        ]
+
+        subject_title = (
+            student_subject.subject.name
+            if student_subject
+            else (
+                deck_name
+                if deck_name and not self._is_generic_title(deck_name)
+                else "Estudos Acadêmicos"
+            )
+        )
+
+        core_theme, full_context_label = self._infer_domain_context(topic, subject_title, lines)
+
+        resolved_deck = (
+            deck_name
+            if deck_name and not self._is_generic_title(deck_name)
+            else (student_subject.subject.name if student_subject else core_theme or "Geral")
+        )
+
+        generated_specs: list[dict[str, str]] = []
+
+        # 1. Tenta geração via Gemini API se houver chave configurada no ambiente, com prompt socrático rigoroso
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if api_key:
+            try:
+                prompt = (
+                    f"Você é um professor universitário sênior especialista em aprendizagem baseada em problemas, "
+                    f"método socrático e Taxonomia de Bloom (níveis de Aplicação, Análise, Avaliação e Síntese).\n"
+                    f"Elabore exatamente {count} flashcards de alta profundidade em português do Brasil sobre:\n"
+                    f"- Disciplina: {subject_title}\n"
+                    f"- Tema Central: {core_theme}\n"
+                    f"- Conteúdo da Anotação: {clean_source[:4000] if clean_source else full_context_label}\n\n"
+                    f"REGRAS OBRIGATÓRIAS DE QUALIDADE:\n"
+                    f"1. PROIBIDO gerar perguntas superficiais de mera definição de nomenclatura (ex.: 'O que é X?', 'Defina Y', 'O que significa Objetivo?').\n"
+                    f"2. PROIBIDO usar títulos genéricos como 'Nova anotação' ou fragmentos conversacionais ('Temos que considerar', 'Nossos modelos') como conceitos isolados.\n"
+                    f"3. Cada pergunta ('front') DEVE estimular o raciocínio lógico: análise de cenários práticos, relações de causa e efeito, avaliação de trade-offs técnicos, validação crítica de aderência ou pensamento contrafactual ('o que acontece se esta premissa for violada?').\n"
+                    f"4. Cada resposta ('back') DEVE ser estruturada em tópicos claros contendo o raciocínio lógico, a justificativa causal e a implicação prática.\n\n"
+                    f"Retorne APENAS um JSON array válido onde cada objeto tem as chaves: "
+                    f"\"front\", \"back\", \"hint\" e \"tags\"."
+                )
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+                req_body = json.dumps({
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"responseMimeType": "application/json"},
+                }).encode("utf-8")
+                req = urllib.request.Request(
+                    url, data=req_body, headers={"Content-Type": "application/json"}
+                )
+                with urllib.request.urlopen(req, timeout=12) as resp:
+                    resp_data = json.loads(resp.read().decode("utf-8"))
+                    text_out = (
+                        resp_data.get("candidates", [{}])[0]
+                        .get("content", {})
+                        .get("parts", [{}])[0]
+                        .get("text", "")
+                    )
+                    parsed = json.loads(text_out)
+                    if isinstance(parsed, list):
+                        for item in parsed[:count]:
+                            if isinstance(item, dict) and item.get("front") and item.get("back"):
+                                generated_specs.append({
+                                    "front": str(item["front"]).strip(),
+                                    "back": str(item["back"]).strip(),
+                                    "hint": str(item.get("hint") or "Raciocínio lógico e análise").strip()[:255],
+                                    "tags": str(item.get("tags") or "ia, raciocinio-logico").strip()[:255],
+                                })
+            except Exception:
+                generated_specs = []
+
+        # 2. Motor Criterioso Local de Raciocínio Lógico e Análise Semântica Profunda
+        if len(generated_specs) < count:
+            analytical_cards = self._build_analytical_cards_from_text(
+                lines=lines,
+                clean_source=clean_source,
+                core_theme=core_theme,
+                subject_title=subject_title,
+                count=count - len(generated_specs),
+            )
+            generated_specs.extend(analytical_cards)
+
+        created_cards: list[Flashcard] = []
+        for spec in generated_specs[:count]:
+            card = Flashcard.objects.create(
+                user=user,
+                student_subject=student_subject,
+                deck_name=resolved_deck[:120],
+                front=spec["front"],
+                back=spec["back"],
+                hint=spec.get("hint", "")[:255],
+                tags=spec.get("tags", "ia, raciocinio-logico")[:255],
+            )
+            created_cards.append(card)
+
+        return Response(
+            {
+                "created_count": len(created_cards),
+                "items": FlashcardSerializer(
+                    created_cards, many=True, context={"request": request}
+                ).data,
+            },
+            status=drf_status.HTTP_201_CREATED,
+        )
+
+

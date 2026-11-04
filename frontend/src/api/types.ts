@@ -78,16 +78,21 @@ export type StudentSubject = {
   updated_at: string
 }
 export type AcademicTaskStatus = 'pending' | 'in_progress' | 'completed'
+export type AcademicTaskCategory = 'task' | 'assignment' | 'exam' | 'other'
 
 export type AcademicTask = {
   id: string
-  student_subject: string
-  subject_id: string
+  student_subject: string | null
+  subject_id: string | null
   subject_name: string
-  subject_semester: number
+  subject_semester: number | null
+  category?: AcademicTaskCategory
   title: string
   description: string
   due_date: string | null
+  end_date?: string | null
+  all_day?: boolean
+  room?: string
   status: AcademicTaskStatus
   estimated_minutes: number
   actual_minutes: number
@@ -97,10 +102,14 @@ export type AcademicTask = {
 }
 
 export type AcademicTaskPayload = {
-  student_subject: string
+  student_subject?: string | null
+  category?: AcademicTaskCategory
   title: string
   description?: string
   due_date?: string | null
+  end_date?: string | null
+  all_day?: boolean
+  room?: string
   status?: AcademicTaskStatus
   estimated_minutes?: number
   actual_minutes?: number
@@ -307,6 +316,103 @@ export type ClassOccurrence = {
   subject_name: string
   created_at: string
   updated_at: string
+}
+
+export type AcademicEventKind = 'exam' | 'assignment' | 'other'
+
+export type AcademicEvent = {
+  id: string
+  title: string
+  kind: AcademicEventKind
+  starts_at: string
+  ends_at: string | null
+  all_day: boolean
+  room: string
+  description: string
+  student_subject_id: string | null
+  subject_name?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type AcademicEventPayload = {
+  title: string
+  kind: AcademicEventKind
+  starts_at: string
+  ends_at?: string | null
+  all_day?: boolean
+  room?: string
+  description?: string
+  student_subject_id?: string | null
+}
+
+export type CalendarItemKind = 'class' | 'task' | 'exam' | 'assignment' | 'other' | 'reading'
+
+export type CalendarItem = {
+  id: string
+  source_type: 'class' | 'event' | 'task' | 'reading'
+  source_id: string
+  title: string
+  description?: string
+  starts_at: string
+  ends_at: string | null
+  room: string
+  student_subject_id: string | null
+  subject_name: string | null
+  cancelled: boolean
+  attendance_status: AttendanceStatus | null
+  all_day: boolean
+  kind: CalendarItemKind
+  task_status?: AcademicTaskStatus
+  reading_progress?: number
+  reading_pages?: string
+}
+
+export type FlashcardState = 'new' | 'learning' | 'review'
+export type FlashcardRating = 'again' | 'hard' | 'good' | 'easy'
+
+export type Flashcard = {
+  id: string
+  student_subject: string | null
+  subject_name?: string | null
+  deck_name: string
+  front: string
+  back: string
+  hint: string
+  tags: string
+  state: FlashcardState
+  ease_factor: number
+  interval_days: number
+  repetitions: number
+  lapses: number
+  due_at: string
+  is_due: boolean
+  last_reviewed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type FlashcardPayload = {
+  student_subject?: string | null
+  deck_name?: string
+  front: string
+  back: string
+  hint?: string
+  tags?: string
+}
+
+export type FlashcardAIGeneratePayload = {
+  topic?: string
+  source_text?: string
+  note_id?: string | null
+  student_subject?: string | null
+  deck_name?: string
+  count?: number
+}
+
+export type FlashcardAIGenerateResponse = {
+  created_count: number
+  items: Flashcard[]
 }
 
 export type AssistantChatMessage = {

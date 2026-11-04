@@ -10,6 +10,8 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { PrintsPage } from './pages/PrintsPage'
 import { ProfileCompletionPage } from './pages/ProfileCompletionPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { CalendarPage } from './pages/CalendarPage'
+import { FlashcardsPage } from './pages/FlashcardsPage'
 import { SubjectsPage } from './pages/SubjectsPage'
 import { TasksPage } from './pages/TasksPage'
 import { StudySessionPage } from './pages/StudySessionPage'
@@ -36,6 +38,8 @@ export function App() {
         <Route path="/tarefas" element={<TasksPage />} />
         <Route path="/estudo" element={<StudySessionPage />} />
         <Route path="/estudo/:taskId" element={<StudySessionPage />} />
+        <Route path="/calendario" element={<CalendarPage />} />
+        <Route path="/flashcards" element={<FlashcardsPage />} />
         <Route path="/perfil" element={<ProfilePage />} />
       </Route>
       <Route path="/termos" element={<LegalPage kind="terms" />} />
