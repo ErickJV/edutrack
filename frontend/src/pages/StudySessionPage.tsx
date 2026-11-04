@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
-import { BookOpen, FileText, LogOut, Plus } from 'lucide-react'
+import { BookOpen, FileText, LogOut, Plus, Timer } from 'lucide-react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import {
   createAcademicReading,
@@ -44,6 +44,7 @@ export function StudySessionPage() {
   const tabFromQuery = (searchParams.get('tab') as 'workspace' | 'readings') || 'workspace'
 
   const [activeTab, setActiveTab] = useState<'workspace' | 'readings'>(tabFromQuery)
+  const [showFocusTools, setShowFocusTools] = useState(false)
   const [tasks, setTasks] = useState<AcademicTask[]>([])
   const [subjects, setSubjects] = useState<StudentSubject[]>([])
   const [readings, setReadings] = useState<AcademicReading[]>([])
@@ -222,84 +223,70 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
   }
 
   return (
-    <main className="min-h-dvh bg-[#dce6ef] text-[#0d3950] transition-colors dark:bg-[#040f17] dark:text-slate-50">
+    <main className="flex min-h-dvh flex-col bg-[#dce6ef] text-[#0d3950] transition-colors dark:bg-[#040f17] dark:text-slate-50">
       <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <Brand />
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <button
-                type="button"
-                onClick={() => void leave()}
-                disabled={leaving}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-white px-4 py-2 text-sm font-bold text-[#0d3950] transition hover:bg-slate-50 disabled:opacity-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-100 dark:hover:bg-[#0d3950]/40"
-              >
-                <LogOut className="size-4" aria-hidden="true" />
-                <span className="hidden sm:inline">{leaving ? 'Saindo...' : 'Sair'}</span>
-              </button>
-            </div>
-          </div>
-          <div className="mt-4">
-            <AppNavigation />
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-10">
-        {/* Cabeçalho do Módulo de Anotações */}
-        <section className="rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-[#0d3950] sm:text-3xl dark:text-white">
-                Anotações
-              </h1>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                Caderno digital com folha pautada alinhada, personalização de fontes, ciclo Pomodoro e leituras.
-              </p>
+        <div className="mx-auto w-full max-w-[1920px] px-3 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-4">
+              <Brand />
+              <AppNavigation />
             </div>
 
-            {/* Alternador de Abas & Foco em Tarefa */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <div
                 role="tablist"
                 aria-label="Seção de Anotações"
-                className="flex rounded-xl border border-slate-200 bg-slate-100/80 p-1 dark:border-[#005063]/40 dark:bg-[#041019]"
+                className="flex rounded-xl border border-slate-200 bg-slate-100/80 p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
               >
                 <button
                   type="button"
                   role="tab"
                   aria-selected={activeTab === 'workspace'}
                   onClick={() => switchTab('workspace')}
-                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-extrabold transition ${
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-extrabold transition ${
                     activeTab === 'workspace'
                       ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
                       : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
                   }`}
                 >
                   <FileText className="size-3.5" aria-hidden="true" />
-                  Bloco de Anotações
+                  Anotações
                 </button>
                 <button
                   type="button"
                   role="tab"
                   aria-selected={activeTab === 'readings'}
                   onClick={() => switchTab('readings')}
-                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-extrabold transition ${
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-extrabold transition ${
                     activeTab === 'readings'
                       ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
                       : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
                   }`}
                 >
                   <BookOpen className="size-3.5" aria-hidden="true" />
-                  Leitura Acadêmica ({readings.length})
+                  Leituras ({readings.length})
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-[#005063]/30 dark:bg-[#041019]">
+              {activeTab === 'workspace' && (
+                <button
+                  type="button"
+                  onClick={() => setShowFocusTools((prev) => !prev)}
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
+                    showFocusTools
+                      ? 'border-[#006768] bg-[#0d3950] text-white dark:bg-[#005063]'
+                      : 'border-slate-200 bg-white text-[#0d3950] hover:bg-slate-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200'
+                  }`}
+                >
+                  <Timer className="size-3.5" />
+                  <span>{showFocusTools ? 'Ocultar Pomodoro' : 'Pomodoro & Metodologias'}</span>
+                </button>
+              )}
+
+              <div className="hidden items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 xl:flex dark:border-[#005063]/30 dark:bg-[#041019]">
                 <label
                   htmlFor={taskSelectId}
-                  className="text-xs font-bold text-slate-500 dark:text-slate-400"
+                  className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
                 >
                   Foco:
                 </label>
@@ -307,7 +294,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                   id={taskSelectId}
                   value={selectedTaskId}
                   onChange={(e) => handleTaskChange(e.target.value)}
-                  className="max-w-[200px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
+                  className="max-w-[160px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
                 >
                   <option value="">(Anotação Livre)</option>
                   {tasks.map((task) => (
@@ -317,17 +304,45 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                   ))}
                 </select>
               </div>
+
+              <ThemeToggle />
+              <button
+                type="button"
+                onClick={() => void leave()}
+                disabled={leaving}
+                className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-bold text-[#0d3950] transition hover:bg-slate-50 disabled:opacity-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-100 dark:hover:bg-[#0d3950]/40"
+              >
+                <LogOut className="size-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">{leaving ? 'Saindo...' : 'Sair'}</span>
+              </button>
             </div>
           </div>
-        </section>
+        </div>
+      </header>
 
+      {/* Container Full-Width e Full-Height para Anotações ocuparem o máximo possível da tela */}
+      <div className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-4 px-2 py-2.5 sm:px-4 sm:py-3">
         {error ? <Alert tone="error">{error}</Alert> : null}
 
-        {/* ABA 1: BLOCO DE ANOTAÇÕES EM DESTAQUE NO TOPO + APOIO DE FOCO ABAIXO */}
         {activeTab === 'workspace' && (
-          <div className="flex flex-col gap-6">
-            {/* Bloco de Anotações Principal */}
-            <div className="w-full">
+          <div className="flex flex-1 flex-col gap-4">
+            {showFocusTools && (
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                <div className="lg:col-span-5">
+                  <PomodoroTimer activeTask={activeTask} onSyncMinutes={handleSyncMinutes} />
+                </div>
+                <div className="lg:col-span-7">
+                  <MethodologySelector
+                    selectedMethodology={selectedMethodology}
+                    onSelectMethodology={setSelectedMethodology}
+                    onInsertTemplate={handleInsertTemplate}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Bloco de Anotações Ocupando o Máximo Possível da Tela */}
+            <div className="flex flex-1 flex-col">
               <StudyNotesWorkspace
                 activeSubject={activeSubject}
                 activeTask={activeTask}
@@ -338,26 +353,12 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 onClearExternalTemplate={() => setPendingTemplate(null)}
               />
             </div>
-
-            {/* Ferramentas de Apoio ao Estudo: Pomodoro & Metodologias */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-              <div className="lg:col-span-5">
-                <PomodoroTimer activeTask={activeTask} onSyncMinutes={handleSyncMinutes} />
-              </div>
-              <div className="lg:col-span-7">
-                <MethodologySelector
-                  selectedMethodology={selectedMethodology}
-                  onSelectMethodology={setSelectedMethodology}
-                  onInsertTemplate={handleInsertTemplate}
-                />
-              </div>
-            </div>
           </div>
         )}
 
         {/* ABA 2: PAINEL DE LEITURA ACADÊMICA */}
         {activeTab === 'readings' && (
-          <div className="space-y-6">
+          <div className="space-y-6 py-2">
             <ReadingStreakTracker summary={readingSummary} />
 
             <div className="flex flex-wrap items-center justify-between gap-3">

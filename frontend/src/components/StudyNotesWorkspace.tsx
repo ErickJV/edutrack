@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
   Bold,
+  Brain,
+  Check,
   CheckSquare,
+  ChevronDown,
   FileText,
   FolderPlus,
   Heading1,
@@ -39,6 +43,7 @@ import {
   createStudyNote,
   deleteStudyFolder,
   deleteStudyNote,
+  generateFlashcardsWithAI,
   listStudyFolders,
   listStudyNotes,
   updateStudyFolder,
@@ -67,6 +72,7 @@ const FONT_OPTIONS: {
   id: FontFamilyChoice
   label: string
   shortLabel: string
+  category: string
   className: string
   fontFamilyCss: string
 }[] = [
@@ -74,13 +80,15 @@ const FONT_OPTIONS: {
     id: 'inter',
     label: 'Inter (Padrão)',
     shortLabel: 'Inter',
+    category: 'Sans-serif limpa',
     className: 'font-sans',
     fontFamilyCss: 'Inter, ui-sans-serif, system-ui, sans-serif',
   },
   {
     id: 'merriweather',
-    label: 'Merriweather (Caderno)',
+    label: 'Merriweather',
     shortLabel: 'Merriweather',
+    category: 'Leitura / Caderno',
     className: 'font-merriweather',
     fontFamilyCss: '"Merriweather", Georgia, serif',
   },
@@ -88,6 +96,7 @@ const FONT_OPTIONS: {
     id: 'montserrat',
     label: 'Montserrat',
     shortLabel: 'Montserrat',
+    category: 'Geométrica',
     className: 'font-montserrat',
     fontFamilyCss: '"Montserrat", sans-serif',
   },
@@ -95,6 +104,7 @@ const FONT_OPTIONS: {
     id: 'comfortaa',
     label: 'Comfortaa',
     shortLabel: 'Comfortaa',
+    category: 'Arredondada',
     className: 'font-comfortaa',
     fontFamilyCss: '"Comfortaa", cursive, sans-serif',
   },
@@ -102,6 +112,7 @@ const FONT_OPTIONS: {
     id: 'segoe',
     label: 'Segoe UI',
     shortLabel: 'Segoe UI',
+    category: 'Moderna',
     className: 'font-segoe',
     fontFamilyCss: '"Segoe UI", Tahoma, sans-serif',
   },
@@ -109,13 +120,15 @@ const FONT_OPTIONS: {
     id: 'arial',
     label: 'Arial',
     shortLabel: 'Arial',
+    category: 'Clássica',
     className: 'font-arial',
     fontFamilyCss: 'Arial, Helvetica, sans-serif',
   },
   {
     id: 'mono',
     label: 'Monospace',
-    shortLabel: 'Mono',
+    shortLabel: 'Monospace',
+    category: 'Código / Técnica',
     className: 'font-mono',
     fontFamilyCss: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
   },
@@ -174,9 +187,6 @@ function formatInlineMarkdownToHtml(line: string): string {
     )
 }
 
-/**
- * Converte anotações para HTML limpo perfeitamente alinhado à linha de 32px da folha pautada.
- */
 function noteContentToVisualHtml(content: string): string {
   if (!content || !content.trim()) return ''
   const trimmed = content.trim()
@@ -289,6 +299,8 @@ export function StudyNotesWorkspace({
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [aiBanner, setAiBanner] = useState<string>('')
+  const [generatingAi, setGeneratingAi] = useState(false)
 
   // Estilo do bloco e fonte (persistidos no navegador)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -300,6 +312,7 @@ export function StudyNotesWorkspace({
     const saved = window.localStorage.getItem('edutrack_note_paper') as PaperStyleChoice | null
     return saved === 'lined' || saved === 'dotted' || saved === 'clean' ? saved : 'lined'
   })
+  const [fontMenuOpen, setFontMenuOpen] = useState(false)
   const [colorMenuOpen, setColorMenuOpen] = useState(false)
   const [calloutMenuOpen, setCalloutMenuOpen] = useState(false)
 
@@ -386,6 +399,7 @@ export function StudyNotesWorkspace({
       setEditorTaskId(note.task || '')
       setEditorReadingId(note.reading || '')
       setSaveStatus('idle')
+      setAiBanner('')
       setMobileView('editor')
       window.setTimeout(() => syncEditorDom(visualHtml), 0)
     },
@@ -530,6 +544,32 @@ export function StudyNotesWorkspace({
     }
   }
 
+  const handleGenerateFlashcardsFromNote = async () => {
+    if (!activeNoteId || generatingAi) return
+    setGeneratingAi(true)
+    setError('')
+    setAiBanner('')
+    try {
+      const currentHtml = editorRef.current?.innerHTML ?? editorContent
+      const subj = subjects.find((s) => s.id === editorSubjectId)
+      const res = await generateFlashcardsWithAI({
+        note_id: activeNoteId,
+        topic: editorTitle || 'Anotação de Estudo',
+        source_text: currentHtml,
+        student_subject: editorSubjectId || activeSubject?.id || null,
+        deck_name: subj?.subject.name || editorTitle || 'Geral',
+        count: 4,
+      })
+      setAiBanner(
+        `✨ ${res.created_count} flashcards foram gerados inteligentemente pela IA a partir desta anotação!`,
+      )
+    } catch {
+      setError('Não foi possível gerar flashcards com IA a partir desta anotação.')
+    } finally {
+      setGeneratingAi(false)
+    }
+  }
+
   const handleSaveFolder = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!folderName.trim()) return
@@ -578,6 +618,7 @@ export function StudyNotesWorkspace({
 
   const handleSelectFont = (fontId: FontFamilyChoice) => {
     setSelectedFont(fontId)
+    setFontMenuOpen(false)
     window.localStorage.setItem('edutrack_note_font', fontId)
   }
 
@@ -681,54 +722,66 @@ export function StudyNotesWorkspace({
   return (
     <section
       aria-label="Bloco de Anotações de Estudo"
-      className="flex w-full flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
+      className="flex min-h-[calc(100dvh-135px)] w-full flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
     >
-      {/* Barra Superior do Bloco de Anotações */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-3.5 sm:px-6 dark:border-[#005063]/30 dark:bg-[#041019]/60">
-        <div className="flex items-center gap-3">
+      {/* Barra Superior Compacta do Bloco de Anotações */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/70 px-3 py-2.5 sm:px-5 dark:border-[#005063]/30 dark:bg-[#041019]/60">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => setSidebarOpen((prev) => !prev)}
             aria-label={sidebarOpen ? 'Recolher menu de pastas' : 'Expandir menu de pastas'}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-[#005063] dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-200 dark:hover:bg-[#040f17]"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-[#005063] dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-200 dark:hover:bg-[#040f17]"
           >
             {sidebarOpen ? (
               <>
-                <SidebarClose className="size-4 text-[#005063] dark:text-[#006768]" />
-                <span className="hidden sm:inline">Recolher Cadernos</span>
+                <SidebarClose className="size-3.5 text-[#005063] dark:text-[#006768]" />
+                <span className="hidden sm:inline">Tela Cheia (Ocultar Menu)</span>
               </>
             ) : (
               <>
-                <SidebarOpen className="size-4 text-[#005063] dark:text-[#006768]" />
-                <span>Minhas Notas ({notes.length})</span>
+                <SidebarOpen className="size-3.5 text-[#005063] dark:text-[#006768]" />
+                <span>Cadernos ({notes.length})</span>
               </>
             )}
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <FileText className="size-4 text-[#006768] dark:text-cyan-400" />
-            <h3 className="text-sm font-black tracking-tight text-[#0d3950] sm:text-base dark:text-slate-50">
+            <h3 className="text-sm font-black tracking-tight text-[#0d3950] dark:text-slate-50">
               Bloco de Anotações
             </h3>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {activeNoteId && (
+            <button
+              type="button"
+              disabled={generatingAi}
+              onClick={() => void handleGenerateFlashcardsFromNote()}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-[#005063]/30 bg-[#005063]/10 px-3 text-xs font-extrabold text-[#0d3950] transition hover:bg-[#005063]/20 disabled:opacity-50 dark:border-cyan-400/30 dark:bg-cyan-400/15 dark:text-cyan-300"
+              title="Gerar flashcards inteligentes pela IA usando o conteúdo desta anotação"
+            >
+              <Brain className="size-3.5" />
+              <span>{generatingAi ? 'Gerando com IA...' : '✨ Gerar Flashcards com IA'}</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => void handleCreateNote()}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3 text-xs font-bold text-white shadow-xs transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
           >
             <Plus className="size-3.5" aria-hidden="true" />
             <span>Nova Página</span>
           </button>
 
-          {/* Alternância mobile */}
           <div className="flex items-center gap-2 sm:hidden">
             <button
               type="button"
               onClick={() => setMobileView(mobileView === 'sidebar' ? 'editor' : 'sidebar')}
-              className="inline-flex min-h-9 items-center rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
+              className="inline-flex min-h-8 items-center rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
             >
               {mobileView === 'sidebar' ? 'Abrir Folha →' : '← Notas'}
             </button>
@@ -737,23 +790,35 @@ export function StudyNotesWorkspace({
       </div>
 
       {error ? (
-        <div className="m-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
+        <div className="mx-4 mt-3 rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs font-semibold text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
           {error}
         </div>
       ) : null}
 
-      {/* Corpo Principal do Bloco de Anotações */}
-      <div className="flex min-h-[680px] flex-1 overflow-hidden">
-        {/* Coluna Lateral: Pastas e Lista de Anotações */}
+      {aiBanner ? (
+        <div className="mx-4 mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-900 dark:text-emerald-200">
+          <span>{aiBanner}</span>
+          <Link
+            to="/flashcards"
+            className="rounded-lg bg-emerald-600 px-3 py-1 text-white transition hover:bg-emerald-700"
+          >
+            Abrir Flashcards →
+          </Link>
+        </div>
+      ) : null}
+
+      {/* Corpo Principal Ocupando o Máximo da Tela */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Coluna Lateral Compacta: Pastas e Lista de Anotações */}
         {sidebarOpen ? (
           <aside
-            className={`w-full shrink-0 flex-col border-r border-slate-200 bg-slate-50/60 p-4 transition-all duration-300 lg:w-72 xl:w-80 dark:border-[#005063]/30 dark:bg-[#040f17]/40 ${
+            className={`w-full shrink-0 flex-col border-r border-slate-200 bg-slate-50/60 p-3 transition-all duration-300 lg:w-60 xl:w-64 dark:border-[#005063]/30 dark:bg-[#040f17]/40 ${
               mobileView === 'editor' ? 'hidden sm:flex' : 'flex'
             }`}
           >
             <div className="flex items-center justify-between">
               <h4 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                Pastas / Cadernos ({folders.length})
+                Cadernos ({folders.length})
               </h4>
               <button
                 type="button"
@@ -770,18 +835,18 @@ export function StudyNotesWorkspace({
               </button>
             </div>
 
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex flex-wrap gap-1">
               <button
                 type="button"
                 onClick={() => setSelectedFolderId('all')}
-                className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
+                className={`inline-flex min-h-6 items-center gap-1 rounded-lg px-2 text-[11px] font-bold transition ${
                   selectedFolderId === 'all'
                     ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
                     : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300'
                 }`}
               >
                 <span>Todas</span>
-                <span className="rounded-full bg-slate-200/60 px-1.5 py-0.2 text-[10px] text-slate-800 dark:bg-slate-700 dark:text-slate-200">
+                <span className="rounded-full bg-slate-200/60 px-1.5 text-[10px] text-slate-800 dark:bg-slate-700 dark:text-slate-200">
                   {notes.length}
                 </span>
               </button>
@@ -792,14 +857,14 @@ export function StudyNotesWorkspace({
                     <button
                       type="button"
                       onClick={() => setSelectedFolderId(f.id)}
-                      className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
+                      className={`inline-flex min-h-6 items-center gap-1 rounded-lg px-2 text-[11px] font-bold transition ${
                         isSelected
                           ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
                           : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300'
                       }`}
                     >
                       <span>{f.name}</span>
-                      <span className="rounded-full bg-slate-200/60 px-1.5 py-0.2 text-[10px] text-slate-800 dark:bg-slate-700 dark:text-slate-200">
+                      <span className="rounded-full bg-slate-200/60 px-1.5 text-[10px] text-slate-800 dark:bg-slate-700 dark:text-slate-200">
                         {f.notes_count}
                       </span>
                     </button>
@@ -819,30 +884,24 @@ export function StudyNotesWorkspace({
               })}
             </div>
 
-            <div className="relative mt-3">
-              <Search className="absolute top-2.5 left-3 size-3.5 text-slate-400" />
+            <div className="relative mt-2.5">
+              <Search className="absolute top-2 left-2.5 size-3.5 text-slate-400" />
               <input
                 id={searchInputId}
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Pesquisar nas anotações..."
-                className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pr-3 pl-8 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-[#005063] focus:outline-hidden dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
+                placeholder="Pesquisar notas..."
+                className="w-full rounded-xl border border-slate-200 bg-white py-1 pr-2.5 pl-7 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-[#005063] focus:outline-hidden dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
               />
             </div>
 
-            <div className="mt-3.5 flex items-center justify-between">
-              <h4 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                Páginas ({filteredNotes.length})
-              </h4>
-            </div>
-
-            <div className="mt-2 flex-1 space-y-2 overflow-y-auto pr-1">
+            <div className="mt-2.5 flex-1 space-y-1.5 overflow-y-auto pr-0.5">
               {loading ? (
                 <div className="py-8 text-center text-xs text-slate-400">Carregando...</div>
               ) : filteredNotes.length === 0 ? (
                 <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
-                  Nenhuma página de anotação encontrada.
+                  Nenhuma página encontrada.
                 </div>
               ) : (
                 filteredNotes.map((note) => {
@@ -853,13 +912,13 @@ export function StudyNotesWorkspace({
                       key={note.id}
                       type="button"
                       onClick={() => selectNote(note)}
-                      className={`flex w-full flex-col rounded-2xl border p-3 text-left transition ${
+                      className={`flex w-full flex-col rounded-xl border p-2.5 text-left transition ${
                         isSelected
                           ? 'border-[#006768] bg-[#dce6ef]/60 shadow-xs dark:border-cyan-500/60 dark:bg-[#081a26]'
                           : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-[#040f17] dark:hover:bg-[#081a26]/60'
                       }`}
                     >
-                      <div className="flex w-full items-center justify-between gap-2">
+                      <div className="flex w-full items-center justify-between gap-1.5">
                         <h5 className="truncate text-xs font-extrabold text-slate-900 dark:text-slate-100">
                           {note.title || 'Sem título'}
                         </h5>
@@ -870,23 +929,9 @@ export function StudyNotesWorkspace({
                           })}
                         </span>
                       </div>
-                      <p className="mt-1 line-clamp-2 text-[11px] text-slate-500 dark:text-slate-400">
-                        {cleanPreview ? cleanPreview.slice(0, 110) : 'Folha em branco...'}
+                      <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500 dark:text-slate-400">
+                        {cleanPreview ? cleanPreview.slice(0, 90) : 'Folha em branco...'}
                       </p>
-                      {note.subject_name || note.reading_title ? (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {note.subject_name && (
-                            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-[#0d3950] dark:bg-[#041019] dark:text-cyan-300">
-                              {note.subject_name}
-                            </span>
-                          )}
-                          {note.reading_title && (
-                            <span className="rounded-md bg-[#005063]/10 px-1.5 py-0.5 text-[10px] font-bold text-[#005063] dark:bg-[#005063]/30 dark:text-slate-200">
-                              📖 {note.reading_title}
-                            </span>
-                          )}
-                        </div>
-                      ) : null}
                     </button>
                   )
                 })
@@ -895,189 +940,90 @@ export function StudyNotesWorkspace({
           </aside>
         ) : null}
 
-        {/* Área Principal da Folha de Anotações */}
+        {/* Área Principal da Folha de Anotações (Máximo Espaço da Tela) */}
         <div
-          className={`flex min-w-0 flex-1 flex-col p-4 sm:p-6 ${
+          className={`flex min-w-0 flex-1 flex-col p-3 sm:p-4 ${
             mobileView === 'sidebar' && sidebarOpen ? 'hidden sm:flex' : 'flex'
           }`}
         >
           {activeNoteId ? (
-            <div className="flex h-full flex-col">
-              {/* Vínculos da Anotação (Pasta, Disciplina, Tarefa, Leitura) */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-slate-50 px-2.5 py-1 dark:border-slate-800 dark:bg-[#040f17]">
-                    <label
-                      htmlFor={editorFolderSelectId}
-                      className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
-                    >
-                      Pasta:
-                    </label>
-                    <select
-                      id={editorFolderSelectId}
-                      value={editorFolderId}
-                      onChange={(e) => {
-                        const next = e.target.value
-                        setEditorFolderId(next)
-                        triggerAutoSave({ folder: next || null })
-                      }}
-                      className="max-w-[140px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
-                    >
-                      <option value="">(Sem pasta)</option>
-                      {folders.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-slate-50 px-2.5 py-1 dark:border-slate-800 dark:bg-[#040f17]">
-                    <label
-                      htmlFor={editorSubjectSelectId}
-                      className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
-                    >
-                      Disciplina:
-                    </label>
-                    <select
-                      id={editorSubjectSelectId}
-                      value={editorSubjectId}
-                      onChange={(e) => {
-                        const next = e.target.value
-                        setEditorSubjectId(next)
-                        triggerAutoSave({ student_subject: next || null })
-                      }}
-                      className="max-w-[180px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
-                    >
-                      <option value="">(Geral)</option>
-                      {subjects.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.subject.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {tasks.length > 0 && (
-                    <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-slate-50 px-2.5 py-1 dark:border-slate-800 dark:bg-[#040f17]">
-                      <label
-                        htmlFor={editorTaskSelectId}
-                        className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
-                      >
-                        Tarefa:
-                      </label>
-                      <select
-                        id={editorTaskSelectId}
-                        value={editorTaskId}
-                        onChange={(e) => {
-                          const next = e.target.value
-                          setEditorTaskId(next)
-                          triggerAutoSave({ task: next || null })
-                        }}
-                        className="max-w-[150px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
-                      >
-                        <option value="">(Nenhuma)</option>
-                        {tasks.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.title}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {readings.length > 0 && (
-                    <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-slate-50 px-2.5 py-1 dark:border-slate-800 dark:bg-[#040f17]">
-                      <label
-                        htmlFor={editorReadingSelectId}
-                        className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
-                      >
-                        Leitura:
-                      </label>
-                      <select
-                        id={editorReadingSelectId}
-                        value={editorReadingId}
-                        onChange={(e) => {
-                          const next = e.target.value
-                          setEditorReadingId(next)
-                          triggerAutoSave({ reading: next || null })
-                        }}
-                        className="max-w-[150px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
-                      >
-                        <option value="">(Nenhuma)</option>
-                        {readings.map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.title}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => void handleDeleteCurrentNote()}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-xl border border-rose-200/70 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400"
-                  title="Excluir página de anotação"
-                >
-                  <Trash2 className="size-3.5" aria-hidden="true" />
-                  <span>Excluir</span>
-                </button>
-              </div>
-
-              {/* BARRA DE PERSONALIZAÇÃO UNIFICADA (Opções de Fonte + Estilo da Folha + Formatação Visual) */}
+            <div className="flex h-full flex-1 flex-col">
+              {/* BARRA DE PERSONALIZAÇÃO COM FONTE EM MENU SUSPENSO + ESTILO DA FOLHA + FERRAMENTAS */}
               <div
                 role="toolbar"
                 aria-label="Barra de personalização do bloco de anotações"
-                className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50/90 p-2.5 shadow-2xs dark:border-[#005063]/30 dark:bg-[#040f17]"
+                className="flex flex-wrap items-center justify-between gap-1.5 rounded-2xl border border-slate-200 bg-slate-50/90 px-2.5 py-2 shadow-2xs dark:border-[#005063]/30 dark:bg-[#040f17]"
               >
-                {/* LINHA 1 DA BARRA DE PERSONALIZAÇÃO: OPÇÕES DE FONTE E ESTILO DA FOLHA */}
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2 dark:border-slate-800">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="inline-flex items-center gap-1 px-1.5 text-[11px] font-extrabold tracking-wider text-[#005063] uppercase dark:text-cyan-400">
-                      <Type className="size-3.5" />
-                      Fonte:
-                    </span>
-                    {FONT_OPTIONS.map((font) => {
-                      const active = selectedFont === font.id
-                      return (
-                        <button
-                          key={font.id}
-                          type="button"
-                          onClick={() => handleSelectFont(font.id)}
-                          style={{ fontFamily: font.fontFamilyCss }}
-                          className={`inline-flex min-h-7 items-center rounded-lg px-2.5 text-xs transition ${
-                            active
-                              ? 'bg-[#0d3950] font-bold text-white shadow-xs dark:bg-[#005063]'
-                              : 'border border-slate-200/80 bg-white font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300 dark:hover:bg-slate-800'
-                          }`}
-                          title={font.label}
-                        >
-                          {font.shortLabel}
-                        </button>
-                      )
-                    })}
+                <div className="flex flex-wrap items-center gap-1">
+                  {/* MENU SUSPENSO DE FONTE NA BARRA DE PERSONALIZAÇÃO */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setFontMenuOpen((prev) => !prev)}
+                      style={{ fontFamily: activeFontOption.fontFamilyCss }}
+                      className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] shadow-2xs transition hover:bg-slate-100 dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                      title="Selecionar fonte do bloco de anotações"
+                    >
+                      <Type className="size-3.5 text-[#005063] dark:text-cyan-400" />
+                      <span>Fonte: {activeFontOption.shortLabel}</span>
+                      <ChevronDown className="size-3.5 text-slate-400" />
+                    </button>
+
+                    {fontMenuOpen ? (
+                      <div className="absolute top-9.5 left-0 z-50 w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+                        <span className="block px-2.5 py-1 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                          Fonte do Caderno
+                        </span>
+                        <div className="space-y-0.5">
+                          {FONT_OPTIONS.map((f) => {
+                            const isSelected = f.id === selectedFont
+                            return (
+                              <button
+                                key={f.id}
+                                type="button"
+                                onClick={() => handleSelectFont(f.id)}
+                                style={{ fontFamily: f.fontFamilyCss }}
+                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs transition ${
+                                  isSelected
+                                    ? 'bg-[#005063]/15 font-bold text-[#0d3950] dark:bg-[#005063]/35 dark:text-white'
+                                    : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]'
+                                }`}
+                              >
+                                <div>
+                                  <div>{f.label}</div>
+                                  <span className="font-sans text-[10px] text-slate-400">
+                                    {f.category}
+                                  </span>
+                                </div>
+                                {isSelected ? (
+                                  <Check className="size-3.5 text-[#006768] dark:text-cyan-400" />
+                                ) : null}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
 
-                  {/* Seletor de Estilo da Folha na Barra de Personalização */}
+                  {/* Seletor de Estilo da Folha */}
                   <div
                     role="group"
                     aria-label="Estilo da folha do caderno"
-                    className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-[#081a26]"
+                    className="flex items-center gap-0.5 rounded-xl border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-[#081a26]"
                   >
                     {(
                       [
                         { id: 'lined', label: 'Pautada' },
                         { id: 'dotted', label: 'Pontilhada' },
-                        { id: 'clean', label: 'Folha Limpa' },
+                        { id: 'clean', label: 'Limpa' },
                       ] as const
                     ).map((opt) => (
                       <button
                         key={opt.id}
                         type="button"
                         onClick={() => handleSelectPaperStyle(opt.id)}
-                        className={`inline-flex min-h-7 items-center rounded-lg px-2.5 text-xs font-bold transition ${
+                        className={`inline-flex min-h-7 items-center rounded-lg px-2 text-xs font-bold transition ${
                           paperStyle === opt.id
                             ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
                             : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
@@ -1087,28 +1033,27 @@ export function StudyNotesWorkspace({
                       </button>
                     ))}
                   </div>
-                </div>
 
-                {/* LINHA 2 DA BARRA DE PERSONALIZAÇÃO: TÍTULOS, ESTILOS, MARCA-TEXTO E BLOCOS */}
-                <div className="flex flex-wrap items-center gap-1">
+                  <div className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-800" />
+
                   {/* Títulos */}
                   <button
                     type="button"
                     onClick={() => applyVisualCommand('formatBlock', 'H2')}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-extrabold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-extrabold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
                     title="Título de Seção"
                   >
                     <Heading1 className="size-3.5" />
-                    <span>Título</span>
+                    <span className="hidden xl:inline">Título</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => applyVisualCommand('formatBlock', 'H3')}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
                     title="Subtítulo"
                   >
                     <Heading2 className="size-3.5" />
-                    <span>Subtítulo</span>
+                    <span className="hidden xl:inline">Subtítulo</span>
                   </button>
                   <button
                     type="button"
@@ -1119,13 +1064,13 @@ export function StudyNotesWorkspace({
                     Texto
                   </button>
 
-                  <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
+                  <div className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-800" />
 
                   {/* Formatação de Texto Visual */}
                   <button
                     type="button"
                     onClick={() => applyVisualCommand('bold')}
-                    className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs font-black text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-8 w-7 items-center justify-center rounded-lg text-xs font-black text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
                     title="Negrito"
                   >
                     <Bold className="size-3.5" />
@@ -1133,7 +1078,7 @@ export function StudyNotesWorkspace({
                   <button
                     type="button"
                     onClick={() => applyVisualCommand('italic')}
-                    className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-8 w-7 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
                     title="Itálico"
                   >
                     <Italic className="size-3.5" />
@@ -1141,7 +1086,7 @@ export function StudyNotesWorkspace({
                   <button
                     type="button"
                     onClick={() => applyVisualCommand('underline')}
-                    className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-8 w-7 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
                     title="Sublinhado"
                   >
                     <Underline className="size-3.5" />
@@ -1149,30 +1094,28 @@ export function StudyNotesWorkspace({
                   <button
                     type="button"
                     onClick={() => applyVisualCommand('strikeThrough')}
-                    className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-8 w-7 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
                     title="Riscado"
                   >
                     <Strikethrough className="size-3.5" />
                   </button>
-
-                  <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
 
                   {/* Marca-texto e Cores Visuais */}
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => setColorMenuOpen((prev) => !prev)}
-                      className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                      className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
                       title="Marca-texto e Cor da Caneta"
                     >
                       <Highlighter className="size-3.5 text-amber-500" />
-                      <span>Marca-texto & Cor</span>
+                      <span>Cor</span>
                     </button>
 
                     {colorMenuOpen && (
-                      <div className="absolute top-9.5 left-0 z-40 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+                      <div className="absolute top-9.5 left-0 z-50 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
                         <p className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-                          Marca-Texto (Selecione o texto e clique)
+                          Marca-Texto
                         </p>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {HIGHLIGHT_COLORS.map((h) => (
@@ -1222,13 +1165,11 @@ export function StudyNotesWorkspace({
                     )}
                   </div>
 
-                  <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
-
                   {/* Listas e Checklists */}
                   <button
                     type="button"
                     onClick={() => applyVisualCommand('insertUnorderedList')}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-8 items-center rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
                     title="Lista com marcadores"
                   >
                     <List className="size-3.5" />
@@ -1236,7 +1177,7 @@ export function StudyNotesWorkspace({
                   <button
                     type="button"
                     onClick={() => applyVisualCommand('insertOrderedList')}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-8 items-center rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
                     title="Lista numerada"
                   >
                     <ListOrdered className="size-3.5" />
@@ -1244,14 +1185,12 @@ export function StudyNotesWorkspace({
                   <button
                     type="button"
                     onClick={handleInsertChecklist}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
                     title="Inserir item de checklist clicável"
                   >
                     <CheckSquare className="size-3.5 text-[#006768] dark:text-cyan-400" />
-                    <span>Checklist</span>
+                    <span className="hidden xl:inline">Checklist</span>
                   </button>
-
-                  <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
 
                   {/* Blocos Visuais de Estudo */}
                   <div className="relative">
@@ -1262,11 +1201,11 @@ export function StudyNotesWorkspace({
                       title="Inserir caixa de destaque na folha"
                     >
                       <Sparkles className="size-3.5" />
-                      <span>Bloco de Destaque</span>
+                      <span>Destaque</span>
                     </button>
 
                     {calloutMenuOpen && (
-                      <div className="absolute top-9.5 left-0 z-40 w-56 space-y-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+                      <div className="absolute top-9.5 left-0 z-50 w-56 space-y-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
                         <button
                           type="button"
                           onClick={() => handleInsertCallout('note')}
@@ -1310,7 +1249,6 @@ export function StudyNotesWorkspace({
                     title="Inserir tabela resumo"
                   >
                     <TableIcon className="size-3.5" />
-                    <span className="hidden md:inline">Tabela</span>
                   </button>
                   <button
                     type="button"
@@ -1325,13 +1263,105 @@ export function StudyNotesWorkspace({
                     <Quote className="size-3.5" />
                   </button>
                 </div>
+
+                {/* Vínculos Compactos na Direita da Barra */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <select
+                    id={editorFolderSelectId}
+                    aria-label="Pasta da anotação"
+                    value={editorFolderId}
+                    onChange={(e) => {
+                      const next = e.target.value
+                      setEditorFolderId(next)
+                      triggerAutoSave({ folder: next || null })
+                    }}
+                    className="min-h-7 max-w-[125px] truncate rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-[#0d3950] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                  >
+                    <option value="">📁 Sem pasta</option>
+                    {folders.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        📁 {f.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    id={editorSubjectSelectId}
+                    aria-label="Disciplina da anotação"
+                    value={editorSubjectId}
+                    onChange={(e) => {
+                      const next = e.target.value
+                      setEditorSubjectId(next)
+                      triggerAutoSave({ student_subject: next || null })
+                    }}
+                    className="min-h-7 max-w-[155px] truncate rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-[#0d3950] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                  >
+                    <option value="">🎓 Disciplina (Geral)</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        🎓 {s.subject.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {tasks.length > 0 && (
+                    <select
+                      id={editorTaskSelectId}
+                      aria-label="Tarefa vinculada"
+                      value={editorTaskId}
+                      onChange={(e) => {
+                        const next = e.target.value
+                        setEditorTaskId(next)
+                        triggerAutoSave({ task: next || null })
+                      }}
+                      className="hidden min-h-7 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-[#0d3950] focus:outline-hidden 2xl:inline-block dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                    >
+                      <option value="">✓ Sem tarefa</option>
+                      {tasks.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          ✓ {t.title}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {readings.length > 0 && (
+                    <select
+                      id={editorReadingSelectId}
+                      aria-label="Leitura vinculada"
+                      value={editorReadingId}
+                      onChange={(e) => {
+                        const next = e.target.value
+                        setEditorReadingId(next)
+                        triggerAutoSave({ reading: next || null })
+                      }}
+                      className="hidden min-h-7 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-[#0d3950] focus:outline-hidden 2xl:inline-block dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                    >
+                      <option value="">📖 Sem leitura</option>
+                      {readings.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          📖 {r.title}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => void handleDeleteCurrentNote()}
+                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-[11px] font-bold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                    title="Excluir página de anotação"
+                  >
+                    <Trash2 className="size-3.5" aria-hidden="true" />
+                  </button>
+                </div>
               </div>
 
-              {/* FOLHA DE CADERNO REAL ALINHADA (32px por pauta, sem desvios) */}
-              <div className="mt-3 flex flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-[#fcfbf7] shadow-inner dark:border-[#005063]/40 dark:bg-[#05131d]">
+              {/* FOLHA DE CADERNO REAL ALINHADA (Ocupando o máximo da altura e largura da tela) */}
+              <div className="mt-2.5 flex flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-[#fcfbf7] shadow-inner dark:border-[#005063]/40 dark:bg-[#05131d]">
                 {/* Cabeçalho da Folha (Título) */}
                 <div
-                  className={`border-b-2 border-rose-400/35 pt-4 pb-2.5 dark:border-cyan-500/30 ${
+                  className={`border-b-2 border-rose-400/35 pt-3.5 pb-2 dark:border-cyan-500/30 ${
                     paperStyle === 'lined' ? 'pl-[58px] pr-7' : 'px-8'
                   }`}
                 >
@@ -1384,13 +1414,13 @@ export function StudyNotesWorkspace({
                   }}
                   style={{ fontFamily: activeFontOption.fontFamilyCss }}
                   data-placeholder="Comece a escrever suas anotações de aula, resumos ou ideias aqui..."
-                  className={`notebook-editor ${paperClassName} min-h-[448px] flex-1 overflow-y-auto text-base text-slate-900 focus:outline-hidden dark:text-slate-100 empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] ${activeFontOption.className}`}
+                  className={`notebook-editor ${paperClassName} min-h-[calc(100dvh-290px)] flex-1 overflow-y-auto text-base text-slate-900 focus:outline-hidden dark:text-slate-100 empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] ${activeFontOption.className}`}
                 />
               </div>
 
-              {/* Rodapé da Folha com Estatísticas e Status de Salvamento */}
-              <footer className="mt-3 flex flex-wrap items-center justify-between gap-3 pt-1 text-xs text-slate-500 dark:text-slate-400">
-                <div className="flex items-center gap-3">
+              {/* Rodapé Compacto da Folha */}
+              <footer className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-2.5">
                   <span>
                     <strong>{noteStats.words}</strong> palavras
                   </span>
@@ -1434,8 +1464,8 @@ export function StudyNotesWorkspace({
                 Seu Bloco de Anotações
               </h4>
               <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
-                Crie páginas de anotação por disciplina, escolha a fonte na barra de personalização
-                e organize tudo em folhas pautadas, pontilhadas ou limpas.
+                Crie páginas de anotação por disciplina, escolha a fonte no menu suspenso da barra
+                de personalização e gere flashcards inteligentes pela IA.
               </p>
               <button
                 type="button"

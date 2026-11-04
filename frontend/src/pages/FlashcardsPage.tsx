@@ -20,12 +20,14 @@ import {
   ApiError,
   createFlashcard,
   deleteFlashcard,
+  generateFlashcardsWithAI,
   listFlashcards,
   listStudentSubjects,
+  listStudyNotes,
   reviewFlashcard,
   updateFlashcard,
 } from '../api/client'
-import type { Flashcard, FlashcardRating, StudentSubject } from '../api/types'
+import type { Flashcard, FlashcardRating, StudentSubject, StudyNote } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { AppNavigation } from '../components/AppNavigation'
 import { Brand } from '../components/Brand'
@@ -70,6 +72,7 @@ export function FlashcardsPage() {
 
   const [cards, setCards] = useState<Flashcard[]>([])
   const [subjects, setSubjects] = useState<StudentSubject[]>([])
+  const [notes, setNotes] = useState<StudyNote[]>([])
   const [selectedDeck, setSelectedDeck] = useState<string>('ALL')
   const [studyAllMode, setStudyAllMode] = useState(false)
   const [showManageList, setShowManageList] = useState(false)
@@ -81,8 +84,9 @@ export function FlashcardsPage() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
-  // Modal de Criar / Editar Flashcard
+  // Modal de Criar / Editar Flashcard Manual
   const [modalOpen, setModalOpen] = useState(false)
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null)
   const [formSubjectId, setFormSubjectId] = useState('')
@@ -93,16 +97,27 @@ export function FlashcardsPage() {
   const [formTags, setFormTags] = useState('')
   const [savingCard, setSavingCard] = useState(false)
 
+  // Modal de Gerar Flashcards Inteligentes pela IA
+  const [aiModalOpen, setAiModalOpen] = useState(false)
+  const [aiSubjectId, setAiSubjectId] = useState('')
+  const [aiNoteId, setAiNoteId] = useState('')
+  const [aiTopic, setAiTopic] = useState('')
+  const [aiSourceText, setAiSourceText] = useState('')
+  const [aiCount, setAiCount] = useState<number>(5)
+  const [generatingAi, setGeneratingAi] = useState(false)
+
   const loadData = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const [loadedCards, loadedSubjects] = await Promise.all([
+      const [loadedCards, loadedSubjects, loadedNotes] = await Promise.all([
         listFlashcards(),
         listStudentSubjects(),
+        listStudyNotes().catch(() => [] as StudyNote[]),
       ])
       setCards(loadedCards)
       setSubjects(loadedSubjects)
+      setNotes(loadedNotes)
     } catch (reason) {
       setError(
         reason instanceof ApiError
@@ -118,7 +133,7 @@ export function FlashcardsPage() {
     void loadData()
   }, [loadData])
 
-  // Agrupamento de Baralhos (Decks) estilo Anki
+  // Agrupamento de Baralhos (Decks)
   const decks = useMemo((): DeckSummary[] => {
     const map = new Map<string, DeckSummary>()
     for (const c of cards) {
@@ -147,7 +162,7 @@ export function FlashcardsPage() {
     return cards.filter((c) => (c.subject_name || c.deck_name || 'Geral') === selectedDeck)
   }, [cards, selectedDeck])
 
-  // Fila de estudo Anki (cartões pendentes ou todos quando studyAllMode=true)
+  // Fila de estudo
   const studyQueue = useMemo(() => {
     const due = deckCards.filter((c) => c.is_due)
     if (due.length > 0 || !studyAllMode) return due
@@ -157,7 +172,7 @@ export function FlashcardsPage() {
   const safeIndex = studyQueue.length > 0 ? Math.min(currentIndex, studyQueue.length - 1) : 0
   const activeCard = studyQueue[safeIndex] || null
 
-  // Totais do baralho selecionado estilo Anki
+  // Totais do baralho selecionado
   const deckStats = useMemo(() => {
     let newCount = 0
     let learningCount = 0
@@ -198,9 +213,9 @@ export function FlashcardsPage() {
     [activeCard, reviewing, studyAllMode, studyQueue.length],
   )
 
-  // Atalhos de teclado estilo Anki (Espaço para flipar, 1-4 para responder)
+  // Atalhos de teclado (Espaço para flipar, 1-4 para responder)
   useEffect(() => {
-    if (modalOpen || !activeCard) return
+    if (modalOpen || aiModalOpen || !activeCard) return
     const onKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
@@ -216,7 +231,7 @@ export function FlashcardsPage() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [modalOpen, activeCard, isFlipped, handleRating])
+  }, [modalOpen, aiModalOpen, activeCard, isFlipped, handleRating])
 
   async function leave() {
     setLeaving(true)
@@ -239,6 +254,17 @@ export function FlashcardsPage() {
     setFormHint('')
     setFormTags('')
     setModalOpen(true)
+  }
+
+  function openAiModal() {
+    const defaultSubj = subjects[0]
+    setAiSubjectId(defaultSubj?.id || '')
+    setAiNoteId(notes[0]?.id || '')
+    setAiTopic('')
+    setAiSourceText('')
+    setAiCount(5)
+    setError('')
+    setAiModalOpen(true)
   }
 
   function openEditModal(card: Flashcard) {
@@ -290,6 +316,48 @@ export function FlashcardsPage() {
     }
   }
 
+  async function handleGenerateAiSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setGeneratingAi(true)
+    setError('')
+    setSuccessMessage('')
+    try {
+      const selectedSubj = subjects.find((s) => s.id === aiSubjectId)
+      const selectedNote = notes.find((n) => n.id === aiNoteId)
+      const resolvedDeck =
+        selectedSubj?.subject.name ||
+        aiTopic.trim() ||
+        selectedNote?.title ||
+        (selectedDeck !== 'ALL' ? selectedDeck : 'Geral')
+
+      const res = await generateFlashcardsWithAI({
+        student_subject: aiSubjectId || null,
+        note_id: aiNoteId || null,
+        topic: aiTopic.trim() || selectedNote?.title || selectedSubj?.subject.name || 'Revisão Geral',
+        source_text: aiSourceText.trim() || selectedNote?.content || '',
+        deck_name: resolvedDeck,
+        count: aiCount,
+      })
+
+      setCards((prev) => [...res.items, ...prev])
+      setSelectedDeck('ALL')
+      setCurrentIndex(0)
+      setIsFlipped(false)
+      setAiModalOpen(false)
+      setSuccessMessage(
+        `✨ ${res.created_count} flashcards foram gerados inteligentemente pela IA e adicionados à sua fila!`,
+      )
+    } catch (reason) {
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : 'Não foi possível gerar os flashcards com IA.',
+      )
+    } finally {
+      setGeneratingAi(false)
+    }
+  }
+
   async function handleDeleteCard(card: Flashcard) {
     try {
       await deleteFlashcard(card.id)
@@ -297,50 +365,6 @@ export function FlashcardsPage() {
       setIsFlipped(false)
     } catch {
       setError('Não foi possível excluir o flashcard.')
-    }
-  }
-
-  async function handleSeedStarterCards() {
-    setLoading(true)
-    setError('')
-    try {
-      const firstSubj = subjects[0]
-      const samples = [
-        {
-          student_subject: firstSubj?.id || null,
-          deck_name: firstSubj?.subject.name || 'Computação & Algoritmos',
-          front: 'Qual é a diferença entre uma Pilha (Stack) e uma Fila (Queue)?',
-          back: '• Pilha (Stack): segue o princípio LIFO (Last In, First Out) — o último elemento inserido é o primeiro a sair.\n• Fila (Queue): segue o princípio FIFO (First In, First Out) — o primeiro elemento inserido é o primeiro a sair.',
-          hint: 'Pense em LIFO vs FIFO',
-          tags: 'estruturas-de-dados, p1',
-        },
-        {
-          student_subject: firstSubj?.id || null,
-          deck_name: firstSubj?.subject.name || 'Computação & Algoritmos',
-          front: 'Como funciona o algoritmo de Repetição Espaçada (SM-2) usado no Anki?',
-          back: 'Baseado na curva do esquecimento de Ebbinghaus: a cada revisão bem-sucedida (Bom/Fácil), o intervalo até a próxima revisão multiplica pelo Fator de Facilidade (Ease Factor). Se errar (De novo), o cartão volta para aprendizagem imediata.',
-          hint: 'Curva do esquecimento',
-          tags: 'anki, estudo-ativo',
-        },
-        {
-          student_subject: firstSubj?.id || null,
-          deck_name: firstSubj?.subject.name || 'Computação & Algoritmos',
-          front: 'O que é uma Chave Primária (Primary Key) em um banco de dados relacional?',
-          back: 'É um identificador único e não nulo (NOT NULL + UNIQUE) de cada registro em uma tabela, garantindo integridade de entidade.',
-          hint: 'Identificador único de linha',
-          tags: 'banco-de-dados, sql',
-        },
-      ]
-      const createdList: Flashcard[] = []
-      for (const item of samples) {
-        const c = await createFlashcard(item)
-        createdList.push(c)
-      }
-      setCards((prev) => [...createdList, ...prev])
-    } catch {
-      setError('Não foi possível gerar os flashcards de demonstração.')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -373,28 +397,37 @@ export function FlashcardsPage() {
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-10">
         {/* Cabeçalho Principal Alinhado */}
         <section className="rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-[#005063]/20 bg-[#0d3950]/5 px-3 py-1 text-xs font-extrabold tracking-wide text-[#0d3950] uppercase dark:border-cyan-400/20 dark:bg-cyan-400/10 dark:text-cyan-300">
                 <Brain className="h-3.5 w-3.5" />
-                Repetição Espaçada Estilo Anki (SM-2)
+                Repetição Espaçada
               </span>
               <h1 className="mt-2 text-2xl font-black tracking-tight text-[#0d3950] sm:text-3xl dark:text-white">
                 Flashcards
               </h1>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                Selecione um baralho à esquerda, clique no cartão para girá-lo em 3D (Flip) e avalie sua memorização.
+                Selecione um baralho à esquerda, clique no cartão para girá-lo em 3D (Flip) ou gere cartões automaticamente com IA.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
+                onClick={openAiModal}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#006768]/40 bg-[#006768]/15 px-4 py-2.5 text-sm font-extrabold text-[#0d3950] shadow-xs transition hover:bg-[#006768]/25 dark:border-cyan-400/40 dark:bg-cyan-400/15 dark:text-cyan-300 dark:hover:bg-cyan-400/25"
+              >
+                <Sparkles className="h-4 w-4 text-[#006768] dark:text-cyan-300" />
+                Gerar com IA
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setShowManageList((prev) => !prev)}
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-extrabold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
               >
                 <Layers className="h-4 w-4 text-[#005063] dark:text-cyan-400" />
-                {showManageList ? 'Ocultar Lista de Cartões' : `Ver Todos os Cartões (${cards.length})`}
+                {showManageList ? 'Ocultar Lista' : `Todos (${cards.length})`}
               </button>
 
               <button
@@ -411,9 +444,22 @@ export function FlashcardsPage() {
 
         {error ? <Alert tone="error">{error}</Alert> : null}
 
-        {/* LAYOUT ANKI EM 2 COLUNAS ALINHADAS: BARALHOS (ESQUERDA) + CARTÃO 3D FLIP (DIREITA) */}
+        {successMessage ? (
+          <div className="flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">
+            <span>{successMessage}</span>
+            <button
+              type="button"
+              onClick={() => setSuccessMessage('')}
+              className="text-emerald-700 hover:underline dark:text-emerald-300"
+            >
+              Fechar
+            </button>
+          </div>
+        ) : null}
+
+        {/* LAYOUT EM 2 COLUNAS ALINHADAS: BARALHOS (ESQUERDA) + CARTÃO 3D FLIP (DIREITA) */}
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          {/* COLUNA ESQUERDA: BARALHOS (DECKS) E RESUMO SM-2 */}
+          {/* COLUNA ESQUERDA: BARALHOS (DECKS) E RESUMO */}
           <aside className="space-y-4 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-[#0d3950]/5 lg:col-span-4 sm:p-6 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
             <div className="flex items-center justify-between">
               <div>
@@ -429,7 +475,7 @@ export function FlashcardsPage() {
               </span>
             </div>
 
-            {/* Contadores Anki: Novos / Aprender / Revisar */}
+            {/* Contadores: Novos / Aprender / Revisar */}
             <div className="grid grid-cols-3 gap-2.5">
               <div className="rounded-2xl border border-sky-500/25 bg-sky-500/10 p-3 text-center">
                 <span className="block text-[10px] font-extrabold tracking-wider text-sky-700 uppercase dark:text-sky-300">
@@ -457,7 +503,7 @@ export function FlashcardsPage() {
               </div>
             </div>
 
-            {/* Lista de Baralhos Estilo Anki */}
+            {/* Lista de Baralhos */}
             <div className="space-y-2 pt-1">
               <button
                 type="button"
@@ -549,26 +595,25 @@ export function FlashcardsPage() {
                   Seu baralho ainda está vazio
                 </h2>
                 <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-300">
-                  Crie seus próprios flashcards por disciplina ou gere um baralho inicial de
-                  demonstração para testar o giro 3D (flipping) agora mesmo.
+                  Crie seus próprios flashcards manualmente ou gere um baralho inteligente com IA a
+                  partir de qualquer tema ou anotação!
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={openAiModal}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#006768] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#005063]"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Gerar Flashcards com IA
+                  </button>
                   <button
                     type="button"
                     onClick={openCreateModal}
                     className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#005063] dark:bg-[#005063]"
                   >
                     <Plus className="h-4 w-4" />
-                    Criar primeiro Flashcard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleSeedStarterCards()}
-                    disabled={loading}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#005063]/30 bg-[#005063]/10 px-5 py-2.5 text-sm font-bold text-[#0d3950] transition hover:bg-[#005063]/20 dark:border-cyan-400/30 dark:bg-cyan-400/10 dark:text-cyan-300"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Gerar 3 Flashcards de Exemplo
+                    Criar Flashcard Manual
                   </button>
                 </div>
               </div>
@@ -580,7 +625,7 @@ export function FlashcardsPage() {
                 </h2>
                 <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-300">
                   Todos os cartões foram agendados para seus próximos intervalos ótimos. Você pode
-                  iniciar um treino livre com todos os cartões ou adicionar novos.
+                  praticar todos os cartões ou gerar novos com a IA.
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                   <button
@@ -597,11 +642,11 @@ export function FlashcardsPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={openCreateModal}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-[#0d3950] hover:bg-slate-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
+                    onClick={openAiModal}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#006768]/40 bg-[#006768]/15 px-5 py-2.5 text-sm font-bold text-[#0d3950] hover:bg-[#006768]/25 dark:border-cyan-400/40 dark:bg-cyan-400/15 dark:text-cyan-300"
                   >
-                    <Plus className="h-4 w-4" />
-                    Adicionar Mais Cartões
+                    <Sparkles className="h-4 w-4" />
+                    Gerar Mais com IA
                   </button>
                 </div>
               </div>
@@ -661,7 +706,7 @@ export function FlashcardsPage() {
                   </div>
                 </div>
 
-                {/* CENA 3D FLIPPING CARD (CSS Grid 1/1 sem colapso e sem z-fighting) */}
+                {/* CENA 3D FLIPPING CARD */}
                 <div
                   className="anki-flip-scene w-full cursor-pointer select-none"
                   onClick={() => setIsFlipped((prev) => !prev)}
@@ -773,7 +818,7 @@ export function FlashcardsPage() {
                   </div>
                 </div>
 
-                {/* DOCK DE AÇÃO INFERIOR (ALTURA CONSISTENTE) */}
+                {/* DOCK DE AÇÃO INFERIOR */}
                 <div className="rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-lg dark:border-[#005063]/30 dark:bg-[#081a26]/90">
                   {!isFlipped ? (
                     <button
@@ -906,7 +951,147 @@ export function FlashcardsPage() {
         )}
       </div>
 
-      {/* Modal de Criar / Editar Flashcard */}
+      {/* Modal de Gerar Flashcards Inteligentes pela IA */}
+      {aiModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-flashcard-modal-title"
+        >
+          <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-[#005063]/30">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#006768]/15 text-[#006768] dark:bg-cyan-400/15 dark:text-cyan-300">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2
+                    id="ai-flashcard-modal-title"
+                    className="text-lg font-black text-[#0d3950] dark:text-white"
+                  >
+                    Gerar Flashcards com IA
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Crie cartões inteligentes a partir das suas anotações, disciplinas ou temas
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(false)}
+                className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#041019]"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => void handleGenerateAiSubmit(e)} className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
+                    Disciplina
+                  </span>
+                  <select
+                    value={aiSubjectId}
+                    onChange={(e) => setAiSubjectId(e.target.value)}
+                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                  >
+                    <option value="">(Geral / Qualquer disciplina)</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.subject.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
+                    Quantidade de Cartões
+                  </span>
+                  <select
+                    value={aiCount}
+                    onChange={(e) => setAiCount(Number(e.target.value))}
+                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                  >
+                    <option value={3}>3 flashcards</option>
+                    <option value={5}>5 flashcards (Recomendado)</option>
+                    <option value={8}>8 flashcards</option>
+                    <option value={10}>10 flashcards</option>
+                  </select>
+                </label>
+              </div>
+
+              {notes.length > 0 && (
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
+                    Basear em uma Página do Bloco de Anotações (Opcional)
+                  </span>
+                  <select
+                    value={aiNoteId}
+                    onChange={(e) => setAiNoteId(e.target.value)}
+                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                  >
+                    <option value="">(Não usar anotação salva)</option>
+                    {notes.map((n) => (
+                      <option key={n.id} value={n.id}>
+                        📒 {n.title || 'Sem título'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
+                  Tema ou Assunto Foco
+                </span>
+                <input
+                  type="text"
+                  value={aiTopic}
+                  onChange={(e) => setAiTopic(e.target.value)}
+                  placeholder="Ex: Normalização de Banco de Dados, Árvores Binárias, Padrões de Projeto..."
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
+                  Texto / Resumo de Aula para a IA Analisar (Opcional)
+                </span>
+                <textarea
+                  rows={4}
+                  value={aiSourceText}
+                  onChange={(e) => setAiSourceText(e.target.value)}
+                  placeholder="Cole aqui trechos da matéria, tópicos de slides ou definições para a IA transformar em perguntas e respostas..."
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                />
+              </label>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAiModalOpen(false)}
+                  className="min-h-11 rounded-xl border border-slate-200 px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 dark:border-[#005063]/40 dark:text-slate-300 dark:hover:bg-[#041019]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={generatingAi}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#006768] px-6 py-2 text-sm font-bold text-white shadow-md transition hover:bg-[#005063] disabled:opacity-50"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {generatingAi ? 'Gerando com IA...' : 'Gerar Flashcards com IA'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Criar / Editar Flashcard Manual */}
       {modalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"

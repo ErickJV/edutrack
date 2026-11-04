@@ -392,6 +392,20 @@ export type FlashcardPayload = {
   tags?: string
 }
 
+export type FlashcardAIGeneratePayload = {
+  topic?: string
+  source_text?: string
+  note_id?: string | null
+  student_subject?: string | null
+  deck_name?: string
+  count?: number
+}
+
+export type FlashcardAIGenerateResponse = {
+  created_count: number
+  items: Flashcard[]
+}
+
 export type AssistantChatMessage = {
   role: 'user' | 'assistant'
   content: string

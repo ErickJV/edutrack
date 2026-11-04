@@ -1175,3 +1175,271 @@ class FlashcardReviewView(generics.GenericAPIView):
 
         return Response(FlashcardSerializer(card, context={"request": request}).data)
 
+
+class FlashcardAIGenerateView(generics.GenericAPIView):
+    """
+    POST /api/v1/flashcards/generate-ai
+    Gera flashcards de forma inteligente com IA a partir de um tema, disciplina,
+    texto colado ou anotação existente (StudyNote).
+    """
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = FlashcardSerializer
+    pagination_class = None
+
+    def post(self, request, *args, **kwargs):
+        import html
+        import json
+        import os
+        import re
+        import urllib.request
+        from rest_framework import status as drf_status
+        from rest_framework.exceptions import ValidationError as DRFValidationError
+
+        user = cast(User, request.user)
+        topic = str(request.data.get("topic") or "").strip()
+        source_text = str(request.data.get("source_text") or "").strip()
+        note_id = request.data.get("note_id")
+        ss_raw = request.data.get("student_subject")
+        deck_name = str(request.data.get("deck_name") or "").strip()
+        try:
+            count = int(request.data.get("count") or 5)
+        except (TypeError, ValueError):
+            count = 5
+        count = max(1, min(10, count))
+
+        student_subject = None
+        if ss_raw:
+            student_subject = (
+                StudentSubject.objects.select_related("subject")
+                .filter(id=ss_raw, user=user)
+                .first()
+            )
+            if not student_subject:
+                student_subject = (
+                    StudentSubject.objects.select_related("subject")
+                    .filter(subject_id=ss_raw, user=user)
+                    .first()
+                )
+
+        note_obj = None
+        if note_id:
+            note_obj = (
+                StudyNote.objects.select_related("student_subject__subject")
+                .filter(id=note_id, user=user)
+                .first()
+            )
+            if note_obj:
+                if not topic:
+                    topic = note_obj.title
+                if not source_text:
+                    source_text = note_obj.content
+                if not student_subject and note_obj.student_subject:
+                    student_subject = note_obj.student_subject
+
+        subject_title = (
+            student_subject.subject.name
+            if student_subject
+            else (deck_name if deck_name and deck_name != "Geral" else "Estudos Acadêmicos")
+        )
+        resolved_deck = deck_name or (
+            student_subject.subject.name if student_subject else (topic or "Geral")
+        )
+
+        # Limpa tags HTML preservando quebras de linha
+        clean_source = re.sub(r"<(br|p|div|li|h[1-6]|tr|blockquote)[^>]*>", "\n", source_text, flags=re.I)
+        clean_source = re.sub(r"<[^>]+>", " ", clean_source)
+        clean_source = html.unescape(clean_source)
+        clean_source = re.sub(r"[ \t]+", " ", clean_source)
+        clean_source = re.sub(r"\n{2,}", "\n", clean_source).strip()
+
+        if not topic and not clean_source and not student_subject:
+            raise DRFValidationError(
+                {"detail": "Informe um tema, selecione uma anotação/disciplina ou cole o conteúdo para gerar os flashcards com IA."}
+            )
+
+        generated_specs: list[dict[str, str]] = []
+
+        # 1. Tenta geração via Gemini API se houver chave configurada no ambiente
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if api_key:
+            try:
+                prompt = (
+                    f"Você é um professor universitário especialista em aprendizagem ativa e repetição espaçada.\n"
+                    f"Gere exatamente {count} flashcards em português do Brasil sobre:\n"
+                    f"- Disciplina: {subject_title}\n"
+                    f"- Tema/Foco: {topic or subject_title}\n"
+                    f"- Conteúdo base: {clean_source[:4000] if clean_source else 'Conhecimento acadêmico essencial da disciplina.'}\n\n"
+                    f"Retorne APENAS um JSON array válido onde cada objeto tem as chaves: "
+                    f"\"front\" (pergunta direta e instigante), \"back\" (resposta clara, completa e didática em tópicos), "
+                    f"\"hint\" (dica curta de memorização) e \"tags\" (tags separadas por vírgula)."
+                )
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+                req_body = json.dumps({
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"responseMimeType": "application/json"},
+                }).encode("utf-8")
+                req = urllib.request.Request(
+                    url, data=req_body, headers={"Content-Type": "application/json"}
+                )
+                with urllib.request.urlopen(req, timeout=12) as resp:
+                    resp_data = json.loads(resp.read().decode("utf-8"))
+                    text_out = (
+                        resp_data.get("candidates", [{}])[0]
+                        .get("content", {})
+                        .get("parts", [{}])[0]
+                        .get("text", "")
+                    )
+                    parsed = json.loads(text_out)
+                    if isinstance(parsed, list):
+                        for item in parsed[:count]:
+                            if isinstance(item, dict) and item.get("front") and item.get("back"):
+                                generated_specs.append({
+                                    "front": str(item["front"]).strip(),
+                                    "back": str(item["back"]).strip(),
+                                    "hint": str(item.get("hint") or "Revisão IA").strip()[:255],
+                                    "tags": str(item.get("tags") or "gerado-por-ia").strip()[:255],
+                                })
+            except Exception:
+                generated_specs = []
+
+        # 2. Motor Inteligente Local de Síntese Acadêmica (extração semântica de notas + banco de domínio)
+        if len(generated_specs) < count:
+            effective_topic = topic or subject_title
+            lines = [
+                ln.strip(" -•*\t")
+                for ln in clean_source.split("\n")
+                if len(ln.strip(" -•*\t")) >= 6
+            ]
+
+            # 2a. Extrai pares "Conceito: explicação" ou "Conceito - explicação" do texto da anotação
+            for ln in lines:
+                if len(generated_specs) >= count:
+                    break
+                match = re.match(r"^([^:–—\-]{3,65})\s*[:–—\-]\s*(.{15,})$", ln)
+                if match:
+                    concept = match.group(1).strip()
+                    explanation = match.group(2).strip()
+                    generated_specs.append({
+                        "front": f"Em {effective_topic}, o que significa e como se aplica \"{concept}\"?",
+                        "back": f"• Definição principal: {explanation}\n• Contexto: {effective_topic} ({subject_title}).",
+                        "hint": f"Pense no conceito de {concept[:35]}",
+                        "tags": "ia, anotacao, conceito",
+                    })
+
+            # 2b. Extrai frases/parágrafos relevantes do texto para perguntas de revisão ativa
+            sentences = [
+                s.strip()
+                for s in re.split(r"(?<=[.!?])\s+|\n+", clean_source)
+                if len(s.strip()) >= 25
+            ]
+            for idx, sent in enumerate(sentences):
+                if len(generated_specs) >= count:
+                    break
+                words = [w.strip(",.;:()[]\"'") for w in sent.split() if len(w.strip(",.;:()[]\"'")) > 4]
+                keyword = words[0] if words else effective_topic
+                question_templates = [
+                    f"Qual é o ponto central abordado sobre \"{keyword}\" em {effective_topic}?",
+                    f"Explique a seguinte afirmação estudada em {effective_topic} e sua importância prática:",
+                    f"Como o conceito relacionado a \"{keyword}\" pode ser cobrado em uma avaliação de {subject_title}?",
+                ]
+                q_front = question_templates[idx % len(question_templates)]
+                generated_specs.append({
+                    "front": q_front,
+                    "back": f"• Síntese da Anotação: {sent}\n• Disciplina: {subject_title}",
+                    "hint": f"Palavra-chave: {keyword}",
+                    "tags": "ia, revisao-ativa",
+                })
+
+            # 2c. Completa até `count` com cartões estruturados de domínio acadêmico sobre o tema/disciplina
+            focus_label = topic or subject_title
+            domain_templates = [
+                {
+                    "front": f"Quais são os conceitos fundamentais e objetivos principais de {focus_label}?",
+                    "back": (
+                        f"• Objetivo central: compreender os fundamentos teóricos e práticos de {focus_label}.\n"
+                        f"• Aplicação: resolução de problemas estruturados na disciplina de {subject_title}.\n"
+                        f"• Ponto de atenção: relacionar as definições-chave com exemplos práticos de projeto."
+                    ),
+                    "hint": f"Fundamentos e propósito de {focus_label[:30]}",
+                    "tags": "ia, fundamentos",
+                },
+                {
+                    "front": f"Quais são as boas práticas e erros mais comuns ao trabalhar com {focus_label}?",
+                    "back": (
+                        f"• Boas práticas em {focus_label}: manter modularidade, clareza conceitual, validação de premissas e documentação limpa.\n"
+                        f"• Erros comuns a evitar: negligenciar casos-limite, acoplamento excessivo e falta de revisão sistemática."
+                    ),
+                    "hint": "Boas práticas vs. armadilhas comuns",
+                    "tags": "ia, boas-praticas",
+                },
+                {
+                    "front": f"Como explicar {focus_label} usando a Técnica Feynman (de forma simples e direta)?",
+                    "back": (
+                        f"1. Defina {focus_label} sem jargões desnecessários.\n"
+                        f"2. Apresente um exemplo concreto do mundo real aplicado a {subject_title}.\n"
+                        f"3. Destaque a regra de ouro que resolve 80% das questões sobre este tema."
+                    ),
+                    "hint": "Definição simples + exemplo prático + regra de ouro",
+                    "tags": "ia, feynman, sintese",
+                },
+                {
+                    "front": f"Quais são as etapas ou componentes essenciais que estruturam {focus_label}?",
+                    "back": (
+                        f"• Entrada / Contexto: requisitos e dados iniciais do problema em {focus_label}.\n"
+                        f"• Processamento / Regras: aplicação dos princípios técnicos de {subject_title}.\n"
+                        f"• Saída / Validação: verificação dos resultados e análise de desempenho/qualidade."
+                    ),
+                    "hint": "Pense em Entrada → Processamento → Validação",
+                    "tags": "ia, arquitetura, revisao",
+                },
+                {
+                    "front": f"Em uma prova de {subject_title}, qual comparação crítica costuma cair sobre {focus_label}?",
+                    "back": (
+                        f"• Trade-offs principais: desempenho vs. simplicidade de manutenção em {focus_label}.\n"
+                        f"• Quando utilizar: cenários que exigem confiabilidade e escalabilidade dentro de {subject_title}.\n"
+                        f"• Quando evitar: situações triviais onde uma abordagem direta reduz a complexidade."
+                    ),
+                    "hint": "Vantagens, desvantagens e quando aplicar",
+                    "tags": "ia, cai-na-prova",
+                },
+                {
+                    "front": f"Qual é o checklist rápido de revisão antes da avaliação sobre {focus_label}?",
+                    "back": (
+                        f"✓ Dominar a definição formal de {focus_label}.\n"
+                        f"✓ Saber exemplificar um caso de uso prático em {subject_title}.\n"
+                        f"✓ Conhecer as limitações e métricas de avaliação do tema."
+                    ),
+                    "hint": "Definição + Caso de uso + Métricas",
+                    "tags": "ia, checklist-prova",
+                },
+            ]
+
+            for tmpl in domain_templates:
+                if len(generated_specs) >= count:
+                    break
+                generated_specs.append(tmpl)
+
+        created_cards: list[Flashcard] = []
+        for spec in generated_specs[:count]:
+            card = Flashcard.objects.create(
+                user=user,
+                student_subject=student_subject,
+                deck_name=resolved_deck[:120],
+                front=spec["front"],
+                back=spec["back"],
+                hint=spec.get("hint", "")[:255],
+                tags=spec.get("tags", "gerado-por-ia")[:255],
+            )
+            created_cards.append(card)
+
+        return Response(
+            {
+                "created_count": len(created_cards),
+                "items": FlashcardSerializer(
+                    created_cards, many=True, context={"request": request}
+                ).data,
+            },
+            status=drf_status.HTTP_201_CREATED,
+        )
+
+

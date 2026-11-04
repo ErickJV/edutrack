@@ -19,6 +19,7 @@ from .views import (
     ClassScheduleListCreateView,
     CurriculumListView,
     DashboardSummaryView,
+    FlashcardAIGenerateView,
     FlashcardDetailView,
     FlashcardListCreateView,
     FlashcardReviewView,
@@ -142,6 +143,11 @@ urlpatterns = [
     ),
     path("calendar", CalendarView.as_view(), name="calendar"),
     path("flashcards", FlashcardListCreateView.as_view(), name="flashcard-list-create"),
+    path(
+        "flashcards/generate-ai",
+        FlashcardAIGenerateView.as_view(),
+        name="flashcard-generate-ai",
+    ),
     path("flashcards/<uuid:pk>", FlashcardDetailView.as_view(), name="flashcard-detail"),
     path("flashcards/<uuid:pk>/review", FlashcardReviewView.as_view(), name="flashcard-review"),
 ]

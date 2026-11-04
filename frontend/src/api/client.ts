@@ -19,6 +19,8 @@ import type {
   CourseOffering,
   DashboardSummary,
   Flashcard,
+  FlashcardAIGeneratePayload,
+  FlashcardAIGenerateResponse,
   FlashcardPayload,
   FlashcardRating,
   Professor,
@@ -518,6 +520,19 @@ export async function reviewFlashcard(id: string, rating: FlashcardRating): Prom
     method: 'POST',
     body: JSON.stringify({ rating }),
   })
+}
+
+export async function generateFlashcardsWithAI(
+  payload: FlashcardAIGeneratePayload,
+): Promise<FlashcardAIGenerateResponse> {
+  return request<FlashcardAIGenerateResponse>(
+    '/api/v1/flashcards/generate-ai',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    [201],
+  )
 }
 
 // Clippit Assistant (Gemini 3.8 Flash via Antigravity OAuth)

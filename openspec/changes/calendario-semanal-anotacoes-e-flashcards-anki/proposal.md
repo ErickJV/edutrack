@@ -1,29 +1,29 @@
+# Proposal: Calendário com Visão Semanal no Topo, Anotações em Tela Cheia e Módulo Flashcards com IA
+
 ## Why
-Para tornar a experiência de planejamento semanal e memorização ativa mais direta e fluida:
-1. No módulo de **Calendário**, o estudante precisa enxergar logo na parte superior (abaixo do cabeçalho `"Calendário Acadêmico"`) tudo o que terá ao longo da **semana selecionada** com ações rápidas, além de um título mais limpo (sem o selo `"Visão Consolidada Multi-Tela"` e sem a palavra `"Integrado"`).
-2. A aba `"Estudo"` deve se chamar **`"Anotações"`**, refletindo seu foco principal no bloco de anotações e leituras.
-3. Logo em seguida de `"Anotações"`, o sistema precisa de um módulo dedicado de **`"Flashcards"`** inspirado no **Anki**, com baralhos (decks) por disciplina, repetição espaçada (SM-2 com botões *Errei / De novo*, *Difícil*, *Bom* e *Fácil*) e animação 3D de virar o cartão (*flipping*).
+1. **Calendário Acadêmico**: O usuário solicitou reestruturar a seção `"Detalhes e Ações Rápidas do Dia Selecionado"` para trazer **tudo o que há ao longo daquela semana inteira**, posicionando essa visão semanal **na parte superior**, logo abaixo do bloco de cabeçalho `"Calendário Acadêmico"`. Além disso, pediu para remover o selo `"Visão Consolidada Multi-Tela"` e remover a palavra `"Integrado"` do título, deixando apenas `"Calendário Acadêmico"`.
+2. **Anotações em Tela Máxima e Fonte em Menu Suspenso na Barra de Personalização**: O usuário pediu para mudar o nome do módulo `"Estudo"` para **`"Anotações"`**, fazer com que a área de anotações ocupe o **máximo possível da tela**, alinhar a folha pautada em passos exatos de `32px` e manter a escolha de **fonte como menu suspenso diretamente na barra de personalização**.
+3. **Módulo Flashcards com Animação Flipping e Geração Inteligente por IA**: Logo em seguida de `"Anotações"`, o usuário solicitou criar um módulo chamado **`"Flashcards"`** com **animação 3D de virar o cartão (`flipping`)**, selo **`"Repetição Espaçada"`** (removendo `"Estilo Anki (SM-2)"`) e uma opção para **gerar flashcards de forma inteligente pela IA** a partir de temas, disciplinas ou páginas do Bloco de Anotações.
 
 ## What Changes
-- **Calendário Acadêmico (`CalendarPage.tsx`)**:
-  - Remover o badge `"Visão Consolidada Multi-Tela"` e alterar o título principal de `"Calendário Acadêmico Integrado"` para **`"Calendário Acadêmico"`**.
-  - Reestruturar a antiga seção `"Detalhes e Ações Rápidas do Dia Selecionado"` para **`" Programação e Ações Rápidas da Semana"`** (trazendo todos os compromissos de Segunda a Domingo da semana do dia selecionado) e posicioná-la **na parte superior**, imediatamente abaixo do bloco `"Calendário Acadêmico"` e acima da grade mensal.
-- **Renomeação de `"Estudo"` para `"Anotações"` (`AppNavigation.tsx`, `StudySessionPage.tsx`)**:
-  - Alterar o rótulo no menu superior de `"Estudo"` para **`"Anotações"`**.
-- **Novo Módulo `"Flashcards"` inspirado no Anki (`backend/apps/academic/` e `frontend/src/pages/FlashcardsPage.tsx`)**:
-  - Adicionar a aba **`"Flashcards"`** (`/flashcards`) no menu superior logo em seguida de `"Anotações"`.
-  - Criar modelo `Flashcard` no backend com campos `front`, `back`, `hint`, `deck_name`, `student_subject`, e parâmetros do algoritmo SM-2 do Anki (`state`: `new`, `learning`, `review`; `ease_factor`, `interval_days`, `repetitions`, `lapses`, `due_at`).
-  - Criar endpoints `/api/v1/flashcards`, `/api/v1/flashcards/{id}` e `/api/v1/flashcards/{id}/review` (que calcula o próximo intervalo de revisão para `again`, `hard`, `good`, `easy`).
-  - Criar `FlashcardsPage.tsx` com visão de Baralhos (Decks) estilo Anki (contadores `Novos`, `Aprender`, `Revisar`), modo de estudo com **animação 3D de flip (`rotateY(180deg)`)** ao virar o cartão frente/verso, botões de avaliação com previsão do próximo intervalo (`< 10 min`, `1d`, `3d`, `7d`...) e modal para criar/editar flashcards.
+- **Calendário Acadêmico (`frontend/src/pages/CalendarPage.tsx`)**:
+  - Remover a badge `"Visão Consolidada Multi-Tela"`.
+  - Alterar o título principal de `"Calendário Acadêmico Integrado"` para **`"Calendário Acadêmico"`**.
+  - Reestruturar a antiga seção `"Detalhes e Ações Rápidas do Dia Selecionado"` para uma seção de **Visão e Ações Rápidas da Semana** e posicioná-la **no topo da página**, imediatamente abaixo do bloco `"Calendário Acadêmico"` e acima da grade mensal.
+- **Módulo Anotações (`frontend/src/components/AppNavigation.tsx`, `frontend/src/pages/StudySessionPage.tsx`, `frontend/src/components/StudyNotesWorkspace.tsx`)**:
+  - Alterar o rótulo `"Estudo"` para **`"Anotações"`**.
+  - Expandir o container de `Anotações` para ocupar o **máximo possível da tela** (`max-w-[1920px]`, `min-h-[calc(100dvh-135px)]` e folha com `min-h-[calc(100dvh-290px)]`), com botão de alternância rápida para ocultar o menu lateral de cadernos e focar 100% na folha.
+  - Posicionar o seletor de **Fonte como menu suspenso** diretamente na barra de personalização (`role="toolbar"`), ao lado do seletor de folha (`Pautada`, `Pontilhada`, `Limpa`) e das ferramentas visuais.
+  - Incluir botão **`"✨ Gerar Flashcards com IA"`** diretamente no Bloco de Anotações para transformar a nota atual em flashcards.
+- **Módulo Flashcards com IA (`backend/apps/academic/` e `frontend/src/pages/FlashcardsPage.tsx`)**:
+  - **Backend**: Modelo `Flashcard`, migração `0011_flashcard.py`, endpoints `/api/v1/flashcards`, `/api/v1/flashcards/<uuid:pk>/review` e `/api/v1/flashcards/generate-ai` (`FlashcardAIGenerateView`).
+  - **Frontend**: Página `FlashcardsPage.tsx` com selo **`"Repetição Espaçada"`**, baralhos à esquerda, cartão 3D Flip à direita e modal **`"✨ Gerar com IA"`** para gerar flashcards inteligentes por tema, disciplina ou anotação salva.
 
 ## Capabilities
 
-### New Capabilities
-- `anki-flashcards`: Módulo completo de Flashcards inspirado no Anki com baralhos por disciplina, repetição espaçada SM-2 e animação 3D de flip.
-
 ### Modified Capabilities
-- `academic-calendar`: Cabeçalho limpo `"Calendário Acadêmico"` e seção superior de resumo e ações rápidas de toda a semana selecionada.
+- `academic-calendar`: Título `"Calendário Acadêmico"`, remoção de `"Visão Consolidada Multi-Tela"` e seção semanal no topo.
+- `study-notes-block`: Renomeado para `"Anotações"`, ocupando o máximo possível da tela, folha pautada alinhada em `32px`, fonte como menu suspenso na barra de personalização e geração de flashcards por IA a partir da nota.
 
-## Impact
-- **Backend**: `backend/apps/academic/models.py`, `backend/apps/academic/migrations/`, `backend/apps/academic/serializers.py`, `backend/apps/academic/views.py`, `backend/apps/academic/urls.py`.
-- **Frontend**: `frontend/src/components/AppNavigation.tsx`, `frontend/src/App.tsx`, `frontend/src/pages/CalendarPage.tsx`, `frontend/src/pages/StudySessionPage.tsx`, `frontend/src/pages/FlashcardsPage.tsx`, `frontend/src/api/types.ts`, `frontend/src/api/client.ts`.
+### New Capabilities
+- `anki-flashcards`: Módulo completo de Flashcards com repetição espaçada, animação 3D Flip e geração inteligente de cartões por IA (`/api/v1/flashcards/generate-ai`).
