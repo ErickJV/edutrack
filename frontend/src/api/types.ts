@@ -78,16 +78,21 @@ export type StudentSubject = {
   updated_at: string
 }
 export type AcademicTaskStatus = 'pending' | 'in_progress' | 'completed'
+export type AcademicTaskCategory = 'task' | 'assignment' | 'exam' | 'other'
 
 export type AcademicTask = {
   id: string
-  student_subject: string
-  subject_id: string
+  student_subject: string | null
+  subject_id: string | null
   subject_name: string
-  subject_semester: number
+  subject_semester: number | null
+  category?: AcademicTaskCategory
   title: string
   description: string
   due_date: string | null
+  end_date?: string | null
+  all_day?: boolean
+  room?: string
   status: AcademicTaskStatus
   estimated_minutes: number
   actual_minutes: number
@@ -97,10 +102,14 @@ export type AcademicTask = {
 }
 
 export type AcademicTaskPayload = {
-  student_subject: string
+  student_subject?: string | null
+  category?: AcademicTaskCategory
   title: string
   description?: string
   due_date?: string | null
+  end_date?: string | null
+  all_day?: boolean
+  room?: string
   status?: AcademicTaskStatus
   estimated_minutes?: number
   actual_minutes?: number

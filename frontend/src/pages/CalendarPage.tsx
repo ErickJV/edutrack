@@ -1,6 +1,5 @@
 import {
   BookOpen,
-  Calendar as CalendarIcon,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -20,15 +19,18 @@ import { Link } from 'react-router-dom'
 
 import {
   ApiError,
-  createAcademicEvent,
+  createAcademicTask,
   deleteAcademicEvent,
+  deleteAcademicTask,
   listCalendarItems,
+  listCurriculum,
   listStudentSubjects,
   recordAttendance,
   toggleAcademicTaskComplete,
 } from '../api/client'
 import type {
-  AcademicEventKind,
+  AcademicSubject,
+  AcademicTaskCategory,
   CalendarItem,
   CalendarItemKind,
   StudentSubject,
@@ -109,6 +111,7 @@ function getCategoryMeta(item: CalendarItem) {
   if (item.source_type === 'class') {
     return {
       label: 'Aula',
+      shortLabel: 'Aula',
       originLabel: 'Disciplinas',
       originLink: '/disciplinas',
       cardClass: item.cancelled
@@ -118,10 +121,49 @@ function getCategoryMeta(item: CalendarItem) {
       badgeClass: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30',
     }
   }
-  if (item.source_type === 'task') {
-    const isDone = item.task_status === 'completed'
+  if (item.source_type === 'reading') {
     return {
-      label: isDone ? 'Tarefa concluída' : 'Entrega de Tarefa',
+      label: 'Anotações & Leitura',
+      shortLabel: 'Leitura',
+      originLabel: 'Anotações',
+      originLink: '/estudo',
+      cardClass:
+        'border-l-4 border-l-cyan-500 border-cyan-500/25 bg-cyan-500/10 text-cyan-950 dark:text-cyan-100',
+      dotClass: 'bg-cyan-500',
+      badgeClass: 'bg-cyan-500/15 text-cyan-800 dark:text-cyan-300 border-cyan-500/30',
+    }
+  }
+  const isDone = item.task_status === 'completed'
+  if (item.kind === 'exam') {
+    return {
+      label: isDone ? 'Prova concluída' : 'Prova / Avaliação',
+      shortLabel: isDone ? 'Prova ✓' : 'Prova',
+      originLabel: 'Tarefas',
+      originLink: '/tarefas',
+      cardClass: isDone
+        ? 'border-l-4 border-l-emerald-500 border-emerald-500/25 bg-emerald-500/10 text-emerald-900 line-through dark:text-emerald-200/80'
+        : 'border-l-4 border-l-rose-500 border-rose-500/25 bg-rose-500/10 text-rose-950 dark:text-rose-100',
+      dotClass: isDone ? 'bg-emerald-500' : 'bg-rose-500',
+      badgeClass: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30',
+    }
+  }
+  if (item.kind === 'assignment') {
+    return {
+      label: isDone ? 'Trabalho concluído' : 'Trabalho / Projeto',
+      shortLabel: isDone ? 'Trabalho ✓' : 'Trabalho',
+      originLabel: 'Tarefas',
+      originLink: '/tarefas',
+      cardClass: isDone
+        ? 'border-l-4 border-l-emerald-500 border-emerald-500/25 bg-emerald-500/10 text-emerald-900 line-through dark:text-emerald-200/80'
+        : 'border-l-4 border-l-violet-500 border-violet-500/25 bg-violet-500/10 text-violet-950 dark:text-violet-100',
+      dotClass: isDone ? 'bg-emerald-500' : 'bg-violet-500',
+      badgeClass: 'bg-violet-500/15 text-violet-800 dark:text-violet-300 border-violet-500/30',
+    }
+  }
+  if (item.source_type === 'task' || item.kind === 'task') {
+    return {
+      label: isDone ? 'Tarefa concluída' : 'Tarefa / Entrega',
+      shortLabel: isDone ? 'Concluída' : 'Tarefa',
       originLabel: 'Tarefas',
       originLink: '/tarefas',
       cardClass: isDone
@@ -131,46 +173,15 @@ function getCategoryMeta(item: CalendarItem) {
       badgeClass: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
     }
   }
-  if (item.source_type === 'reading') {
-    return {
-      label: 'Anotações & Leitura',
-      originLabel: 'Anotações',
-      originLink: '/estudo',
-      cardClass:
-        'border-l-4 border-l-cyan-500 border-cyan-500/25 bg-cyan-500/10 text-cyan-950 dark:text-cyan-100',
-      dotClass: 'bg-cyan-500',
-      badgeClass: 'bg-cyan-500/15 text-cyan-800 dark:text-cyan-300 border-cyan-500/30',
-    }
-  }
-  if (item.kind === 'exam') {
-    return {
-      label: 'Prova / Avaliação',
-      originLabel: 'Calendário',
-      originLink: '/calendario',
-      cardClass:
-        'border-l-4 border-l-rose-500 border-rose-500/25 bg-rose-500/10 text-rose-950 dark:text-rose-100',
-      dotClass: 'bg-rose-500',
-      badgeClass: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30',
-    }
-  }
-  if (item.kind === 'assignment') {
-    return {
-      label: 'Trabalho / Projeto',
-      originLabel: 'Calendário',
-      originLink: '/calendario',
-      cardClass:
-        'border-l-4 border-l-violet-500 border-violet-500/25 bg-violet-500/10 text-violet-950 dark:text-violet-100',
-      dotClass: 'bg-violet-500',
-      badgeClass: 'bg-violet-500/15 text-violet-800 dark:text-violet-300 border-violet-500/30',
-    }
-  }
   return {
-    label: 'Evento Acadêmico',
-    originLabel: 'Calendário',
-    originLink: '/calendario',
-    cardClass:
-      'border-l-4 border-l-sky-500 border-sky-500/25 bg-sky-500/10 text-sky-950 dark:text-sky-100',
-    dotClass: 'bg-sky-500',
+    label: isDone ? 'Atividade concluída' : 'Estudo / Atividade',
+    shortLabel: isDone ? 'Atividade ✓' : 'Atividade',
+    originLabel: 'Tarefas',
+    originLink: '/tarefas',
+    cardClass: isDone
+      ? 'border-l-4 border-l-emerald-500 border-emerald-500/25 bg-emerald-500/10 text-emerald-900 line-through dark:text-emerald-200/80'
+      : 'border-l-4 border-l-sky-500 border-sky-500/25 bg-sky-500/10 text-sky-950 dark:text-sky-100',
+    dotClass: isDone ? 'bg-emerald-500' : 'bg-sky-500',
     badgeClass: 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border-sky-500/30',
   }
 }
@@ -186,6 +197,7 @@ export function CalendarPage() {
   const [selectedDateKey, setSelectedDateKey] = useState(() => toLocalDateKey(today))
 
   const [subjects, setSubjects] = useState<StudentSubject[]>([])
+  const [curriculum, setCurriculum] = useState<AcademicSubject[]>([])
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('')
   const [selectedKind, setSelectedKind] = useState<string>('')
 
@@ -194,10 +206,10 @@ export function CalendarPage() {
   const [error, setError] = useState('')
   const [actionBusyId, setActionBusyId] = useState<string | null>(null)
 
-  // Modal de novo evento acadêmico
+  // Modal de nova tarefa / evento sincronizado
   const [showNewEventModal, setShowNewEventModal] = useState(false)
   const [eventTitle, setEventTitle] = useState('')
-  const [eventKind, setEventKind] = useState<AcademicEventKind>('exam')
+  const [eventKind, setEventKind] = useState<AcademicTaskCategory>('task')
   const [eventDate, setEventDate] = useState(() => toLocalDateKey(today))
   const [eventStartTime, setEventStartTime] = useState('19:00')
   const [eventEndTime, setEventEndTime] = useState('21:00')
@@ -291,13 +303,32 @@ export function CalendarPage() {
 
   useEffect(() => {
     listStudentSubjects()
-      .then((list) => setSubjects(list.filter((s) => s.status === 'active')))
+      .then((list) => {
+        const active = list.filter((s) => s.status === 'active')
+        setSubjects(active)
+        if (active.length > 0) {
+          setEventSubjectId((prev) => prev || active[0].id)
+        }
+      })
+      .catch(() => {})
+    listCurriculum()
+      .then(setCurriculum)
       .catch(() => {})
   }, [])
 
   useEffect(() => {
     void loadCalendarData()
   }, [loadCalendarData])
+
+  const enrolledSubjectIds = useMemo(
+    () => new Set(subjects.map((s) => s.subject.id)),
+    [subjects],
+  )
+
+  const extraCurriculumSubjects = useMemo(
+    () => curriculum.filter((item) => !enrolledSubjectIds.has(item.id)),
+    [curriculum, enrolledSubjectIds],
+  )
 
   // Agrupamento por data local YYYY-MM-DD
   const itemsByDate = useMemo(() => {
@@ -370,9 +401,9 @@ export function CalendarPage() {
       const key = itemToDateKey(item)
       if (!key.startsWith(monthPrefix)) continue
       if (item.source_type === 'class' && !item.cancelled) classes++
-      else if (item.source_type === 'task') tasks++
       else if (item.source_type === 'reading') readings++
-      else if (item.source_type === 'event') events++
+      else if (item.kind === 'exam') events++
+      else if (item.source_type === 'task' || item.source_type === 'event') tasks++
     }
     return { classes, tasks, readings, events }
   }, [items, currentMonth])
@@ -424,6 +455,7 @@ export function CalendarPage() {
     setSelectedDateKey(dateKey)
     setEventDate(dateKey)
     setEventTitle('')
+    setEventKind('task')
     setEventRoom('')
     setEventDescription('')
     setShowNewEventModal(true)
@@ -432,7 +464,7 @@ export function CalendarPage() {
   async function handleCreateEvent(e: React.FormEvent) {
     e.preventDefault()
     if (!eventTitle.trim()) {
-      setError('Informe um título para o evento acadêmico.')
+      setError('Informe um título para a tarefa ou evento acadêmico.')
       return
     }
     setSavingEvent(true)
@@ -447,16 +479,26 @@ export function CalendarPage() {
           ? new Date(`${eventDate}T${eventEndTime}:00`).toISOString()
           : null
 
-      await createAcademicEvent({
+      // Cria a tarefa sincronizada que aparece tanto em Tarefas quanto no Calendário
+      await createAcademicTask({
+        student_subject: eventSubjectId || null,
+        category: eventKind,
         title: eventTitle.trim(),
-        kind: eventKind,
-        starts_at: startsAtIso,
-        ends_at: endsAtIso,
+        description: eventDescription.trim(),
+        due_date: startsAtIso,
+        end_date: endsAtIso,
         all_day: eventAllDay,
         room: eventRoom.trim(),
-        description: eventDescription.trim(),
-        student_subject_id: eventSubjectId || null,
+        status: 'pending',
+        estimated_minutes: 60,
       })
+
+      if (eventSubjectId && !subjects.some((s) => s.id === eventSubjectId)) {
+        void listStudentSubjects()
+          .then((list) => setSubjects(list.filter((s) => s.status === 'active')))
+          .catch(() => {})
+      }
+
       setShowNewEventModal(false)
       setSelectedDateKey(eventDate)
       await loadCalendarData()
@@ -464,7 +506,7 @@ export function CalendarPage() {
       setError(
         reason instanceof ApiError
           ? reason.message
-          : 'Não foi possível criar o evento no calendário.',
+          : 'Não foi possível salvar a tarefa/evento no calendário.',
       )
     } finally {
       setSavingEvent(false)
@@ -506,15 +548,19 @@ export function CalendarPage() {
     }
   }
 
-  async function handleDeleteEvent(item: CalendarItem) {
+  async function handleDeleteItem(item: CalendarItem) {
     setActionBusyId(item.id)
     setError('')
     try {
-      await deleteAcademicEvent(item.source_id)
+      if (item.source_type === 'task') {
+        await deleteAcademicTask(item.source_id)
+      } else {
+        await deleteAcademicEvent(item.source_id)
+      }
       await loadCalendarData()
     } catch (reason) {
       setError(
-        reason instanceof ApiError ? reason.message : 'Não foi possível remover o evento.',
+        reason instanceof ApiError ? reason.message : 'Não foi possível remover o item.',
       )
     } finally {
       setActionBusyId(null)
@@ -556,8 +602,8 @@ export function CalendarPage() {
                 Calendário Acadêmico
               </h1>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                Todos os dias do mês e compromissos sincronizados com{' '}
-                <strong>Disciplinas</strong> (aulas), <strong>Tarefas</strong> (prazos) e{' '}
+                Todos os dias do mês e compromissos sincronizados em tempo real com{' '}
+                <strong>Disciplinas</strong> (aulas), <strong>Tarefas</strong> (trabalhos e entregas) e{' '}
                 <strong>Anotações</strong> (metas e leituras).
               </p>
             </div>
@@ -569,7 +615,7 @@ export function CalendarPage() {
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#0d3950]/20 transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
-                Novo Evento
+                Nova Tarefa / Evento
               </button>
               <button
                 type="button"
@@ -598,7 +644,7 @@ export function CalendarPage() {
             <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4">
               <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
                 <ListTodo className="h-4 w-4 shrink-0" />
-                Entregas no mês (Tarefas)
+                Tarefas & Trabalhos
               </div>
               <p className="mt-1 text-2xl font-black text-amber-950 dark:text-white">
                 {monthSummary.tasks}
@@ -616,7 +662,7 @@ export function CalendarPage() {
             <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 p-4">
               <div className="flex items-center gap-2 text-xs font-bold text-rose-800 dark:text-rose-300">
                 <Sparkles className="h-4 w-4 shrink-0" />
-                Provas & Eventos
+                Provas & Avaliações
               </div>
               <p className="mt-1 text-2xl font-black text-rose-950 dark:text-white">
                 {monthSummary.events}
@@ -678,11 +724,11 @@ export function CalendarPage() {
               >
                 <option value="">Todos os itens</option>
                 <option value="class">Aulas (Disciplinas)</option>
-                <option value="task">Entregas (Tarefas)</option>
+                <option value="task">Tarefas & Entregas</option>
                 <option value="reading">Leituras & Metas (Anotações)</option>
                 <option value="exam">Provas / Avaliações</option>
                 <option value="assignment">Trabalhos / Projetos</option>
-                <option value="other">Outros Eventos</option>
+                <option value="other">Outras Atividades</option>
               </Select>
             </div>
           </div>
@@ -731,13 +777,13 @@ export function CalendarPage() {
             </div>
           </div>
 
-          {/* Visão dos 7 dias da semana com todos os compromissos e ações rápidas */}
-          <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-7">
+          {/* Visão dos 7 dias da semana com todos os compromissos alinhados dentro do esqueleto */}
+          <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
             {selectedWeekDays.map((day) => (
               <div
                 key={day.key}
                 onClick={() => setSelectedDateKey(day.key)}
-                className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-3.5 transition ${
+                className={`flex min-w-0 cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-3 transition ${
                   day.isSelected
                     ? 'border-[#0d3950] bg-[#0d3950]/5 ring-2 ring-[#0d3950]/20 dark:border-cyan-400 dark:bg-cyan-400/10'
                     : day.isToday
@@ -745,13 +791,13 @@ export function CalendarPage() {
                       : 'border-slate-200/80 bg-slate-50/70 hover:border-[#0d3950]/40 dark:border-[#005063]/30 dark:bg-[#041019]/80'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between gap-1 border-b border-slate-200/60 pb-2 dark:border-slate-800">
-                    <div>
-                      <span className="block text-[10px] font-extrabold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                <div className="min-w-0">
+                  <div className="flex items-center justify-between gap-1.5 border-b border-slate-200/60 pb-2 dark:border-slate-800">
+                    <div className="min-w-0">
+                      <span className="block truncate text-[10px] font-extrabold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                         {day.weekdayFull}
                       </span>
-                      <span className="text-sm font-black text-[#0d3950] dark:text-white">
+                      <span className="block truncate text-sm font-black text-[#0d3950] dark:text-white">
                         {day.date.toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: '2-digit',
@@ -765,8 +811,8 @@ export function CalendarPage() {
                         e.stopPropagation()
                         openNewEventForDate(day.key)
                       }}
-                      title={`Adicionar evento em ${day.weekdayFull}`}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-[#0d3950] shadow-2xs hover:bg-slate-100 dark:bg-[#081a26] dark:text-cyan-300"
+                      title={`Adicionar tarefa ou evento em ${day.weekdayFull}`}
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-[#0d3950] shadow-2xs hover:bg-slate-100 dark:bg-[#081a26] dark:text-cyan-300"
                     >
                       <Plus className="h-3.5 w-3.5" />
                     </button>
@@ -790,99 +836,117 @@ export function CalendarPage() {
                           <div
                             key={item.id}
                             onClick={(e) => e.stopPropagation()}
-                            className="rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-2xs dark:border-[#005063]/30 dark:bg-[#081a26]"
+                            className="min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-2xs dark:border-[#005063]/30 dark:bg-[#081a26]"
                           >
+                            {/* Linha 1: Badge compacto sem quebrar linha */}
                             <div className="flex items-center justify-between gap-1">
                               <span
-                                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold ${meta.badgeClass}`}
+                                className={`inline-flex max-w-full items-center gap-1 truncate rounded-full border px-2 py-0.5 text-[10px] font-extrabold whitespace-nowrap ${meta.badgeClass}`}
                               >
-                                <span className={`h-1.5 w-1.5 rounded-full ${meta.dotClass}`} />
-                                {meta.label}
+                                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${meta.dotClass}`} />
+                                <span className="truncate">{meta.shortLabel}</span>
                               </span>
-                              <Link
-                                to={meta.originLink}
-                                className="text-[10px] font-bold text-[#005063] hover:underline dark:text-cyan-400"
-                              >
-                                {meta.originLabel} →
-                              </Link>
                             </div>
 
-                            <h4 className="mt-1.5 text-xs font-black text-[#0d3950] dark:text-white">
+                            {/* Linha 2: Título */}
+                            <h4 className="mt-1.5 break-words text-xs leading-snug font-black text-[#0d3950] dark:text-white">
                               {item.title}
                             </h4>
 
+                            {/* Linha 3: Disciplina */}
                             {item.subject_name && (
-                              <p className="mt-0.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                              <p className="mt-0.5 line-clamp-2 break-words text-[11px] leading-tight font-semibold text-slate-600 dark:text-slate-300">
                                 {item.subject_name}
                               </p>
                             )}
 
-                            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                              <span className="inline-flex items-center gap-0.5">
-                                <Clock className="h-3 w-3" />
+                            {/* Linha 4: Horário e Sala */}
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                              <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
+                                <Clock className="h-3 w-3 shrink-0" />
                                 {formatTimeRange(item)}
                               </span>
                               {item.room && (
-                                <span className="inline-flex items-center gap-0.5">
-                                  <MapPin className="h-3 w-3" />
-                                  {item.room}
+                                <span className="inline-flex items-center gap-0.5 truncate">
+                                  <MapPin className="h-3 w-3 shrink-0" />
+                                  <span className="truncate">{item.room}</span>
                                 </span>
                               )}
                             </div>
 
-                            {/* Ações rápidas inline */}
-                            {item.source_type === 'task' && (
-                              <button
-                                type="button"
-                                disabled={isBusy}
-                                onClick={() => void handleToggleTask(item)}
-                                className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-900 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-200"
-                              >
-                                <CheckCircle2 className="h-3 w-3" />
-                                {item.task_status === 'completed' ? 'Reabrir' : 'Concluir'}
-                              </button>
-                            )}
+                            {/* Linha 5: Rodapé de Ações Rápidas sem quebra de layout */}
+                            <div className="mt-2 flex flex-col gap-1 border-t border-slate-200/60 pt-1.5 dark:border-slate-700/50">
+                              {item.source_type === 'task' && (
+                                <div className="grid grid-cols-2 gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => void handleToggleTask(item)}
+                                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-1.5 py-1 text-[10px] font-bold whitespace-nowrap text-amber-900 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-200"
+                                  >
+                                    <CheckCircle2 className="h-3 w-3 shrink-0" />
+                                    <span>{item.task_status === 'completed' ? 'Reabrir' : 'Concluir'}</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => void handleDeleteItem(item)}
+                                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-rose-500/25 bg-rose-500/10 px-1.5 py-1 text-[10px] font-bold whitespace-nowrap text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
+                                  >
+                                    <Trash2 className="h-3 w-3 shrink-0" />
+                                    <span>Excluir</span>
+                                  </button>
+                                </div>
+                              )}
 
-                            {item.source_type === 'class' && !item.cancelled && isPastClass && (
-                              <div className="mt-2 flex items-center gap-1">
+                              {item.source_type === 'event' && (
                                 <button
                                   type="button"
                                   disabled={isBusy}
-                                  onClick={() => void handleAttendance(item, 'present')}
-                                  className={`flex-1 rounded-md py-0.5 text-[10px] font-bold ${
-                                    item.attendance_status === 'present'
-                                      ? 'bg-emerald-600 text-white'
-                                      : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
-                                  }`}
+                                  onClick={() => void handleDeleteItem(item)}
+                                  className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-rose-500/25 bg-rose-500/10 py-1 text-[10px] font-bold whitespace-nowrap text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
                                 >
-                                  Presente
+                                  <Trash2 className="h-3 w-3 shrink-0" />
+                                  <span>Excluir</span>
                                 </button>
-                                <button
-                                  type="button"
-                                  disabled={isBusy}
-                                  onClick={() => void handleAttendance(item, 'absent')}
-                                  className={`flex-1 rounded-md py-0.5 text-[10px] font-bold ${
-                                    item.attendance_status === 'absent'
-                                      ? 'bg-rose-600 text-white'
-                                      : 'bg-rose-500/15 text-rose-800 dark:text-rose-300'
-                                  }`}
-                                >
-                                  Falta
-                                </button>
-                              </div>
-                            )}
+                              )}
 
-                            {item.source_type === 'event' && (
-                              <button
-                                type="button"
-                                disabled={isBusy}
-                                onClick={() => void handleDeleteEvent(item)}
-                                className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-md py-0.5 text-[10px] font-bold text-rose-600 hover:bg-rose-500/10 dark:text-rose-400"
+                              {item.source_type === 'class' && !item.cancelled && isPastClass && (
+                                <div className="grid grid-cols-2 gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => void handleAttendance(item, 'present')}
+                                    className={`rounded-md py-1 text-[10px] font-bold whitespace-nowrap ${
+                                      item.attendance_status === 'present'
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                                    }`}
+                                  >
+                                    Presente
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => void handleAttendance(item, 'absent')}
+                                    className={`rounded-md py-1 text-[10px] font-bold whitespace-nowrap ${
+                                      item.attendance_status === 'absent'
+                                        ? 'bg-rose-600 text-white'
+                                        : 'bg-rose-500/15 text-rose-800 dark:text-rose-300'
+                                    }`}
+                                  >
+                                    Falta
+                                  </button>
+                                </div>
+                              )}
+
+                              <Link
+                                to={meta.originLink}
+                                className="block truncate text-center text-[10px] font-bold text-[#005063] hover:underline dark:text-cyan-400"
                               >
-                                <Trash2 className="h-3 w-3" />
-                                Excluir
-                              </button>
-                            )}
+                                Ver em {meta.originLabel} →
+                              </Link>
+                            </div>
                           </div>
                         )
                       })}
@@ -904,7 +968,7 @@ export function CalendarPage() {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-full bg-amber-500" />
-                Prazos (Tarefas)
+                Tarefas & Entregas
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-full bg-cyan-500" />
@@ -916,11 +980,11 @@ export function CalendarPage() {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-full bg-violet-500" />
-                Trabalhos & Eventos
+                Trabalhos & Projetos
               </span>
             </div>
             <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-              Clique em um dia para atualizar a semana exibida acima
+              Clique em um dia para atualizar a semana exibida acima ou no + para criar tarefa
             </span>
           </div>
 
@@ -930,7 +994,7 @@ export function CalendarPage() {
               {WEEKDAYS_FULL.map((day, idx) => (
                 <div
                   key={day}
-                  className="rounded-xl bg-slate-100/80 py-2.5 dark:bg-[#041019]/80"
+                  className="truncate rounded-xl bg-slate-100/80 py-2.5 dark:bg-[#041019]/80"
                 >
                   <span className="hidden lg:inline">{day}</span>
                   <span className="lg:hidden">{WEEKDAYS_SHORT[idx]}</span>
@@ -954,7 +1018,7 @@ export function CalendarPage() {
                         setSelectedDateKey(cell.key)
                       }
                     }}
-                    className={`group flex min-h-36 cursor-pointer flex-col justify-between rounded-2xl border p-2.5 text-left transition lg:min-h-44 lg:p-3 ${
+                    className={`group flex min-h-36 min-w-0 cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-2.5 text-left transition lg:min-h-44 lg:p-3 ${
                       isSelected
                         ? 'border-[#0d3950] bg-[#0d3950]/5 ring-2 ring-[#0d3950]/30 dark:border-cyan-400 dark:bg-cyan-400/10 dark:ring-cyan-400/30'
                         : cell.isCurrentMonth
@@ -963,9 +1027,9 @@ export function CalendarPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex min-w-0 items-center gap-1.5">
                         <span
-                          className={`inline-flex h-8 w-8 items-center justify-center rounded-xl text-sm font-black ${
+                          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black ${
                             cell.isToday
                               ? 'bg-[#0d3950] text-white shadow-xs dark:bg-cyan-400 dark:text-slate-950'
                               : 'text-[#0d3950] dark:text-slate-100'
@@ -974,13 +1038,13 @@ export function CalendarPage() {
                           {cell.date.getDate()}
                         </span>
                         {cell.isToday && (
-                          <span className="rounded-md bg-[#0d3950]/10 px-1.5 py-0.5 text-[10px] font-extrabold text-[#0d3950] dark:bg-cyan-400/20 dark:text-cyan-300">
+                          <span className="truncate rounded-md bg-[#0d3950]/10 px-1.5 py-0.5 text-[10px] font-extrabold text-[#0d3950] dark:bg-cyan-400/20 dark:text-cyan-300">
                             Hoje
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex shrink-0 items-center gap-1">
                         {dayItems.length > 0 && (
                           <span className="rounded-full bg-[#0d3950]/10 px-2 py-0.5 text-[11px] font-extrabold text-[#0d3950] dark:bg-cyan-400/15 dark:text-cyan-300">
                             {dayItems.length}
@@ -992,7 +1056,7 @@ export function CalendarPage() {
                             e.stopPropagation()
                             openNewEventForDate(cell.key)
                           }}
-                          title={`Adicionar evento em ${cell.date.getDate()}/${cell.date.getMonth() + 1}`}
+                          title={`Adicionar tarefa ou evento em ${cell.date.getDate()}/${cell.date.getMonth() + 1}`}
                           className="hidden h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/70 hover:text-[#0d3950] group-hover:inline-flex dark:hover:bg-slate-800 dark:hover:text-cyan-300"
                         >
                           <Plus className="h-3.5 w-3.5" />
@@ -1000,7 +1064,7 @@ export function CalendarPage() {
                       </div>
                     </div>
 
-                    <div className="mt-2 flex-1 space-y-1.5">
+                    <div className="mt-2 min-w-0 flex-1 space-y-1.5">
                       {dayItems.length === 0 ? (
                         <div className="flex h-full items-end pt-4">
                           <span className="text-[11px] font-medium text-slate-300 opacity-0 transition group-hover:opacity-100 dark:text-slate-600">
@@ -1014,13 +1078,13 @@ export function CalendarPage() {
                           return (
                             <div
                               key={it.id}
-                              className={`rounded-xl border px-2 py-1.5 text-xs transition ${meta.cardClass}`}
+                              className={`min-w-0 overflow-hidden rounded-xl border px-2 py-1.5 text-xs transition ${meta.cardClass}`}
                             >
                               <div className="flex items-center justify-between gap-1 text-[10px] font-extrabold opacity-85">
-                                <span className="truncate">{meta.label}</span>
+                                <span className="truncate">{meta.shortLabel}</span>
                                 {timeLabel && <span className="shrink-0">{timeLabel}</span>}
                               </div>
-                              <p className="mt-0.5 line-clamp-2 text-xs leading-snug font-extrabold">
+                              <p className="mt-0.5 line-clamp-2 break-words text-xs leading-snug font-extrabold">
                                 {it.title}
                               </p>
                               {it.subject_name && (
@@ -1120,7 +1184,7 @@ export function CalendarPage() {
                         className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-[#0d3950] dark:bg-slate-800 dark:text-cyan-300"
                       >
                         <Plus className="h-3.5 w-3.5" />
-                        Evento
+                        Tarefa / Evento
                       </button>
                     </div>
 
@@ -1160,7 +1224,7 @@ export function CalendarPage() {
         </section>
       </div>
 
-      {/* Modal de Criação de Evento Acadêmico */}
+      {/* Modal de Criação de Tarefa / Evento Sincronizado */}
       {showNewEventModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
@@ -1170,12 +1234,17 @@ export function CalendarPage() {
         >
           <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-[#005063]/30">
-              <h2
-                id="modal-new-event-title"
-                className="text-lg font-black text-[#0d3950] dark:text-white"
-              >
-                Novo Evento no Calendário
-              </h2>
+              <div>
+                <p className="text-[11px] font-extrabold tracking-wider text-[#006768] uppercase dark:text-cyan-400">
+                  Sincronizado com a aba Tarefas
+                </p>
+                <h2
+                  id="modal-new-event-title"
+                  className="text-lg font-black text-[#0d3950] dark:text-white"
+                >
+                  Nova Tarefa ou Evento no Calendário
+                </h2>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowNewEventModal(false)}
@@ -1188,8 +1257,8 @@ export function CalendarPage() {
 
             <form onSubmit={(e) => void handleCreateEvent(e)} className="mt-4 space-y-4">
               <Input
-                label="Título do evento"
-                placeholder="Ex: Prova P1, Apresentação de Seminário..."
+                label="Título da tarefa ou compromisso"
+                placeholder="Ex: Entrega de Trabalho, Lista de Exercícios, Prova P1..."
                 value={eventTitle}
                 onChange={(e) => setEventTitle(e.target.value)}
                 required
@@ -1199,24 +1268,38 @@ export function CalendarPage() {
                 <Select
                   label="Categoria"
                   value={eventKind}
-                  onChange={(e) => setEventKind(e.target.value as AcademicEventKind)}
+                  onChange={(e) => setEventKind(e.target.value as AcademicTaskCategory)}
                 >
+                  <option value="task">Tarefa / Entrega</option>
+                  <option value="assignment">Trabalho / Projeto</option>
                   <option value="exam">Prova / Avaliação</option>
-                  <option value="assignment">Trabalho / Entrega</option>
-                  <option value="other">Outro Evento</option>
+                  <option value="other">Estudo / Outra Atividade</option>
                 </Select>
 
                 <Select
-                  label="Disciplina vinculada (opcional)"
+                  label="Disciplina vinculada"
                   value={eventSubjectId}
                   onChange={(e) => setEventSubjectId(e.target.value)}
                 >
-                  <option value="">Geral / Sem disciplina</option>
-                  {subjects.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.subject.name}
-                    </option>
-                  ))}
+                  <option value="">Geral / Outras Atividades</option>
+                  {subjects.length > 0 && (
+                    <optgroup label="Disciplinas ativas">
+                      {subjects.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.subject.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {extraCurriculumSubjects.length > 0 && (
+                    <optgroup label="Outras disciplinas da matriz">
+                      {extraCurriculumSubjects.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name} · {item.semester}º sem
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </Select>
               </div>
 
@@ -1254,7 +1337,7 @@ export function CalendarPage() {
                   onChange={(e) => setEventAllDay(e.target.checked)}
                   className="h-4 w-4 rounded border-slate-300"
                 />
-                Evento de dia inteiro
+                Dia inteiro
               </label>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1281,7 +1364,7 @@ export function CalendarPage() {
                   Cancelar
                 </button>
                 <PrimaryButton type="submit" disabled={savingEvent}>
-                  {savingEvent ? 'Salvando...' : 'Salvar no Calendário'}
+                  {savingEvent ? 'Salvando...' : 'Salvar em Tarefas e Calendário'}
                 </PrimaryButton>
               </div>
             </form>

@@ -4,15 +4,24 @@ import { X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { ApiError, createAcademicTask, listCurriculum, updateAcademicTask } from '../api/client'
-import type { AcademicSubject, AcademicTask, AcademicTaskStatus, StudentSubject } from '../api/types'
+import type {
+  AcademicSubject,
+  AcademicTask,
+  AcademicTaskCategory,
+  AcademicTaskStatus,
+  StudentSubject,
+} from '../api/types'
 import { Alert } from './Feedback'
 import { Input, PrimaryButton, Select } from './FormControls'
 
 type TaskFormValues = {
   student_subject: string
+  category: AcademicTaskCategory
   title: string
   description: string
   due_date: string
+  due_time: string
+  room: string
   status: AcademicTaskStatus
   estimated_minutes: string
   actual_minutes: string
@@ -22,22 +31,36 @@ type TaskFormModalProps = {
   open: boolean
   subjects: StudentSubject[]
   initialTask?: AcademicTask | null
+  defaultDateKey?: string
   onClose: () => void
   onSaved: (task: AcademicTask) => void
 }
 
-const EMPTY_VALUES: TaskFormValues = {
-  student_subject: '',
-  title: '',
-  description: '',
-  due_date: '',
-  status: 'pending',
-  estimated_minutes: '30',
-  actual_minutes: '0',
+function getTodayDateInput(): string {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 function toDateInput(value: string | null): string {
-  return value ? value.slice(0, 10) : ''
+  if (!value) return getTodayDateInput()
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value.slice(0, 10)
+  const y = parsed.getFullYear()
+  const m = String(parsed.getMonth() + 1).padStart(2, '0')
+  const d = String(parsed.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function toTimeInput(value: string | null): string {
+  if (!value) return '19:00'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return '19:00'
+  const hh = String(parsed.getHours()).padStart(2, '0')
+  const mm = String(parsed.getMinutes()).padStart(2, '0')
+  return `${hh}:${mm}`
 }
 
 function formatNumberInput(value: number): string {
@@ -48,19 +71,31 @@ function buildValues(
   initialTask: AcademicTask | null | undefined,
   subjects: StudentSubject[],
   curriculum: AcademicSubject[],
+  defaultDateKey?: string,
 ): TaskFormValues {
   if (!initialTask) {
     return {
-      ...EMPTY_VALUES,
       student_subject: subjects[0]?.id || curriculum[0]?.id || '',
+      category: 'task',
+      title: '',
+      description: '',
+      due_date: defaultDateKey || getTodayDateInput(),
+      due_time: '19:00',
+      room: '',
+      status: 'pending',
+      estimated_minutes: '60',
+      actual_minutes: '0',
     }
   }
 
   return {
-    student_subject: initialTask.student_subject,
+    student_subject: initialTask.student_subject || '',
+    category: initialTask.category || 'task',
     title: initialTask.title,
     description: initialTask.description,
     due_date: toDateInput(initialTask.due_date),
+    due_time: toTimeInput(initialTask.due_date),
+    room: initialTask.room || '',
     status: initialTask.status,
     estimated_minutes: formatNumberInput(initialTask.estimated_minutes),
     actual_minutes: formatNumberInput(initialTask.actual_minutes),
@@ -71,19 +106,20 @@ export function TaskFormModal({
   open,
   subjects,
   initialTask = null,
+  defaultDateKey,
   onClose,
   onSaved,
 }: TaskFormModalProps) {
   const [curriculum, setCurriculum] = useState<AcademicSubject[]>([])
   const [values, setValues] = useState<TaskFormValues>(() =>
-    buildValues(initialTask, subjects, []),
+    buildValues(initialTask, subjects, [], defaultDateKey),
   )
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof TaskFormValues, string>>>({})
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   const isEditing = Boolean(initialTask)
-  const title = isEditing ? 'Editar tarefa' : 'Nova tarefa'
+  const title = isEditing ? 'Editar tarefa / entrega' : 'Cadastrar nova tarefa / atividade'
 
   useEffect(() => {
     if (!open) return
@@ -92,15 +128,8 @@ export function TaskFormModal({
       .then((items) => {
         if (!alive) return
         setCurriculum(items)
-        setValues((prev) => {
-          if (prev.student_subject) return prev
-          const fallbackId = subjects[0]?.id || items[0]?.id || ''
-          return fallbackId ? { ...prev, student_subject: fallbackId } : prev
-        })
       })
-      .catch(() => {
-        // Silencioso: usa subjects ativos já carregados
-      })
+      .catch(() => {})
     return () => {
       alive = false
     }
@@ -108,11 +137,11 @@ export function TaskFormModal({
 
   useEffect(() => {
     if (!open) return
-    setValues(buildValues(initialTask, subjects, curriculum))
+    setValues(buildValues(initialTask, subjects, curriculum, defaultDateKey))
     setFieldErrors({})
     setError('')
     setSaving(false)
-  }, [open, initialTask, subjects, curriculum])
+  }, [open, initialTask, subjects, curriculum, defaultDateKey])
 
   const enrolledSubjectIds = useMemo(
     () => new Set(subjects.map((s) => s.subject.id)),
@@ -128,8 +157,7 @@ export function TaskFormModal({
     event.preventDefault()
 
     const nextErrors: Partial<Record<keyof TaskFormValues, string>> = {}
-    if (!values.student_subject) nextErrors.student_subject = 'Selecione uma disciplina.'
-    if (!values.title.trim()) nextErrors.title = 'Informe um título.'
+    if (!values.title.trim()) nextErrors.title = 'Informe um título para a tarefa.'
 
     const estimatedMinutes = Number.parseInt(values.estimated_minutes, 10)
     if (!Number.isFinite(estimatedMinutes) || estimatedMinutes < 0) {
@@ -147,11 +175,17 @@ export function TaskFormModal({
     setSaving(true)
     setError('')
     try {
+      const dateStr = values.due_date || getTodayDateInput()
+      const timeStr = values.due_time || '19:00'
+      const dueIso = new Date(`${dateStr}T${timeStr}:00`).toISOString()
+
       const payload = {
-        student_subject: values.student_subject,
+        student_subject: values.student_subject || null,
+        category: values.category,
         title: values.title.trim(),
         description: values.description.trim(),
-        due_date: values.due_date || null,
+        due_date: dueIso,
+        room: values.room.trim(),
         status: values.status,
         estimated_minutes: estimatedMinutes,
         actual_minutes: actualMinutes,
@@ -187,8 +221,8 @@ export function TaskFormModal({
       >
         <header className="z-10 flex shrink-0 items-start justify-between border-b border-slate-200 bg-white p-5 sm:px-6 sm:py-5 dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div>
-            <p className="text-xs font-bold tracking-[0.16em] text-[#006768] uppercase dark:text-[#005063]">
-              Gestão de tarefas
+            <p className="text-xs font-bold tracking-[0.16em] text-[#006768] uppercase dark:text-cyan-400">
+              Sincronizado com o Calendário Acadêmico
             </p>
             <h2
               id="task-form-title"
@@ -215,69 +249,96 @@ export function TaskFormModal({
               </div>
             ) : null}
 
-            <Select
-              label="Disciplina vinculada"
-              value={values.student_subject}
-              onChange={(event) =>
-                setValues((current) => ({ ...current, student_subject: event.target.value }))
-              }
-              error={fieldErrors.student_subject}
-            >
-              <option value="">Selecione uma disciplina</option>
-              {subjects.length > 0 && (
-                <optgroup label="Disciplinas ativas no semestre">
-                  {subjects.map((subject) => (
-                    <option key={subject.id} value={subject.id}>
-                      {subject.subject.name} · {subject.subject.semester}º semestre
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {extraCurriculumSubjects.length > 0 && (
-                <optgroup label="Outras disciplinas da matriz do curso (ativa automaticamente)">
-                  {extraCurriculumSubjects.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name} · {item.semester}º semestre
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </Select>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Disciplina ou área"
+                value={values.student_subject}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, student_subject: event.target.value }))
+                }
+                error={fieldErrors.student_subject}
+              >
+                <option value="">Geral / Outras Atividades (Sem disciplina específica)</option>
+                {subjects.length > 0 && (
+                  <optgroup label="Disciplinas ativas no semestre">
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>
+                        {subject.subject.name} · {subject.subject.semester}º semestre
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {extraCurriculumSubjects.length > 0 && (
+                  <optgroup label="Outras disciplinas da matriz do curso (ativa automaticamente)">
+                    {extraCurriculumSubjects.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} · {item.semester}º semestre
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </Select>
+
+              <Select
+                label="Tipo de atividade"
+                value={values.category}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    category: event.target.value as AcademicTaskCategory,
+                  }))
+                }
+              >
+                <option value="task">Tarefa / Lista / Exercício</option>
+                <option value="assignment">Trabalho / Projeto</option>
+                <option value="exam">Prova / Avaliação</option>
+                <option value="other">Estudo / Outra Atividade</option>
+              </Select>
+            </div>
 
             <Input
-              label="Título"
+              label="Título da tarefa ou atividade"
               name="title"
               value={values.title}
               onChange={(event) =>
                 setValues((current) => ({ ...current, title: event.target.value }))
               }
               error={fieldErrors.title}
-              placeholder="Ex.: Exercícios da lista 3"
+              placeholder="Ex.: Entrega do Trabalho P1, Lista de Exercícios 3, Estudar para prova..."
             />
 
             <label className="block">
               <span className="mb-2 block text-sm font-bold text-slate-800 dark:text-slate-200">
-                Descrição
+                Descrição / Observações (opcional)
               </span>
               <textarea
                 value={values.description}
                 onChange={(event) =>
                   setValues((current) => ({ ...current, description: event.target.value }))
                 }
-                rows={4}
-                className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-[#005063] focus:ring-2 focus:ring-[#005063]/20 dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-[#006768]"
-                placeholder="Detalhe o objetivo ou instruções da tarefa"
+                rows={3}
+                className="min-h-20 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-[#005063] focus:ring-2 focus:ring-[#005063]/20 dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-[#006768]"
+                placeholder="Detalhe o objetivo, links ou instruções da tarefa"
               />
             </label>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <Input
-                label="Prazo"
+                label="Data no Calendário / Prazo"
                 name="due_date"
                 type="date"
                 value={values.due_date}
                 onChange={(event) =>
                   setValues((current) => ({ ...current, due_date: event.target.value }))
+                }
+              />
+              <Input
+                label="Horário"
+                name="due_time"
+                type="time"
+                value={values.due_time}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, due_time: event.target.value }))
                 }
               />
               <Select
@@ -296,7 +357,16 @@ export function TaskFormModal({
               </Select>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Input
+                label="Sala / Local (opcional)"
+                name="room"
+                value={values.room}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, room: event.target.value }))
+                }
+                placeholder="Ex.: Sala 304 / Online"
+              />
               <Input
                 label="Minutos estimados"
                 name="estimated_minutes"
@@ -331,7 +401,7 @@ export function TaskFormModal({
               Cancelar
             </button>
             <PrimaryButton type="submit" loading={saving} className="sm:w-auto">
-              {isEditing ? 'Salvar alterações' : 'Criar tarefa'}
+              {isEditing ? 'Salvar alterações' : 'Salvar Tarefa e Alocar no Calendário'}
             </PrimaryButton>
           </div>
         </form>

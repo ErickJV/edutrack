@@ -186,12 +186,8 @@ class StudentSubjectDetailView(generics.RetrieveUpdateAPIView):
 class AcademicTaskMixin:
     def get_base_queryset(self: Any):
         user = cast(User, self.request.user)
-        if not user.course_offering_id:
-            raise PermissionDenied(
-                "Complete seu perfil acadêmico antes de acessar tarefas acadêmicas."
-            )
         queryset = AcademicTask.objects.select_related(
-            "student_subject", "student_subject__subject", "user"
+            "student_subject", "student_subject__subject", "linked_event", "user"
         ).filter(user=user)
         student_subject_id = self.request.query_params.get("student_subject")
         if student_subject_id:
@@ -239,6 +235,12 @@ class AcademicTaskDetailView(AcademicTaskMixin, generics.RetrieveUpdateDestroyAP
         return (
             AcademicTaskSerializer if self.request.method == "GET" else AcademicTaskWriteSerializer
         )
+
+    def perform_destroy(self, instance: AcademicTask):
+        linked = instance.linked_event
+        instance.delete()
+        if linked:
+            linked.delete()
 
     def retrieve(self, request, *args, **kwargs):
         return Response(AcademicTaskSerializer(self.get_object()).data)
@@ -425,6 +427,10 @@ class AcademicEventDetailView(generics.RetrieveUpdateDestroyAPIView):
         return AcademicEvent.objects.select_related(
             "student_subject", "student_subject__subject"
         ).filter(user=user)
+
+    def perform_destroy(self, instance: AcademicEvent):
+        AcademicTask.objects.filter(linked_event=instance).delete()
+        instance.delete()
 
 
 class StudyFolderListCreateView(generics.ListCreateAPIView):
@@ -929,13 +935,14 @@ class CalendarView(generics.GenericAPIView):
                     "kind": "class",
                 })
 
-        # 2. Academic events
+        # 2. Academic events (somente eventos legados sem AcademicTask vinculada para evitar duplicidade)
         if not kind_filter or kind_filter in ("exam", "assignment", "other"):
             from django.db.models import Q
             event_qs = AcademicEvent.objects.select_related(
                 "student_subject__subject"
             ).filter(
                 user=user,
+                synced_task__isnull=True,
                 starts_at__lt=to_dt,
             ).filter(
                 Q(ends_at__isnull=True, starts_at__gte=from_dt)
@@ -963,8 +970,8 @@ class CalendarView(generics.GenericAPIView):
                     "kind": ev.kind,
                 })
 
-        # 3. Task due dates (no kind filter or kind==task)
-        if not kind_filter or kind_filter == "task":
+        # 3. Tasks & Synchronized Calendar Activities
+        if not kind_filter or kind_filter in ("task", "exam", "assignment", "other"):
             task_qs = AcademicTask.objects.select_related(
                 "student_subject__subject"
             ).filter(
@@ -975,6 +982,8 @@ class CalendarView(generics.GenericAPIView):
             )
             if ss_id:
                 task_qs = task_qs.filter(student_subject_id=ss_id)
+            if kind_filter in ("exam", "assignment", "other"):
+                task_qs = task_qs.filter(category=kind_filter)
             for task in task_qs:
                 items.append({
                     "id": f"task:{task.id}",
@@ -983,14 +992,18 @@ class CalendarView(generics.GenericAPIView):
                     "title": task.title,
                     "description": task.description,
                     "starts_at": task.due_date.isoformat(),
-                    "ends_at": task.due_date.isoformat(),
-                    "room": "",
-                    "student_subject_id": str(task.student_subject_id),
-                    "subject_name": task.student_subject.subject.name,
+                    "ends_at": (task.end_date or task.due_date).isoformat(),
+                    "room": task.room or "",
+                    "student_subject_id": str(task.student_subject_id) if task.student_subject_id else None,
+                    "subject_name": (
+                        task.student_subject.subject.name
+                        if task.student_subject and task.student_subject.subject
+                        else "Geral / Outras Atividades"
+                    ),
                     "cancelled": False,
                     "attendance_status": None,
-                    "all_day": False,
-                    "kind": "task",
+                    "all_day": task.all_day,
+                    "kind": task.category or "task",
                     "task_status": task.status,
                 })
 

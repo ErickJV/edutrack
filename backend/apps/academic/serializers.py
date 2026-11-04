@@ -560,11 +560,9 @@ class StudentSubjectSelectionSerializer(serializers.Serializer):
 
 
 class AcademicTaskSerializer(serializers.ModelSerializer):
-    subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
-    subject_id = serializers.UUIDField(source="student_subject.subject.id", read_only=True)
-    subject_semester = serializers.IntegerField(
-        source="student_subject.subject.semester", read_only=True
-    )
+    subject_name = serializers.SerializerMethodField()
+    subject_id = serializers.SerializerMethodField()
+    subject_semester = serializers.SerializerMethodField()
 
     class Meta:
         model = AcademicTask
@@ -574,9 +572,13 @@ class AcademicTaskSerializer(serializers.ModelSerializer):
             "subject_id",
             "subject_name",
             "subject_semester",
+            "category",
             "title",
             "description",
             "due_date",
+            "end_date",
+            "all_day",
+            "room",
             "status",
             "estimated_minutes",
             "actual_minutes",
@@ -594,6 +596,21 @@ class AcademicTaskSerializer(serializers.ModelSerializer):
             "subject_semester",
         )
 
+    def get_subject_name(self, obj: AcademicTask) -> str:
+        if obj.student_subject and obj.student_subject.subject:
+            return obj.student_subject.subject.name
+        return "Geral / Outras Atividades"
+
+    def get_subject_id(self, obj: AcademicTask) -> str | None:
+        if obj.student_subject and obj.student_subject.subject_id:
+            return str(obj.student_subject.subject_id)
+        return None
+
+    def get_subject_semester(self, obj: AcademicTask) -> int | None:
+        if obj.student_subject and obj.student_subject.subject:
+            return obj.student_subject.subject.semester
+        return None
+
 
 class DashboardSummarySerializer(serializers.Serializer):
     subjects_count = serializers.IntegerField()
@@ -607,16 +624,20 @@ class DashboardSummarySerializer(serializers.Serializer):
 
 
 class AcademicTaskWriteSerializer(serializers.ModelSerializer):
-    student_subject = serializers.UUIDField()
+    student_subject = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = AcademicTask
         fields = (
             "id",
             "student_subject",
+            "category",
             "title",
             "description",
             "due_date",
+            "end_date",
+            "all_day",
+            "room",
             "status",
             "estimated_minutes",
             "actual_minutes",
@@ -629,13 +650,23 @@ class AcademicTaskWriteSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         if isinstance(data, dict):
             mutable = dict(data)
+            raw_ss = mutable.get("student_subject")
+            if raw_ss == "":
+                mutable["student_subject"] = None
             raw_due = mutable.get("due_date")
             if isinstance(raw_due, str) and len(raw_due.strip()) == 10:
                 mutable["due_date"] = f"{raw_due.strip()}T12:00:00"
+            elif not raw_due and self.instance is None:
+                mutable["due_date"] = timezone.now().isoformat()
+            raw_end = mutable.get("end_date")
+            if isinstance(raw_end, str) and len(raw_end.strip()) == 10:
+                mutable["end_date"] = f"{raw_end.strip()}T13:00:00"
             data = mutable
         return super().to_internal_value(data)
 
     def validate_student_subject(self, value):
+        if value is None:
+            return None
         request = self.context["request"]
         user = request.user
         enrollment = (
@@ -679,7 +710,23 @@ class AcademicTaskWriteSerializer(serializers.ModelSerializer):
             validated_data["completed_at"] = timezone.now()
         elif status != AcademicTask.Status.COMPLETED:
             validated_data["completed_at"] = None
-        return super().update(instance, validated_data)
+        updated = super().update(instance, validated_data)
+        if updated.linked_event_id:
+            ev = updated.linked_event
+            if ev:
+                ev.title = updated.title
+                ev.description = updated.description
+                ev.student_subject = updated.student_subject
+                if updated.due_date:
+                    ev.starts_at = updated.due_date
+                if updated.end_date is not None:
+                    ev.ends_at = updated.end_date
+                ev.all_day = updated.all_day
+                ev.room = updated.room
+                if updated.category in ("exam", "assignment", "other"):
+                    ev.kind = updated.category
+                ev.save()
+        return updated
 
 
 class AcademicEventSerializer(serializers.ModelSerializer):
@@ -709,10 +756,27 @@ class AcademicEventSerializer(serializers.ModelSerializer):
         if value is None:
             return None
         user = self.context["request"].user
-        try:
-            return StudentSubject.objects.get(id=value, user=user)
-        except StudentSubject.DoesNotExist as exc:
-            raise serializers.ValidationError("Disciplina do aluno não encontrada.") from exc
+        enrollment = (
+            StudentSubject.objects.select_related("subject")
+            .filter(id=value, user=user)
+            .first()
+        )
+        if enrollment is not None:
+            if enrollment.status != StudentSubject.Status.ACTIVE:
+                enrollment.status = StudentSubject.Status.ACTIVE
+                enrollment.save(update_fields=("status", "updated_at"))
+            return enrollment
+
+        subj = Subject.objects.filter(id=value).first()
+        if subj is not None:
+            enrollment, _ = StudentSubject.objects.get_or_create(
+                user=user,
+                subject=subj,
+                defaults={"status": StudentSubject.Status.ACTIVE},
+            )
+            return enrollment
+
+        raise serializers.ValidationError("Disciplina do aluno não encontrada.")
 
     def validate(self, attrs):
         starts_at = attrs.get("starts_at") or getattr(self.instance, "starts_at", None)
@@ -729,17 +793,56 @@ class AcademicEventSerializer(serializers.ModelSerializer):
                 )
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
         user = self.context["request"].user
         student_subject = validated_data.pop("student_subject_id", None)
-        return AcademicEvent.objects.create(
+        event = AcademicEvent.objects.create(
             user=user, student_subject=student_subject, **validated_data
         )
+        # Sincroniza automaticamente com AcademicTask para constar em Tarefas e Calendário
+        est_minutes = 60
+        if event.starts_at and event.ends_at and event.ends_at > event.starts_at:
+            diff_min = int((event.ends_at - event.starts_at).total_seconds() // 60)
+            if 5 <= diff_min <= 480:
+                est_minutes = diff_min
+        AcademicTask.objects.update_or_create(
+            linked_event=event,
+            defaults={
+                "user": user,
+                "student_subject": student_subject,
+                "category": event.kind if event.kind in ("exam", "assignment", "other") else "task",
+                "title": event.title,
+                "description": event.description,
+                "due_date": event.starts_at,
+                "end_date": event.ends_at,
+                "all_day": event.all_day,
+                "room": event.room,
+                "estimated_minutes": est_minutes,
+            },
+        )
+        return event
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         if "student_subject_id" in validated_data:
             instance.student_subject = validated_data.pop("student_subject_id")
-        return super().update(instance, validated_data)
+        updated = super().update(instance, validated_data)
+        AcademicTask.objects.update_or_create(
+            linked_event=updated,
+            defaults={
+                "user": updated.user,
+                "student_subject": updated.student_subject,
+                "category": updated.kind if updated.kind in ("exam", "assignment", "other") else "task",
+                "title": updated.title,
+                "description": updated.description,
+                "due_date": updated.starts_at,
+                "end_date": updated.ends_at,
+                "all_day": updated.all_day,
+                "room": updated.room,
+            },
+        )
+        return updated
 
 
 class StudyFolderSerializer(serializers.ModelSerializer):

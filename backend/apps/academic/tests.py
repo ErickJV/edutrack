@@ -94,3 +94,58 @@ class FlashcardsAndNotesQualityTests(TestCase):
         self.assertIn("múltiplas variáveis", combined_fronts)
         self.assertIn("trade-off", combined_fronts)
         self.assertEqual(Flashcard.objects.filter(user=self.user).count(), 4)
+
+    def test_bidirectional_sync_between_tasks_and_calendar(self):
+        # 1. Cria tarefa na aba Tarefas (com disciplina) -> deve constar em /api/v1/calendar
+        resp_task = self.client.post(
+            "/api/v1/tasks",
+            {
+                "student_subject": str(self.student_subject.id),
+                "category": "assignment",
+                "title": "Entrega do Protótipo",
+                "due_date": "2026-11-05T19:00:00Z",
+                "end_date": "2026-11-05T21:00:00Z",
+                "estimated_minutes": 90,
+            },
+            format="json",
+        )
+        self.assertEqual(resp_task.status_code, 201)
+
+        # 2. Cria atividade geral na aba Tarefas (sem disciplina) -> deve constar em /api/v1/tasks e /api/v1/calendar
+        resp_general = self.client.post(
+            "/api/v1/tasks",
+            {
+                "student_subject": None,
+                "category": "other",
+                "title": "Revisão Geral da Semana",
+                "due_date": "2026-11-06T19:00:00Z",
+            },
+            format="json",
+        )
+        self.assertEqual(resp_general.status_code, 201)
+        self.assertEqual(resp_general.json()["subject_name"], "Geral / Outras Atividades")
+
+        # 3. Cria evento via endpoint de calendário (/api/v1/academic-events) -> sincroniza com /api/v1/tasks sem duplicar no calendário
+        resp_event = self.client.post(
+            "/api/v1/academic-events",
+            {
+                "title": "Prova P1",
+                "kind": "exam",
+                "starts_at": "2026-11-07T19:00:00Z",
+                "ends_at": "2026-11-07T21:00:00Z",
+                "student_subject_id": str(self.student_subject.id),
+            },
+            format="json",
+        )
+        self.assertEqual(resp_event.status_code, 201)
+
+        tasks_list = self.client.get("/api/v1/tasks").json()
+        self.assertEqual(len(tasks_list), 3)
+
+        cal_resp = self.client.get(
+            "/api/v1/calendar?from=2026-11-01T00:00:00Z&to=2026-11-10T23:59:59Z"
+        )
+        self.assertEqual(cal_resp.status_code, 200)
+        cal_items = cal_resp.json()["items"]
+        self.assertEqual(len(cal_items), 3)
+

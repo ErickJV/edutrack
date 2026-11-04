@@ -292,6 +292,12 @@ class AcademicTask(models.Model):
         IN_PROGRESS = "in_progress", "Em andamento"
         COMPLETED = "completed", "Concluída"
 
+    class Category(models.TextChoices):
+        TASK = "task", "Tarefa / Entrega"
+        ASSIGNMENT = "assignment", "Trabalho / Projeto"
+        EXAM = "exam", "Prova / Avaliação"
+        OTHER = "other", "Atividade Geral"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -300,12 +306,29 @@ class AcademicTask(models.Model):
     )
     student_subject = models.ForeignKey(
         StudentSubject,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name="tasks",
+    )
+    linked_event = models.OneToOneField(
+        AcademicEvent,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="synced_task",
+    )
+    category = models.CharField(
+        max_length=20,
+        choices=Category.choices,
+        default=Category.TASK,
     )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     due_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+    all_day = models.BooleanField(default=False)
+    room = models.CharField(max_length=80, blank=True, default="")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     estimated_minutes = models.PositiveIntegerField(default=60)
     actual_minutes = models.PositiveIntegerField(default=0)
