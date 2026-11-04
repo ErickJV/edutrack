@@ -459,7 +459,7 @@ class StudyNote(models.Model):
         on_delete=models.SET_NULL,
         related_name="study_notes",
     )
-    title = models.CharField(max_length=200, default="Sem título")
+    title = models.CharField(max_length=200, default="Nova anotação")
     content = models.TextField(blank=True, default="")
     methodology = models.CharField(max_length=50, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -469,6 +469,14 @@ class StudyNote(models.Model):
         ordering = ("-updated_at",)
         verbose_name = "anotação de estudo"
         verbose_name_plural = "anotações de estudo"
+
+    def save(self, *args, **kwargs):
+        raw_title = (self.title or "").strip()
+        if not raw_title or raw_title.lower() in ("nova anotaço", "nova anotaco"):
+            self.title = "Nova anotação"
+        else:
+            self.title = raw_title
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.title

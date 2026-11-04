@@ -1,3 +1,4 @@
+import re
 from typing import Any, cast
 from uuid import UUID
 
@@ -1179,12 +1180,317 @@ class FlashcardReviewView(generics.GenericAPIView):
 class FlashcardAIGenerateView(generics.GenericAPIView):
     """
     POST /api/v1/flashcards/generate-ai
-    Gera flashcards de forma inteligente com IA a partir de um tema, disciplina,
-    texto colado ou anotação existente (StudyNote).
+    Gera flashcards criteriosos voltados ao raciocínio lógico profundo (Taxonomia de Bloom:
+    Aplicação, Análise, Avaliação, Trade-offs e Causa-Efeito) a partir de uma anotação
+    (StudyNote), disciplina, texto colado ou tema acadêmico.
     """
     permission_classes = (IsAuthenticatedOr401,)
     serializer_class = FlashcardSerializer
     pagination_class = None
+
+    GENERIC_TITLES = {
+        "nova anotação",
+        "nova anotaço",
+        "nova anotaco",
+        "sem título",
+        "sem titulo",
+        "anotação",
+        "anotacao",
+        "anotação de estudo",
+        "anotação guiada",
+        "nota",
+        "geral",
+        "estudos acadêmicos",
+    }
+
+    META_PREFIX_REGEX = re.compile(
+        r"^(objetivos?|metas?|propósitos?|finalidades?|"
+        r"temos que considerar.*|devemos considerar.*|fatores.*|variáveis.*|critérios.*|aspectos.*|"
+        r"nossos? modelos?|características.*|propriedades.*|vantagens.*|desvantagens.*|"
+        r"observaç(?:ão|ões)|obs\.?|notas?|importantes?|atenção|lembretes?|resumos?|conclus(?:ão|ões)|sínteses?|exemplos?|dicas?)$",
+        re.IGNORECASE,
+    )
+
+    @classmethod
+    def _is_generic_title(cls, value: str | None) -> bool:
+        cleaned = (value or "").strip().lower()
+        if not cleaned or cleaned in cls.GENERIC_TITLES:
+            return True
+        if cleaned.startswith("nova anota") or cleaned.startswith("sem tít") or cleaned.startswith("sem tit"):
+            return True
+        return False
+
+    @classmethod
+    def _infer_domain_context(
+        cls, raw_topic: str, subject_title: str, lines: list[str]
+    ) -> tuple[str, str]:
+        """
+        Retorna (core_theme, full_context_label) garantindo que títulos genéricos como
+        'Nova anotação' ou 'Nova anotaço' jamais apareçam no enunciado das perguntas.
+        """
+        specific_topic = "" if cls._is_generic_title(raw_topic) else raw_topic.strip()
+
+        inferred_concept = ""
+        for ln in lines:
+            # Verifica se há um cabeçalho ou conceito inicial antes de ':' que não seja metalinguagem
+            m = re.match(r"^([^:–—\-]{3,60})\s*[:–—\-]\s*(.+)$", ln)
+            if m:
+                candidate = m.group(1).strip(" \"'“”•*-")
+                if (
+                    candidate
+                    and not cls._is_generic_title(candidate)
+                    and not cls.META_PREFIX_REGEX.match(candidate)
+                    and len(candidate.split()) <= 6
+                ):
+                    inferred_concept = candidate
+                    break
+            elif 4 <= len(ln) <= 55 and not ln.endswith(".") and not cls.META_PREFIX_REGEX.match(ln):
+                inferred_concept = ln.strip(" \"'“”•*-")
+                break
+
+        core_theme = specific_topic or inferred_concept or subject_title
+        if subject_title and subject_title.lower() not in core_theme.lower() and subject_title != "Estudos Acadêmicos":
+            full_context = f"{core_theme} ({subject_title})"
+        else:
+            full_context = core_theme
+        return core_theme, full_context
+
+    @classmethod
+    def _build_analytical_cards_from_text(
+        cls,
+        lines: list[str],
+        clean_source: str,
+        core_theme: str,
+        subject_title: str,
+        count: int,
+    ) -> list[dict[str, str]]:
+        """
+        Motor Semântico de Elaboração de Flashcards por Raciocínio Lógico.
+        Classifica proposições da anotação nos eixos cognitivos de Avaliação Crítica,
+        Finalidade e Abstração Seletiva, Análise Multivariável / Tomada de Decisão,
+        Trade-offs Arquiteturais e Causa-Efeito / Pensamento Contrafactual.
+        """
+        cards: list[dict[str, str]] = []
+        seen_signatures: set[str] = set()
+
+        def add_card(front: str, back: str, hint: str, tags: str) -> None:
+            sig = front[:80].lower()
+            if sig not in seen_signatures and len(cards) < count:
+                seen_signatures.add(sig)
+                cards.append({
+                    "front": front.strip(),
+                    "back": back.strip(),
+                    "hint": hint.strip()[:255],
+                    "tags": tags.strip()[:255],
+                })
+
+        context_clause = (
+            f"em {core_theme} ({subject_title})"
+            if subject_title and subject_title.lower() not in core_theme.lower() and subject_title != "Estudos Acadêmicos"
+            else f"em {core_theme}"
+        )
+
+        for ln in lines:
+            if len(cards) >= count:
+                break
+
+            match = re.match(r"^([^:–—\-]{2,70})\s*[:–—\-]\s*(.{10,})$", ln)
+            prefix = match.group(1).strip() if match else ""
+            body = match.group(2).strip() if match else ln.strip()
+            prefix_lower = prefix.lower()
+            body_lower = body.lower()
+            full_lower = ln.lower()
+
+            # EIXO 1: Validação Crítica / Pergunta Norteadora / Critério de Aderência
+            quoted_q = re.search(r"[\"“”']([^\"“”']+\?)[\"“”']|([^:]+?\?)", body)
+            if quoted_q or "aderente" in full_lower or "específica" in full_lower:
+                guiding_question = (
+                    (quoted_q.group(1) or quoted_q.group(2)).strip()
+                    if quoted_q
+                    else body.strip(" \"'“”")
+                )
+                concept_focus = (
+                    prefix
+                    if prefix and not cls.META_PREFIX_REGEX.match(prefix) and not cls._is_generic_title(prefix)
+                    else core_theme
+                )
+                add_card(
+                    front=(
+                        f"Ao trabalhar com {concept_focus} ({subject_title}), por que o questionamento "
+                        f"\"{guiding_question}\" exige raciocínio crítico contextual em vez da adoção mecânica de um modelo padrão?"
+                    ),
+                    back=(
+                        f"• Raciocínio Crítico: A validade lógica de uma solução em {concept_focus} não é absoluta; ela depende da aderência real às restrições e objetivos do problema (\"{guiding_question}\").\n"
+                        f"• Implicação Prática: Adotar uma abstração sem julgar sua aderência leva à sobre-engenharia (complexidade excessiva) ou à sub-especificação (incapacidade de atender regras críticas).\n"
+                        f"• Regra de Decisão: Validar se cada componente do modelo responde diretamente às demandas da aplicação em {subject_title}."
+                    ),
+                    hint="Relacione a validade do modelo às restrições específicas da aplicação vs. soluções genéricas",
+                    tags="ia, raciocinio-logico, avaliacao-critica",
+                )
+                continue
+
+            # EIXO 2: Finalidade, Propósito e Abstração Seletiva
+            if (
+                re.match(r"^(objetivos?|metas?|propósitos?|finalidades?)$", prefix_lower)
+                or "capturar aspectos" in full_lower
+                or "interesse da situação" in full_lower
+            ):
+                add_card(
+                    front=(
+                        f"Sob a ótica da abstração lógica {context_clause}, por que o propósito deve ser "
+                        f"\"{body}\" e qual o impacto sistêmico de falhar nesse filtro de relevância?"
+                    ),
+                    back=(
+                        f"• Princípio da Abstração Seletiva: O foco analítico consiste em {body}.\n"
+                        f"• Relação de Causa e Efeito: Tentar representar todos os elementos da realidade sem filtro gera ruído cognitivo e inviabiliza a implementação; omitir variáveis de interesse da situação invalida as conclusões do modelo.\n"
+                        f"• Aplicação Prática: Distinguir rigorosamente o que é essencial para o domínio em {subject_title} daquilo que é detalhe acidental."
+                    ),
+                    hint="Pense no papel do filtro seletivo (essencial vs. ruído) ao abstrair um problema real",
+                    tags="ia, raciocinio-logico, abstracao, causa-e-efeito",
+                )
+                continue
+
+            # EIXO 3: Análise Multivariável e Tomada de Decisão em Cenário Prático
+            comma_items = [item.strip(" .;") for item in body.split(",") if len(item.strip(" .;")) >= 3]
+            if (
+                "fatores" in prefix_lower
+                or "considerar" in prefix_lower
+                or "variáveis" in prefix_lower
+                or "critérios" in prefix_lower
+                or len(comma_items) >= 3
+            ):
+                factors_summary = body.rstrip(".")
+                add_card(
+                    front=(
+                        f"Em um cenário prático de projeto {context_clause}, de que maneira a interação entre "
+                        f"múltiplas variáveis ({factors_summary}) condiciona a tomada de decisão técnica e quais riscos surgem ao analisá-las isoladamente?"
+                    ),
+                    back=(
+                        f"• Variáveis Interdependentes: A decisão exige ponderar em conjunto: {factors_summary}.\n"
+                        f"• Raciocínio de Cenário: Escopo/tamanho do projeto e volatilidade dos requisitos definem o grau de formalismo e prototipação, enquanto a escolha tecnológica é limitada pela experiência e conhecimento real da equipe.\n"
+                        f"• Consequência de Negligência: Desconsiderar o equilíbrio entre fatores técnicos e humanos produz soluções teoricamente elegantes, porém inviáveis de implementar ou manter em {subject_title}."
+                    ),
+                    hint="Analise como escopo, requisitos, tecnologia e maturidade da equipe se restringem mutuamente",
+                    tags="ia, raciocinio-logico, tomada-de-decisao, cenario",
+                )
+                continue
+
+            # EIXO 4: Trade-offs de Abstração, Complexidade, Manutenção e Evolução
+            if (
+                "mais detalhad" in full_lower
+                or "menos complex" in full_lower
+                or "manter" in full_lower
+                or "evolução" in full_lower
+                or "nossos modelos" in prefix_lower
+                or ";" in body
+            ):
+                add_card(
+                    front=(
+                        f"Qual é o dilema técnico (trade-off) {context_clause} entre o nível de abstração dos requisitos e a complexidade de implementação, "
+                        f"e como as propriedades \"{body}\" asseguram a evolução sustentável do sistema?"
+                    ),
+                    back=(
+                        f"• Equilíbrio Estrutural (Trade-off): A solução deve operar no ponto ótimo onde os artefatos são {body}.\n"
+                        f"• Justificativa Lógica: Se o nível for superficial como requisitos brutos, faltará precisão para guiar a construção; se tiver a mesma complexidade do código final, perde-se a clareza de entendimento e o baixo custo de mudança.\n"
+                        f"• Impacto no Ciclo de Vida: Manter essa separação lógica garante que o sistema em {subject_title} seja facilmente compreendido, mantido e evoluído."
+                    ),
+                    hint="Compare o custo cognitivo dos dois extremos: requisitos vagos vs. código de baixo nível",
+                    tags="ia, raciocinio-logico, trade-offs, arquitetura",
+                )
+                continue
+
+            # EIXO 5: Conceito Técnico Real com Raciocínio de Causa, Efeito e Pensamento Contrafactual
+            if prefix and not cls.META_PREFIX_REGEX.match(prefix) and not cls._is_generic_title(prefix):
+                add_card(
+                    front=(
+                        f"Qual é o papel lógico de \"{prefix}\" {context_clause}, como ele se conecta a \"{body[:90]}\" "
+                        f"e que falha ocorreria no projeto caso esse princípio fosse violado?"
+                    ),
+                    back=(
+                        f"• Fundamento e Papel Lógico: {prefix} estabelece que {body}.\n"
+                        f"• Análise Contrafactual (E se for violado?): Sem aplicar corretamente {prefix}, o sistema perde consistência estrutural e previsibilidade diante de casos-limite em {subject_title}.\n"
+                        f"• Critério de Verificação: Confirmar como {prefix} sustenta as decisões práticas do domínio."
+                    ),
+                    hint=f"Relacione a premissa de {prefix[:35]} com a consequência de sua ausência",
+                    tags="ia, raciocinio-logico, causa-e-efeito",
+                )
+            elif len(body) >= 25:
+                add_card(
+                    front=(
+                        f"Analise criticamente a premissa estudada {context_clause}: \"{body}\". "
+                        f"Por que essa condição é logicamente necessária e como validá-la na prática?"
+                    ),
+                    back=(
+                        f"• Proposição Base: {body}.\n"
+                        f"• Dedução Lógica: Essa premissa atua como restrição orientadora em {core_theme}, evitando decisões arbitrárias durante a resolução de problemas.\n"
+                        f"• Validação Prática: Verificar se o comportamento observado em {subject_title} preserva essa propriedade sob diferentes cenários."
+                    ),
+                    hint="Avalie por que essa afirmação funciona como uma condição lógica necessária",
+                    tags="ia, raciocinio-logico, analise-critica",
+                )
+
+        # Complemento analítico de domínio se o número de cartões pedidos for maior que as proposições da nota
+        analytical_fallbacks = [
+            {
+                "front": (
+                    f"Em um problema complexo de {core_theme} ({subject_title}), qual raciocínio lógico deve guiar a escolha "
+                    f"entre uma solução altamente acoplada/otimizada e uma arquitetura modular e evolutiva?"
+                ),
+                "back": (
+                    f"• Análise de Trade-off: Soluções fortemente acopladas podem reduzir latência imediata, mas elevam exponencialmente o custo de manutenção diante de mudanças de requisitos em {core_theme}.\n"
+                    f"• Critério de Decisão: Avaliar a taxa esperada de mudança do domínio, o tamanho do projeto e a necessidade de evolução contínua em {subject_title}.\n"
+                    f"• Conclusão Lógica: Priorizar clareza, coesão e facilidade de manutenção sempre que o sistema precisar evoluir."
+                ),
+                "hint": "Pondere o custo de mudança futura vs. ganho imediato",
+                "tags": "ia, raciocinio-logico, trade-offs",
+            },
+            {
+                "front": (
+                    f"Como aplicar o pensamento contrafactual para validar se uma decisão técnica em {core_theme} "
+                    f"realmente resolve a causa-raiz do problema em {subject_title}?"
+                ),
+                "back": (
+                    f"• Teste Contrafactual: Perguntar 'Se alterarmos o volume de dados, os requisitos ou a tecnologia base, esta modelagem em {core_theme} continua coerente ou entra em colapso?'.\n"
+                    f"• Diagnóstico de Causa-Raiz: Separa sintomas superficiais das restrições estruturais do domínio.\n"
+                    f"• Resultado: Garante que a solução seja aderente ao contexto real e resiliente à evolução."
+                ),
+                "hint": "Teste os limites da solução alterando as variáveis do cenário",
+                "tags": "ia, raciocinio-logico, validacao",
+            },
+            {
+                "front": (
+                    f"De que forma o excesso de detalhamento precoce (sobre-engenharia) e a falta de especificação "
+                    f"afetam de maneiras opostas o sucesso de um projeto em {core_theme}?"
+                ),
+                "back": (
+                    f"• Sub-especificação: Deixa lacunas lógicas que forçam decisões improvisadas durante a codificação em {subject_title}, gerando retrabalho.\n"
+                    f"• Sobre-engenharia (Over-engineering): Introduz complexidade acidental antes de validar se o modelo é aderente à aplicação específica.\n"
+                    f"• Ponto de Equilíbrio: Capturar exatamente os aspectos da realidade de interesse da situação, mantendo o modelo mais detalhado que os requisitos e menos complexo que o código."
+                ),
+                "hint": "Compare os riscos da ambiguidade com os riscos da complexidade acidental",
+                "tags": "ia, raciocinio-logico, sintese",
+            },
+            {
+                "front": (
+                    f"Ao revisar {core_theme} antes de uma avaliação prática de {subject_title}, quais perguntas "
+                    f"de causa e efeito permitem comprovar domínio profundo do tema (além da simples memorização)?"
+                ),
+                "back": (
+                    f"1. Por que este modelo/solução existe e qual problema real ele abstrai?\n"
+                    f"2. Quais fatores técnicos e humanos (requisitos, tamanho do projeto, tecnologia, experiência) condicionam sua aplicação?\n"
+                    f"3. Quais são os trade-offs assumidos e sob qual cenário esta abordagem deixa de ser aderente?"
+                ),
+                "hint": "Por que existe + Quais variáveis condicionam + Quais os limites/trade-offs",
+                "tags": "ia, raciocinio-logico, revisao-profunda",
+            },
+        ]
+
+        for fb in analytical_fallbacks:
+            if len(cards) >= count:
+                break
+            add_card(fb["front"], fb["back"], fb["hint"], fb["tags"])
+
+        return cards[:count]
 
     def post(self, request, *args, **kwargs):
         import html
@@ -1229,21 +1535,29 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
                 .first()
             )
             if note_obj:
-                if not topic:
+                updated_note_fields: list[str] = []
+                # Normaliza eventual título legado "Nova anotaço" salvo anteriormente
+                if note_obj.title and note_obj.title.strip().lower() in ("nova anotaço", "nova anotaco", "sem título", "sem titulo"):
+                    note_obj.title = "Nova anotação"
+                    updated_note_fields.append("title")
+                if source_text and source_text.strip() not in ("", "<br>", "<p><br></p>") and note_obj.content != source_text:
+                    note_obj.content = source_text
+                    updated_note_fields.append("content")
+                if student_subject and note_obj.student_subject_id != student_subject.id:
+                    note_obj.student_subject = student_subject
+                    updated_note_fields.append("student_subject")
+                if updated_note_fields:
+                    updated_note_fields.append("updated_at")
+                    note_obj.save(update_fields=updated_note_fields)
+                if not topic and not self._is_generic_title(note_obj.title):
                     topic = note_obj.title
                 if not source_text:
                     source_text = note_obj.content
                 if not student_subject and note_obj.student_subject:
                     student_subject = note_obj.student_subject
 
-        subject_title = (
-            student_subject.subject.name
-            if student_subject
-            else (deck_name if deck_name and deck_name != "Geral" else "Estudos Acadêmicos")
-        )
-        resolved_deck = deck_name or (
-            student_subject.subject.name if student_subject else (topic or "Geral")
-        )
+        if self._is_generic_title(topic):
+            topic = ""
 
         # Limpa tags HTML preservando quebras de linha
         clean_source = re.sub(r"<(br|p|div|li|h[1-6]|tr|blockquote)[^>]*>", "\n", source_text, flags=re.I)
@@ -1252,26 +1566,55 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
         clean_source = re.sub(r"[ \t]+", " ", clean_source)
         clean_source = re.sub(r"\n{2,}", "\n", clean_source).strip()
 
-        if not topic and not clean_source and not student_subject:
+        if not topic and not clean_source and not student_subject and not note_obj:
             raise DRFValidationError(
                 {"detail": "Informe um tema, selecione uma anotação/disciplina ou cole o conteúdo para gerar os flashcards com IA."}
             )
 
+        lines = [
+            ln.strip(" -•*\t")
+            for ln in clean_source.split("\n")
+            if len(ln.strip(" -•*\t")) >= 6
+        ]
+
+        subject_title = (
+            student_subject.subject.name
+            if student_subject
+            else (
+                deck_name
+                if deck_name and not self._is_generic_title(deck_name)
+                else "Estudos Acadêmicos"
+            )
+        )
+
+        core_theme, full_context_label = self._infer_domain_context(topic, subject_title, lines)
+
+        resolved_deck = (
+            deck_name
+            if deck_name and not self._is_generic_title(deck_name)
+            else (student_subject.subject.name if student_subject else core_theme or "Geral")
+        )
+
         generated_specs: list[dict[str, str]] = []
 
-        # 1. Tenta geração via Gemini API se houver chave configurada no ambiente
+        # 1. Tenta geração via Gemini API se houver chave configurada no ambiente, com prompt socrático rigoroso
         api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if api_key:
             try:
                 prompt = (
-                    f"Você é um professor universitário especialista em aprendizagem ativa e repetição espaçada.\n"
-                    f"Gere exatamente {count} flashcards em português do Brasil sobre:\n"
+                    f"Você é um professor universitário sênior especialista em aprendizagem baseada em problemas, "
+                    f"método socrático e Taxonomia de Bloom (níveis de Aplicação, Análise, Avaliação e Síntese).\n"
+                    f"Elabore exatamente {count} flashcards de alta profundidade em português do Brasil sobre:\n"
                     f"- Disciplina: {subject_title}\n"
-                    f"- Tema/Foco: {topic or subject_title}\n"
-                    f"- Conteúdo base: {clean_source[:4000] if clean_source else 'Conhecimento acadêmico essencial da disciplina.'}\n\n"
+                    f"- Tema Central: {core_theme}\n"
+                    f"- Conteúdo da Anotação: {clean_source[:4000] if clean_source else full_context_label}\n\n"
+                    f"REGRAS OBRIGATÓRIAS DE QUALIDADE:\n"
+                    f"1. PROIBIDO gerar perguntas superficiais de mera definição de nomenclatura (ex.: 'O que é X?', 'Defina Y', 'O que significa Objetivo?').\n"
+                    f"2. PROIBIDO usar títulos genéricos como 'Nova anotação' ou fragmentos conversacionais ('Temos que considerar', 'Nossos modelos') como conceitos isolados.\n"
+                    f"3. Cada pergunta ('front') DEVE estimular o raciocínio lógico: análise de cenários práticos, relações de causa e efeito, avaliação de trade-offs técnicos, validação crítica de aderência ou pensamento contrafactual ('o que acontece se esta premissa for violada?').\n"
+                    f"4. Cada resposta ('back') DEVE ser estruturada em tópicos claros contendo o raciocínio lógico, a justificativa causal e a implicação prática.\n\n"
                     f"Retorne APENAS um JSON array válido onde cada objeto tem as chaves: "
-                    f"\"front\" (pergunta direta e instigante), \"back\" (resposta clara, completa e didática em tópicos), "
-                    f"\"hint\" (dica curta de memorização) e \"tags\" (tags separadas por vírgula)."
+                    f"\"front\", \"back\", \"hint\" e \"tags\"."
                 )
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
                 req_body = json.dumps({
@@ -1296,128 +1639,22 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
                                 generated_specs.append({
                                     "front": str(item["front"]).strip(),
                                     "back": str(item["back"]).strip(),
-                                    "hint": str(item.get("hint") or "Revisão IA").strip()[:255],
-                                    "tags": str(item.get("tags") or "gerado-por-ia").strip()[:255],
+                                    "hint": str(item.get("hint") or "Raciocínio lógico e análise").strip()[:255],
+                                    "tags": str(item.get("tags") or "ia, raciocinio-logico").strip()[:255],
                                 })
             except Exception:
                 generated_specs = []
 
-        # 2. Motor Inteligente Local de Síntese Acadêmica (extração semântica de notas + banco de domínio)
+        # 2. Motor Criterioso Local de Raciocínio Lógico e Análise Semântica Profunda
         if len(generated_specs) < count:
-            effective_topic = topic or subject_title
-            lines = [
-                ln.strip(" -•*\t")
-                for ln in clean_source.split("\n")
-                if len(ln.strip(" -•*\t")) >= 6
-            ]
-
-            # 2a. Extrai pares "Conceito: explicação" ou "Conceito - explicação" do texto da anotação
-            for ln in lines:
-                if len(generated_specs) >= count:
-                    break
-                match = re.match(r"^([^:–—\-]{3,65})\s*[:–—\-]\s*(.{15,})$", ln)
-                if match:
-                    concept = match.group(1).strip()
-                    explanation = match.group(2).strip()
-                    generated_specs.append({
-                        "front": f"Em {effective_topic}, o que significa e como se aplica \"{concept}\"?",
-                        "back": f"• Definição principal: {explanation}\n• Contexto: {effective_topic} ({subject_title}).",
-                        "hint": f"Pense no conceito de {concept[:35]}",
-                        "tags": "ia, anotacao, conceito",
-                    })
-
-            # 2b. Extrai frases/parágrafos relevantes do texto para perguntas de revisão ativa
-            sentences = [
-                s.strip()
-                for s in re.split(r"(?<=[.!?])\s+|\n+", clean_source)
-                if len(s.strip()) >= 25
-            ]
-            for idx, sent in enumerate(sentences):
-                if len(generated_specs) >= count:
-                    break
-                words = [w.strip(",.;:()[]\"'") for w in sent.split() if len(w.strip(",.;:()[]\"'")) > 4]
-                keyword = words[0] if words else effective_topic
-                question_templates = [
-                    f"Qual é o ponto central abordado sobre \"{keyword}\" em {effective_topic}?",
-                    f"Explique a seguinte afirmação estudada em {effective_topic} e sua importância prática:",
-                    f"Como o conceito relacionado a \"{keyword}\" pode ser cobrado em uma avaliação de {subject_title}?",
-                ]
-                q_front = question_templates[idx % len(question_templates)]
-                generated_specs.append({
-                    "front": q_front,
-                    "back": f"• Síntese da Anotação: {sent}\n• Disciplina: {subject_title}",
-                    "hint": f"Palavra-chave: {keyword}",
-                    "tags": "ia, revisao-ativa",
-                })
-
-            # 2c. Completa até `count` com cartões estruturados de domínio acadêmico sobre o tema/disciplina
-            focus_label = topic or subject_title
-            domain_templates = [
-                {
-                    "front": f"Quais são os conceitos fundamentais e objetivos principais de {focus_label}?",
-                    "back": (
-                        f"• Objetivo central: compreender os fundamentos teóricos e práticos de {focus_label}.\n"
-                        f"• Aplicação: resolução de problemas estruturados na disciplina de {subject_title}.\n"
-                        f"• Ponto de atenção: relacionar as definições-chave com exemplos práticos de projeto."
-                    ),
-                    "hint": f"Fundamentos e propósito de {focus_label[:30]}",
-                    "tags": "ia, fundamentos",
-                },
-                {
-                    "front": f"Quais são as boas práticas e erros mais comuns ao trabalhar com {focus_label}?",
-                    "back": (
-                        f"• Boas práticas em {focus_label}: manter modularidade, clareza conceitual, validação de premissas e documentação limpa.\n"
-                        f"• Erros comuns a evitar: negligenciar casos-limite, acoplamento excessivo e falta de revisão sistemática."
-                    ),
-                    "hint": "Boas práticas vs. armadilhas comuns",
-                    "tags": "ia, boas-praticas",
-                },
-                {
-                    "front": f"Como explicar {focus_label} usando a Técnica Feynman (de forma simples e direta)?",
-                    "back": (
-                        f"1. Defina {focus_label} sem jargões desnecessários.\n"
-                        f"2. Apresente um exemplo concreto do mundo real aplicado a {subject_title}.\n"
-                        f"3. Destaque a regra de ouro que resolve 80% das questões sobre este tema."
-                    ),
-                    "hint": "Definição simples + exemplo prático + regra de ouro",
-                    "tags": "ia, feynman, sintese",
-                },
-                {
-                    "front": f"Quais são as etapas ou componentes essenciais que estruturam {focus_label}?",
-                    "back": (
-                        f"• Entrada / Contexto: requisitos e dados iniciais do problema em {focus_label}.\n"
-                        f"• Processamento / Regras: aplicação dos princípios técnicos de {subject_title}.\n"
-                        f"• Saída / Validação: verificação dos resultados e análise de desempenho/qualidade."
-                    ),
-                    "hint": "Pense em Entrada → Processamento → Validação",
-                    "tags": "ia, arquitetura, revisao",
-                },
-                {
-                    "front": f"Em uma prova de {subject_title}, qual comparação crítica costuma cair sobre {focus_label}?",
-                    "back": (
-                        f"• Trade-offs principais: desempenho vs. simplicidade de manutenção em {focus_label}.\n"
-                        f"• Quando utilizar: cenários que exigem confiabilidade e escalabilidade dentro de {subject_title}.\n"
-                        f"• Quando evitar: situações triviais onde uma abordagem direta reduz a complexidade."
-                    ),
-                    "hint": "Vantagens, desvantagens e quando aplicar",
-                    "tags": "ia, cai-na-prova",
-                },
-                {
-                    "front": f"Qual é o checklist rápido de revisão antes da avaliação sobre {focus_label}?",
-                    "back": (
-                        f"✓ Dominar a definição formal de {focus_label}.\n"
-                        f"✓ Saber exemplificar um caso de uso prático em {subject_title}.\n"
-                        f"✓ Conhecer as limitações e métricas de avaliação do tema."
-                    ),
-                    "hint": "Definição + Caso de uso + Métricas",
-                    "tags": "ia, checklist-prova",
-                },
-            ]
-
-            for tmpl in domain_templates:
-                if len(generated_specs) >= count:
-                    break
-                generated_specs.append(tmpl)
+            analytical_cards = self._build_analytical_cards_from_text(
+                lines=lines,
+                clean_source=clean_source,
+                core_theme=core_theme,
+                subject_title=subject_title,
+                count=count - len(generated_specs),
+            )
+            generated_specs.extend(analytical_cards)
 
         created_cards: list[Flashcard] = []
         for spec in generated_specs[:count]:
@@ -1428,7 +1665,7 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
                 front=spec["front"],
                 back=spec["back"],
                 hint=spec.get("hint", "")[:255],
-                tags=spec.get("tags", "gerado-por-ia")[:255],
+                tags=spec.get("tags", "ia, raciocinio-logico")[:255],
             )
             created_cards.append(card)
 

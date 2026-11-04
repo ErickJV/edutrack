@@ -973,7 +973,7 @@ export function FlashcardsPage() {
                     Gerar Flashcards com IA
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Crie cartões inteligentes a partir das suas anotações, disciplinas ou temas
+                    Elabora perguntas de raciocínio lógico, análise de cenários e trade-offs a partir das suas anotações
                   </p>
                 </div>
               </div>
@@ -1034,11 +1034,21 @@ export function FlashcardsPage() {
                     className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
                   >
                     <option value="">(Não usar anotação salva)</option>
-                    {notes.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        📒 {n.title || 'Sem título'}
-                      </option>
-                    ))}
+                    {notes.map((n) => {
+                      const rawTitle = (n.title ?? '').trim()
+                      const displayTitle =
+                        !rawTitle ||
+                        rawTitle.toLowerCase() === 'nova anotaço' ||
+                        rawTitle.toLowerCase() === 'nova anotaco' ||
+                        rawTitle.toLowerCase() === 'sem título'
+                          ? 'Nova anotação'
+                          : rawTitle
+                      return (
+                        <option key={n.id} value={n.id}>
+                          📒 {displayTitle}
+                        </option>
+                      )
+                    })}
                   </select>
                 </label>
               )}

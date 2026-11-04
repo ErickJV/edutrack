@@ -290,6 +290,34 @@ function stripHtmlForPreview(raw: string): string {
     .trim()
 }
 
+function normalizeNoteTitle(raw?: string | null): string {
+  const cleaned = (raw ?? '').trim()
+  if (
+    !cleaned ||
+    cleaned.toLowerCase() === 'nova anotaço' ||
+    cleaned.toLowerCase() === 'nova anotaco' ||
+    cleaned.toLowerCase() === 'sem título' ||
+    cleaned.toLowerCase() === 'sem titulo'
+  ) {
+    return 'Nova anotação'
+  }
+  return cleaned
+}
+
+function isGenericNoteTitle(raw?: string | null): boolean {
+  const cleaned = (raw ?? '').trim().toLowerCase()
+  return (
+    !cleaned ||
+    cleaned === 'nova anotação' ||
+    cleaned === 'nova anotaço' ||
+    cleaned === 'nova anotaco' ||
+    cleaned === 'sem título' ||
+    cleaned === 'sem titulo' ||
+    cleaned === 'anotação de estudo' ||
+    cleaned === 'anotação guiada'
+  )
+}
+
 export function StudyNotesWorkspace({
   activeSubject,
   activeTask,
@@ -380,7 +408,7 @@ export function StudyNotesWorkspace({
         if (fetchedNotes.length > 0) {
           const first = fetchedNotes[0]
           setActiveNoteId(first.id)
-          setEditorTitle(first.title)
+          setEditorTitle(normalizeNoteTitle(first.title))
           const visualHtml = noteContentToVisualHtml(first.content)
           setEditorContent(visualHtml)
           setEditorFolderId(first.folder || '')
@@ -405,7 +433,7 @@ export function StudyNotesWorkspace({
   const selectNote = useCallback(
     (note: StudyNote) => {
       setActiveNoteId(note.id)
-      setEditorTitle(note.title)
+      setEditorTitle(normalizeNoteTitle(note.title))
       const visualHtml = noteContentToVisualHtml(note.content)
       setEditorContent(visualHtml)
       setEditorFolderId(note.folder || '')
@@ -435,8 +463,9 @@ export function StudyNotesWorkspace({
               : editorRef.current?.innerHTML ?? editorContent
 
           const payload: StudyNotePayload = {
-            title:
-              overrides?.title !== undefined ? overrides.title : editorTitle || 'Sem título',
+            title: normalizeNoteTitle(
+              overrides?.title !== undefined ? overrides.title : editorTitle,
+            ),
             content: currentDomHtml,
             folder:
               overrides?.folder !== undefined
@@ -566,16 +595,18 @@ export function StudyNotesWorkspace({
     try {
       const currentHtml = editorRef.current?.innerHTML ?? editorContent
       const subj = subjects.find((s) => s.id === editorSubjectId)
+      const cleanTitle = normalizeNoteTitle(editorTitle)
+      const specificTopic = isGenericNoteTitle(cleanTitle) ? '' : cleanTitle
       const res = await generateFlashcardsWithAI({
         note_id: activeNoteId,
-        topic: editorTitle || 'Anotação de Estudo',
+        topic: specificTopic,
         source_text: currentHtml,
         student_subject: editorSubjectId || activeSubject?.id || null,
-        deck_name: subj?.subject.name || editorTitle || 'Geral',
+        deck_name: subj?.subject.name || specificTopic || 'Geral',
         count: 4,
       })
       setAiBanner(
-        `✨ ${res.created_count} flashcards foram gerados inteligentemente pela IA a partir desta anotação!`,
+        `✨ ${res.created_count} flashcards de raciocínio lógico e análise profunda foram gerados pela IA a partir desta anotação!`,
       )
     } catch {
       setError('Não foi possível gerar flashcards com IA a partir desta anotação.')
@@ -1010,7 +1041,7 @@ export function StudyNotesWorkspace({
                     >
                       <div className="flex w-full items-center justify-between gap-1.5">
                         <h5 className="truncate text-xs font-extrabold text-slate-900 dark:text-slate-100">
-                          {note.title || 'Sem título'}
+                          {normalizeNoteTitle(note.title)}
                         </h5>
                         <span className="shrink-0 text-[10px] text-slate-400">
                           {new Date(note.updated_at).toLocaleDateString('pt-BR', {
@@ -1479,6 +1510,11 @@ export function StudyNotesWorkspace({
                   aria-multiline="true"
                   aria-label="Folha de anotações"
                   onInput={(e) => {
+                    const html = (e.currentTarget as HTMLDivElement).innerHTML
+                    setEditorContent(html)
+                    triggerAutoSave({ content: html })
+                  }}
+                  onBlur={(e) => {
                     const html = (e.currentTarget as HTMLDivElement).innerHTML
                     setEditorContent(html)
                     triggerAutoSave({ content: html })

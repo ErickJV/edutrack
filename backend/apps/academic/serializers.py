@@ -784,10 +784,16 @@ class StudyNoteSerializer(serializers.ModelSerializer):
     )
     reading_title = serializers.CharField(source="reading.title", read_only=True)
     title = serializers.CharField(
-        required=False, default="Sem título", allow_blank=True, max_length=200
+        required=False, default="Nova anotação", allow_blank=True, max_length=200
     )
     content = serializers.CharField(required=False, default="", allow_blank=True)
     methodology = serializers.CharField(required=False, default="", allow_blank=True, max_length=50)
+
+    def validate_title(self, value: str) -> str:
+        cleaned = (value or "").strip()
+        if not cleaned or cleaned.lower() in ("nova anotaço", "nova anotaco", "sem título", "sem titulo"):
+            return "Nova anotação"
+        return cleaned
 
     class Meta:
         model = StudyNote
