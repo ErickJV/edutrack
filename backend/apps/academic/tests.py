@@ -89,9 +89,9 @@ class FlashcardsAndNotesQualityTests(TestCase):
             self.assertNotIn('o que significa e como se aplica "Nossos modelos"', front)
 
         combined_fronts = " ".join(fronts).lower()
-        self.assertIn("raciocínio crítico", combined_fronts)
-        self.assertIn("abstração lógica", combined_fronts)
-        self.assertIn("múltiplas variáveis", combined_fronts)
+        self.assertIn("critério decisivo de aderência", combined_fronts)
+        self.assertIn("razão lógica", combined_fronts)
+        self.assertIn("fatores técnicos e humanos", combined_fronts)
         self.assertIn("trade-off", combined_fronts)
         self.assertEqual(Flashcard.objects.filter(user=self.user).count(), 4)
 

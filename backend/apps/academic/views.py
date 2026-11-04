@@ -1311,7 +1311,6 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
             prefix = match.group(1).strip() if match else ""
             body = match.group(2).strip() if match else ln.strip()
             prefix_lower = prefix.lower()
-            body_lower = body.lower()
             full_lower = ln.lower()
 
             # EIXO 1: Validação Crítica / Pergunta Norteadora / Critério de Aderência
@@ -1329,16 +1328,15 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
                 )
                 add_card(
                     front=(
-                        f"Ao trabalhar com {concept_focus} ({subject_title}), por que o questionamento "
-                        f"\"{guiding_question}\" exige raciocínio crítico contextual em vez da adoção mecânica de um modelo padrão?"
+                        f"Em {concept_focus}, por que a pergunta \"{guiding_question}\" é o critério decisivo de aderência prática?"
                     ),
                     back=(
-                        f"• Raciocínio Crítico: A validade lógica de uma solução em {concept_focus} não é absoluta; ela depende da aderência real às restrições e objetivos do problema (\"{guiding_question}\").\n"
-                        f"• Implicação Prática: Adotar uma abstração sem julgar sua aderência leva à sobre-engenharia (complexidade excessiva) ou à sub-especificação (incapacidade de atender regras críticas).\n"
-                        f"• Regra de Decisão: Validar se cada componente do modelo responde diretamente às demandas da aplicação em {subject_title}."
+                        f"• Critério Lógico: Valida se a solução atende às restrições reais da aplicação específica.\n"
+                        f"• Risco de Falha: Evita sobre-engenharia (complexidade desnecessária) ou sub-especificação (lacunas nas regras).\n"
+                        f"• Regra: Cada componente do modelo deve resolver uma necessidade direta do domínio."
                     ),
-                    hint="Relacione a validade do modelo às restrições específicas da aplicação vs. soluções genéricas",
-                    tags="ia, raciocinio-logico, avaliacao-critica",
+                    hint="Aderência ao problema real vs. modelo genérico ou complexo demais",
+                    tags="anki, aderencia, decisao",
                 )
                 continue
 
@@ -1350,16 +1348,15 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
             ):
                 add_card(
                     front=(
-                        f"Sob a ótica da abstração lógica {context_clause}, por que o propósito deve ser "
-                        f"\"{body}\" e qual o impacto sistêmico de falhar nesse filtro de relevância?"
+                        f"Em {core_theme}, qual é a razão lógica para \"{body}\"?"
                     ),
                     back=(
-                        f"• Princípio da Abstração Seletiva: O foco analítico consiste em {body}.\n"
-                        f"• Relação de Causa e Efeito: Tentar representar todos os elementos da realidade sem filtro gera ruído cognitivo e inviabiliza a implementação; omitir variáveis de interesse da situação invalida as conclusões do modelo.\n"
-                        f"• Aplicação Prática: Distinguir rigorosamente o que é essencial para o domínio em {subject_title} daquilo que é detalhe acidental."
+                        f"• Foco da Abstração: {body}.\n"
+                        f"• Por que Seletivo? Modelar tudo gera ruído cognitivo e custo inviável; omitir o essencial invalida a aplicação.\n"
+                        f"• Aplicação: Filtrar apenas as variáveis críticas para a situação."
                     ),
-                    hint="Pense no papel do filtro seletivo (essencial vs. ruído) ao abstrair um problema real",
-                    tags="ia, raciocinio-logico, abstracao, causa-e-efeito",
+                    hint="Princípio da abstração seletiva: essência vs. ruído",
+                    tags="anki, abstracao, objetivo",
                 )
                 continue
 
@@ -1375,16 +1372,15 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
                 factors_summary = body.rstrip(".")
                 add_card(
                     front=(
-                        f"Em um cenário prático de projeto {context_clause}, de que maneira a interação entre "
-                        f"múltiplas variáveis ({factors_summary}) condiciona a tomada de decisão técnica e quais riscos surgem ao analisá-las isoladamente?"
+                        f"Quais fatores técnicos e humanos ({factors_summary}) condicionam a decisão em {core_theme}?"
                     ),
                     back=(
-                        f"• Variáveis Interdependentes: A decisão exige ponderar em conjunto: {factors_summary}.\n"
-                        f"• Raciocínio de Cenário: Escopo/tamanho do projeto e volatilidade dos requisitos definem o grau de formalismo e prototipação, enquanto a escolha tecnológica é limitada pela experiência e conhecimento real da equipe.\n"
-                        f"• Consequência de Negligência: Desconsiderar o equilíbrio entre fatores técnicos e humanos produz soluções teoricamente elegantes, porém inviáveis de implementar ou manter em {subject_title}."
+                        f"• Fatores Críticos: {factors_summary}.\n"
+                        f"• Relação Prática: Escopo e requisitos definem formalismo/protótipos; tecnologias dependem da maturidade e experiência da equipe.\n"
+                        f"• Risco: Ignorar qualquer dessas variáveis inviabiliza a entrega."
                     ),
-                    hint="Analise como escopo, requisitos, tecnologia e maturidade da equipe se restringem mutuamente",
-                    tags="ia, raciocinio-logico, tomada-de-decisao, cenario",
+                    hint="Interdependência entre escopo, requisitos, tecnologia e equipe",
+                    tags="anki, tomada-de-decisao, fatores",
                 )
                 continue
 
@@ -1399,16 +1395,15 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
             ):
                 add_card(
                     front=(
-                        f"Qual é o dilema técnico (trade-off) {context_clause} entre o nível de abstração dos requisitos e a complexidade de implementação, "
-                        f"e como as propriedades \"{body}\" asseguram a evolução sustentável do sistema?"
+                        f"Em {core_theme}, qual o trade-off ideal entre requisitos e código final ({body})?"
                     ),
                     back=(
-                        f"• Equilíbrio Estrutural (Trade-off): A solução deve operar no ponto ótimo onde os artefatos são {body}.\n"
-                        f"• Justificativa Lógica: Se o nível for superficial como requisitos brutos, faltará precisão para guiar a construção; se tiver a mesma complexidade do código final, perde-se a clareza de entendimento e o baixo custo de mudança.\n"
-                        f"• Impacto no Ciclo de Vida: Manter essa separação lógica garante que o sistema em {subject_title} seja facilmente compreendido, mantido e evoluído."
+                        f"• Ponto Ótimo: Mais detalhado que requisitos brutos (dá precisão) e menos complexo que o código (dá clareza).\n"
+                        f"• Benefício Prático: Fácil entendimento, manutenção ágil e evolução contínua.\n"
+                        f"• Causa e Efeito: Evita ambiguidade sem antecipar detalhes acidentais de implementação."
                     ),
-                    hint="Compare o custo cognitivo dos dois extremos: requisitos vagos vs. código de baixo nível",
-                    tags="ia, raciocinio-logico, trade-offs, arquitetura",
+                    hint="Equilíbrio entre precisão conceitual e facilidade de manutenção",
+                    tags="anki, trade-offs, arquitetura",
                 )
                 continue
 
@@ -1416,30 +1411,28 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
             if prefix and not cls.META_PREFIX_REGEX.match(prefix) and not cls._is_generic_title(prefix):
                 add_card(
                     front=(
-                        f"Qual é o papel lógico de \"{prefix}\" {context_clause}, como ele se conecta a \"{body[:90]}\" "
-                        f"e que falha ocorreria no projeto caso esse princípio fosse violado?"
+                        f"Qual é a função lógica de \"{prefix}\" em {core_theme} e o que ocorre se for violado?"
                     ),
                     back=(
-                        f"• Fundamento e Papel Lógico: {prefix} estabelece que {body}.\n"
-                        f"• Análise Contrafactual (E se for violado?): Sem aplicar corretamente {prefix}, o sistema perde consistência estrutural e previsibilidade diante de casos-limite em {subject_title}.\n"
-                        f"• Critério de Verificação: Confirmar como {prefix} sustenta as decisões práticas do domínio."
+                        f"• Papel no Domínio: {body}.\n"
+                        f"• Se Violado: Perda de consistência estrutural e falhas em casos-limite do sistema.\n"
+                        f"• Validação: Verificar aderência nas regras da aplicação."
                     ),
-                    hint=f"Relacione a premissa de {prefix[:35]} com a consequência de sua ausência",
-                    tags="ia, raciocinio-logico, causa-e-efeito",
+                    hint=f"Função de {prefix[:30]} e risco de sua ausência",
+                    tags="anki, causa-e-efeito, conceito",
                 )
             elif len(body) >= 25:
                 add_card(
                     front=(
-                        f"Analise criticamente a premissa estudada {context_clause}: \"{body}\". "
-                        f"Por que essa condição é logicamente necessária e como validá-la na prática?"
+                        f"Por que a premissa \"{body}\" é necessária em {core_theme}?"
                     ),
                     back=(
-                        f"• Proposição Base: {body}.\n"
-                        f"• Dedução Lógica: Essa premissa atua como restrição orientadora em {core_theme}, evitando decisões arbitrárias durante a resolução de problemas.\n"
-                        f"• Validação Prática: Verificar se o comportamento observado em {subject_title} preserva essa propriedade sob diferentes cenários."
+                        f"• Proposição: {body}.\n"
+                        f"• Justificativa: Atua como restrição orientadora para evitar decisões arbitrárias.\n"
+                        f"• Validação: Garantir consistência prática nos fluxos da disciplina."
                     ),
-                    hint="Avalie por que essa afirmação funciona como uma condição lógica necessária",
-                    tags="ia, raciocinio-logico, analise-critica",
+                    hint="Condição lógica necessária para o problema",
+                    tags="anki, premissa, raciocinio",
                 )
 
         # Complemento analítico de domínio se o número de cartões pedidos for maior que as proposições da nota

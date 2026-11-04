@@ -874,78 +874,86 @@ export function CalendarPage() {
                               )}
                             </div>
 
-                            {/* Linha 5: Rodapé de Ações Rápidas sem quebra de layout */}
-                            <div className="mt-2 flex flex-col gap-1 border-t border-slate-200/60 pt-1.5 dark:border-slate-700/50">
-                              {item.source_type === 'task' && (
-                                <div className="grid grid-cols-2 gap-1">
-                                  <button
-                                    type="button"
-                                    disabled={isBusy}
-                                    onClick={() => void handleToggleTask(item)}
-                                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-1.5 py-1 text-[10px] font-bold whitespace-nowrap text-amber-900 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-200"
-                                  >
-                                    <CheckCircle2 className="h-3 w-3 shrink-0" />
-                                    <span>{item.task_status === 'completed' ? 'Reabrir' : 'Concluir'}</span>
-                                  </button>
+                            {/* Linha 5: Rodapé de Ações Rápidas por ícones compactos */}
+                            <div className="mt-2 flex items-center justify-between gap-1 border-t border-slate-200/60 pt-1.5 dark:border-slate-700/50">
+                              <Link
+                                to={meta.originLink}
+                                className="truncate text-[10px] font-bold text-[#005063] hover:underline dark:text-cyan-400"
+                              >
+                                {meta.originLabel} →
+                              </Link>
+
+                              <div className="flex shrink-0 items-center gap-1">
+                                {item.source_type === 'task' && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => void handleToggleTask(item)}
+                                      title={item.task_status === 'completed' ? 'Reabrir tarefa' : 'Concluir tarefa'}
+                                      className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border transition ${
+                                        item.task_status === 'completed'
+                                          ? 'border-emerald-500 bg-emerald-500 text-white'
+                                          : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300'
+                                      } disabled:opacity-50`}
+                                    >
+                                      <CheckCircle2 className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => void handleDeleteItem(item)}
+                                      title="Descartar / Excluir tarefa"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </>
+                                )}
+
+                                {item.source_type === 'event' && (
                                   <button
                                     type="button"
                                     disabled={isBusy}
                                     onClick={() => void handleDeleteItem(item)}
-                                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-rose-500/25 bg-rose-500/10 px-1.5 py-1 text-[10px] font-bold whitespace-nowrap text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
+                                    title="Descartar / Excluir evento"
+                                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
                                   >
-                                    <Trash2 className="h-3 w-3 shrink-0" />
-                                    <span>Excluir</span>
+                                    <Trash2 className="h-4 w-4" />
                                   </button>
-                                </div>
-                              )}
+                                )}
 
-                              {item.source_type === 'event' && (
-                                <button
-                                  type="button"
-                                  disabled={isBusy}
-                                  onClick={() => void handleDeleteItem(item)}
-                                  className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-rose-500/25 bg-rose-500/10 py-1 text-[10px] font-bold whitespace-nowrap text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
-                                >
-                                  <Trash2 className="h-3 w-3 shrink-0" />
-                                  <span>Excluir</span>
-                                </button>
-                              )}
-
-                              {item.source_type === 'class' && !item.cancelled && isPastClass && (
-                                <div className="grid grid-cols-2 gap-1">
-                                  <button
-                                    type="button"
-                                    disabled={isBusy}
-                                    onClick={() => void handleAttendance(item, 'present')}
-                                    className={`rounded-md py-1 text-[10px] font-bold whitespace-nowrap ${
-                                      item.attendance_status === 'present'
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
-                                    }`}
-                                  >
-                                    Presente
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={isBusy}
-                                    onClick={() => void handleAttendance(item, 'absent')}
-                                    className={`rounded-md py-1 text-[10px] font-bold whitespace-nowrap ${
-                                      item.attendance_status === 'absent'
-                                        ? 'bg-rose-600 text-white'
-                                        : 'bg-rose-500/15 text-rose-800 dark:text-rose-300'
-                                    }`}
-                                  >
-                                    Falta
-                                  </button>
-                                </div>
-                              )}
-
-                              <Link
-                                to={meta.originLink}
-                                className="block truncate text-center text-[10px] font-bold text-[#005063] hover:underline dark:text-cyan-400"
-                              >
-                                Ver em {meta.originLabel} →
-                              </Link>
+                                {item.source_type === 'class' && !item.cancelled && isPastClass && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => void handleAttendance(item, 'present')}
+                                      title="Registrar Presença"
+                                      className={`inline-flex h-7 px-1.5 items-center justify-center rounded-md text-[10px] font-bold ${
+                                        item.attendance_status === 'present'
+                                          ? 'bg-emerald-600 text-white'
+                                          : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                                      }`}
+                                    >
+                                      P
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => void handleAttendance(item, 'absent')}
+                                      title="Registrar Falta"
+                                      className={`inline-flex h-7 px-1.5 items-center justify-center rounded-md text-[10px] font-bold ${
+                                        item.attendance_status === 'absent'
+                                          ? 'bg-rose-600 text-white'
+                                          : 'bg-rose-500/15 text-rose-800 dark:text-rose-300'
+                                      }`}
+                                    >
+                                      F
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
                         )

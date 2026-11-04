@@ -347,56 +347,22 @@ export function TasksPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
-        <section className="rounded-[2rem] border border-[#005063]/40 bg-[#0d3950] px-6 py-8 text-white shadow-xl sm:px-10 sm:py-9 dark:border-[#005063]/50 dark:bg-[#081a26]">
-          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-            <div className="max-w-3xl space-y-3">
-              <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold tracking-[0.16em] text-white uppercase">
-                <BookOpen size={14} aria-hidden="true" /> Tarefas & Atividades Sincronizadas com o Calendário
-              </p>
-              <h1 className="text-2xl font-black tracking-tight text-white sm:text-4xl">
-                Cadastre entregas de disciplinas e atividades gerais em total sincronia com o seu Calendário.
-              </h1>
-              <p className="max-w-2xl text-sm leading-6 text-[#dce6ef]/90 sm:text-base">
-                Tudo o que você cadastrar aqui aparece automaticamente no <strong>Calendário Acadêmico</strong>, e qualquer tarefa ou trabalho alocado no Calendário consta aqui em tempo real.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={openCreate}
-                className="inline-flex min-h-12 items-center gap-2 rounded-2xl bg-[#006768] px-5 py-3 text-sm font-black text-white shadow-lg transition hover:bg-[#005063]"
-              >
-                <Plus size={18} aria-hidden="true" />
-                Cadastrar Nova Tarefa
-              </button>
-              <Link
-                to="/calendario"
-                className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/20"
-              >
-                <CalendarIcon size={16} aria-hidden="true" />
-                Ver no Calendário →
-              </Link>
-            </div>
-          </div>
-        </section>
-
+      <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8">
         {error ? (
-          <div className="mt-6">
+          <div className="mb-6">
             <Alert>{error}</Alert>
           </div>
         ) : null}
 
         {/* BLOCO DE CADASTRO RÁPIDO DE TAREFA (DISCIPLINAS E AFINS) */}
-        <section className="mt-6 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-md sm:p-6 dark:border-[#005063]/30 dark:bg-[#081a26]">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-md sm:p-6 dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-3 dark:border-[#005063]/30">
             <div>
               <h2 className="text-base font-black text-[#0d3950] dark:text-white">
-                Cadastro Rápido de Tarefa, Trabalho ou Atividade
+                Cadastro de Tarefas e Entregas
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Vincule a uma disciplina do curso ou selecione &quot;Geral / Outras Atividades&quot; — sincroniza automaticamente com o Calendário.
+                Cadastre por disciplina ou geral — alocado automaticamente no seu Calendário Acadêmico.
               </p>
             </div>
             <button
