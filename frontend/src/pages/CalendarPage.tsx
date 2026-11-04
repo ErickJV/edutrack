@@ -72,6 +72,12 @@ function toLocalDateKey(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
+function parseDateKey(key: string): Date {
+  const [y, m, d] = key.split('-').map(Number)
+  if (!y || !m || !d) return new Date()
+  return new Date(y, m - 1, d)
+}
+
 function itemToDateKey(item: CalendarItem): string {
   const parsed = new Date(item.starts_at)
   if (Number.isNaN(parsed.getTime())) {
@@ -127,8 +133,8 @@ function getCategoryMeta(item: CalendarItem) {
   }
   if (item.source_type === 'reading') {
     return {
-      label: 'Estudo & Leitura',
-      originLabel: 'Estudo',
+      label: 'Anotações & Leitura',
+      originLabel: 'Anotações',
       originLink: '/estudo',
       cardClass:
         'border-l-4 border-l-cyan-500 border-cyan-500/25 bg-cyan-500/10 text-cyan-950 dark:text-cyan-100',
@@ -219,6 +225,7 @@ export function CalendarPage() {
       isCurrentMonth: boolean
       isToday: boolean
       weekdayShort: string
+      weekdayFull: string
     }> = []
     const todayKey = toLocalDateKey(new Date())
     for (let i = 0; i < totalCells; i++) {
@@ -235,6 +242,7 @@ export function CalendarPage() {
         isCurrentMonth: cellDate.getMonth() === month,
         isToday: key === todayKey,
         weekdayShort: WEEKDAYS_SHORT[wdIdx],
+        weekdayFull: WEEKDAYS_FULL[wdIdx],
       })
     }
     return cells
@@ -306,10 +314,44 @@ export function CalendarPage() {
     return map
   }, [items])
 
-  const selectedDayItems = useMemo(
-    () => itemsByDate.get(selectedDateKey) || [],
-    [itemsByDate, selectedDateKey],
+  // Calcula os 7 dias (Segunda a Domingo) da semana correspondente ao dia selecionado
+  const selectedWeekDays = useMemo(() => {
+    const baseDate = parseDateKey(selectedDateKey)
+    const dayOffset = (baseDate.getDay() + 6) % 7 // Seg=0 .. Dom=6
+    const monday = new Date(
+      baseDate.getFullYear(),
+      baseDate.getMonth(),
+      baseDate.getDate() - dayOffset,
+    )
+    const todayKey = toLocalDateKey(new Date())
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const dt = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i)
+      const key = toLocalDateKey(dt)
+      return {
+        date: dt,
+        key,
+        isToday: key === todayKey,
+        isSelected: key === selectedDateKey,
+        weekdayShort: WEEKDAYS_SHORT[i],
+        weekdayFull: WEEKDAYS_FULL[i],
+        items: itemsByDate.get(key) || [],
+      }
+    })
+  }, [selectedDateKey, itemsByDate])
+
+  const selectedWeekTotalItems = useMemo(
+    () => selectedWeekDays.reduce((acc, d) => acc + d.items.length, 0),
+    [selectedWeekDays],
   )
+
+  const selectedWeekRangeLabel = useMemo(() => {
+    const start = selectedWeekDays[0].date
+    const end = selectedWeekDays[6].date
+    const fmt = (d: Date) =>
+      d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    return `${fmt(start)} a ${fmt(end)}`
+  }, [selectedWeekDays])
 
   // Dias do mês atual para visão responsiva em telas pequenas
   const currentMonthDays = useMemo(
@@ -345,11 +387,31 @@ export function CalendarPage() {
   }
 
   function handlePrevMonth() {
-    setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
+    setCurrentMonth((prev) => {
+      const next = new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
+      setSelectedDateKey(toLocalDateKey(next))
+      return next
+    })
   }
 
   function handleNextMonth() {
-    setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
+    setCurrentMonth((prev) => {
+      const next = new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
+      setSelectedDateKey(toLocalDateKey(next))
+      return next
+    })
+  }
+
+  function handleShiftWeek(deltaDays: number) {
+    const dt = parseDateKey(selectedDateKey)
+    const shifted = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + deltaDays)
+    setSelectedDateKey(toLocalDateKey(shifted))
+    if (
+      shifted.getMonth() !== currentMonth.getMonth() ||
+      shifted.getFullYear() !== currentMonth.getFullYear()
+    ) {
+      setCurrentMonth(new Date(shifted.getFullYear(), shifted.getMonth(), 1))
+    }
   }
 
   function handleJumpToToday() {
@@ -459,18 +521,6 @@ export function CalendarPage() {
     }
   }
 
-  const formattedSelectedDate = useMemo(() => {
-    const [y, m, d] = selectedDateKey.split('-').map(Number)
-    if (!y || !m || !d) return selectedDateKey
-    const dt = new Date(y, m - 1, d)
-    return dt.toLocaleDateString('pt-BR', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    })
-  }, [selectedDateKey])
-
   return (
     <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
       <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
@@ -498,21 +548,17 @@ export function CalendarPage() {
       </header>
 
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-10">
-        {/* Cabeçalho + Resumo do Mês + Controles */}
+        {/* 1. BLOCO PRINCIPAL: CALENDÁRIO ACADÊMICO */}
         <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-[#005063]/20 bg-[#0d3950]/5 px-3 py-1 text-xs font-extrabold tracking-wide text-[#0d3950] uppercase dark:border-cyan-400/20 dark:bg-cyan-400/10 dark:text-cyan-300">
-                <CalendarIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                Visão Consolidada Multi-Tela
-              </span>
-              <h1 className="mt-2 text-2xl font-black tracking-tight text-[#0d3950] sm:text-3xl dark:text-white">
-                Calendário Acadêmico Integrado
+              <h1 className="text-2xl font-black tracking-tight text-[#0d3950] sm:text-3xl dark:text-white">
+                Calendário Acadêmico
               </h1>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                 Todos os dias do mês e compromissos sincronizados com{' '}
                 <strong>Disciplinas</strong> (aulas), <strong>Tarefas</strong> (prazos) e{' '}
-                <strong>Estudo</strong> (metas e leituras).
+                <strong>Anotações</strong> (metas e leituras).
               </p>
             </div>
 
@@ -561,7 +607,7 @@ export function CalendarPage() {
             <div className="rounded-2xl border border-cyan-500/25 bg-cyan-500/10 p-4">
               <div className="flex items-center gap-2 text-xs font-bold text-cyan-800 dark:text-cyan-300">
                 <BookOpen className="h-4 w-4 shrink-0" />
-                Leituras & Metas (Estudo)
+                Leituras & Metas (Anotações)
               </div>
               <p className="mt-1 text-2xl font-black text-cyan-950 dark:text-white">
                 {monthSummary.readings}
@@ -633,7 +679,7 @@ export function CalendarPage() {
                 <option value="">Todos os itens</option>
                 <option value="class">Aulas (Disciplinas)</option>
                 <option value="task">Entregas (Tarefas)</option>
-                <option value="reading">Leituras & Metas (Estudo)</option>
+                <option value="reading">Leituras & Metas (Anotações)</option>
                 <option value="exam">Provas / Avaliações</option>
                 <option value="assignment">Trabalhos / Projetos</option>
                 <option value="other">Outros Eventos</option>
@@ -644,9 +690,212 @@ export function CalendarPage() {
 
         {error ? <Alert tone="error">{error}</Alert> : null}
 
-        {/* CALENDÁRIO EM LARGURA TOTAL (100% da tela útil, sem ficar espremido na esquerda) */}
+        {/* 2. SEÇÃO SUPERIOR: DETALHES E AÇÕES RÁPIDAS DA SEMANA (Logo abaixo do bloco Calendário Acadêmico) */}
+        <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4 dark:border-[#005063]/30">
+            <div>
+              <p className="text-xs font-extrabold tracking-wider text-[#005063] uppercase dark:text-cyan-300">
+                Programação Semanal ({selectedWeekRangeLabel})
+              </p>
+              <h3 className="mt-1 text-xl font-black text-[#0d3950] dark:text-white">
+                Detalhes e Ações Rápidas da Semana ({selectedWeekTotalItems}{' '}
+                {selectedWeekTotalItems === 1 ? 'compromisso' : 'compromissos'})
+              </h3>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleShiftWeek(-7)}
+                className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Semana anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => handleShiftWeek(7)}
+                className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
+              >
+                Próxima semana
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => openNewEventForDate(selectedDateKey)}
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3.5 text-xs font-extrabold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar na Semana
+              </button>
+            </div>
+          </div>
+
+          {/* Visão dos 7 dias da semana com todos os compromissos e ações rápidas */}
+          <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-7">
+            {selectedWeekDays.map((day) => (
+              <div
+                key={day.key}
+                onClick={() => setSelectedDateKey(day.key)}
+                className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-3.5 transition ${
+                  day.isSelected
+                    ? 'border-[#0d3950] bg-[#0d3950]/5 ring-2 ring-[#0d3950]/20 dark:border-cyan-400 dark:bg-cyan-400/10'
+                    : day.isToday
+                      ? 'border-emerald-500/40 bg-emerald-500/5 dark:border-emerald-400/40 dark:bg-emerald-950/20'
+                      : 'border-slate-200/80 bg-slate-50/70 hover:border-[#0d3950]/40 dark:border-[#005063]/30 dark:bg-[#041019]/80'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-1 border-b border-slate-200/60 pb-2 dark:border-slate-800">
+                    <div>
+                      <span className="block text-[10px] font-extrabold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                        {day.weekdayFull}
+                      </span>
+                      <span className="text-sm font-black text-[#0d3950] dark:text-white">
+                        {day.date.toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                        })}
+                        {day.isToday ? ' · Hoje' : ''}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openNewEventForDate(day.key)
+                      }}
+                      title={`Adicionar evento em ${day.weekdayFull}`}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-[#0d3950] shadow-2xs hover:bg-slate-100 dark:bg-[#081a26] dark:text-cyan-300"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  {day.items.length === 0 ? (
+                    <p className="py-5 text-center text-xs text-slate-400 dark:text-slate-500">
+                      Livre
+                    </p>
+                  ) : (
+                    <div className="mt-2.5 space-y-2">
+                      {day.items.map((item) => {
+                        const meta = getCategoryMeta(item)
+                        const isBusy = actionBusyId === item.id
+                        const isPastClass =
+                          item.source_type === 'class' &&
+                          !item.cancelled &&
+                          new Date(item.ends_at || item.starts_at) <= new Date()
+
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-2xs dark:border-[#005063]/30 dark:bg-[#081a26]"
+                          >
+                            <div className="flex items-center justify-between gap-1">
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold ${meta.badgeClass}`}
+                              >
+                                <span className={`h-1.5 w-1.5 rounded-full ${meta.dotClass}`} />
+                                {meta.label}
+                              </span>
+                              <Link
+                                to={meta.originLink}
+                                className="text-[10px] font-bold text-[#005063] hover:underline dark:text-cyan-400"
+                              >
+                                {meta.originLabel} →
+                              </Link>
+                            </div>
+
+                            <h4 className="mt-1.5 text-xs font-black text-[#0d3950] dark:text-white">
+                              {item.title}
+                            </h4>
+
+                            {item.subject_name && (
+                              <p className="mt-0.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                                {item.subject_name}
+                              </p>
+                            )}
+
+                            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                              <span className="inline-flex items-center gap-0.5">
+                                <Clock className="h-3 w-3" />
+                                {formatTimeRange(item)}
+                              </span>
+                              {item.room && (
+                                <span className="inline-flex items-center gap-0.5">
+                                  <MapPin className="h-3 w-3" />
+                                  {item.room}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Ações rápidas inline */}
+                            {item.source_type === 'task' && (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => void handleToggleTask(item)}
+                                className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-900 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-200"
+                              >
+                                <CheckCircle2 className="h-3 w-3" />
+                                {item.task_status === 'completed' ? 'Reabrir' : 'Concluir'}
+                              </button>
+                            )}
+
+                            {item.source_type === 'class' && !item.cancelled && isPastClass && (
+                              <div className="mt-2 flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => void handleAttendance(item, 'present')}
+                                  className={`flex-1 rounded-md py-0.5 text-[10px] font-bold ${
+                                    item.attendance_status === 'present'
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                                  }`}
+                                >
+                                  Presente
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => void handleAttendance(item, 'absent')}
+                                  className={`flex-1 rounded-md py-0.5 text-[10px] font-bold ${
+                                    item.attendance_status === 'absent'
+                                      ? 'bg-rose-600 text-white'
+                                      : 'bg-rose-500/15 text-rose-800 dark:text-rose-300'
+                                  }`}
+                                >
+                                  Falta
+                                </button>
+                              </div>
+                            )}
+
+                            {item.source_type === 'event' && (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => void handleDeleteEvent(item)}
+                                className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-md py-0.5 text-[10px] font-bold text-rose-600 hover:bg-rose-500/10 dark:text-rose-400"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Excluir
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 3. GRADE MENSAL EM LARGURA TOTAL */}
         <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-xl shadow-[#0d3950]/5 sm:p-6 lg:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-          {/* Legenda superior rápida */}
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 pb-4 text-xs font-bold text-slate-600 dark:border-[#005063]/30 dark:text-slate-300">
             <div className="flex flex-wrap items-center gap-4">
               <span className="inline-flex items-center gap-1.5">
@@ -659,7 +908,7 @@ export function CalendarPage() {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-full bg-cyan-500" />
-                Leituras & Páginas (Estudo)
+                Leituras & Páginas (Anotações)
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-full bg-rose-500" />
@@ -671,7 +920,7 @@ export function CalendarPage() {
               </span>
             </div>
             <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-              Clique em qualquer dia para gerenciar ou adicionar eventos
+              Clique em um dia para atualizar a semana exibida acima
             </span>
           </div>
 
@@ -713,7 +962,6 @@ export function CalendarPage() {
                           : 'border-slate-100 bg-slate-50/50 opacity-50 dark:border-slate-800/50 dark:bg-[#041019]/30'
                     }`}
                   >
-                    {/* Topo do dia: Número + Botão rápido '+' + Contador */}
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex items-center gap-1.5">
                         <span
@@ -752,7 +1000,6 @@ export function CalendarPage() {
                       </div>
                     </div>
 
-                    {/* Lista de eventos dentro da célula do dia */}
                     <div className="mt-2 flex-1 space-y-1.5">
                       {dayItems.length === 0 ? (
                         <div className="flex h-full items-end pt-4">
@@ -792,7 +1039,7 @@ export function CalendarPage() {
             </div>
           </div>
 
-          {/* VISÃO RESPONSIVA MOBILE (< 640px): Seletor compacto + Lista completa de todos os dias do mês */}
+          {/* VISÃO RESPONSIVA MOBILE (< 640px) */}
           <div className="space-y-4 sm:hidden">
             <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-extrabold text-slate-500 uppercase dark:text-slate-400">
               {WEEKDAYS_SHORT.map((d) => (
@@ -910,178 +1157,6 @@ export function CalendarPage() {
               })}
             </div>
           </div>
-        </section>
-
-        {/* PAINEL DE DETALHES E AÇÕES RÁPIDAS DO DIA SELECIONADO (Largura Total abaixo do calendário) */}
-        <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4 dark:border-[#005063]/30">
-            <div>
-              <p className="text-xs font-extrabold tracking-wider text-slate-400 uppercase">
-                Detalhes e Ações Rápidas do Dia Selecionado
-              </p>
-              <h3 className="mt-1 text-xl font-black capitalize text-[#0d3950] dark:text-white">
-                {formattedSelectedDate}
-              </h3>
-            </div>
-            <button
-              type="button"
-              onClick={() => openNewEventForDate(selectedDateKey)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 py-2 text-sm font-extrabold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
-            >
-              <Plus className="h-4 w-4" />
-              Adicionar Evento neste Dia
-            </button>
-          </div>
-
-          {selectedDayItems.length === 0 ? (
-            <div className="py-10 text-center">
-              <CalendarIcon className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-600" />
-              <p className="mt-3 text-base font-bold text-slate-600 dark:text-slate-300">
-                Nenhum compromisso registrado para {formattedSelectedDate}.
-              </p>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Cadastre horários em Disciplinas, tarefas em Tarefas, metas/leituras em Estudo ou
-                adicione um evento diretamente aqui.
-              </p>
-            </div>
-          ) : (
-            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {selectedDayItems.map((item) => {
-                const meta = getCategoryMeta(item)
-                const isBusy = actionBusyId === item.id
-                const isPastClass =
-                  item.source_type === 'class' &&
-                  !item.cancelled &&
-                  new Date(item.ends_at || item.starts_at) <= new Date()
-
-                return (
-                  <div
-                    key={item.id}
-                    className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-5 dark:border-[#005063]/30 dark:bg-[#041019]/80"
-                  >
-                    <div>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-extrabold ${meta.badgeClass}`}
-                        >
-                          <span className={`h-2 w-2 rounded-full ${meta.dotClass}`} />
-                          {meta.label}
-                        </span>
-
-                        <Link
-                          to={meta.originLink}
-                          className="text-xs font-bold text-[#005063] underline-offset-2 hover:underline dark:text-cyan-400"
-                        >
-                          Ir para {meta.originLabel} →
-                        </Link>
-                      </div>
-
-                      <h4 className="mt-3 text-base font-black text-[#0d3950] dark:text-white">
-                        {item.title}
-                      </h4>
-
-                      {item.subject_name && (
-                        <p className="mt-1 text-xs font-bold text-slate-600 dark:text-slate-300">
-                          Disciplina: {item.subject_name}
-                        </p>
-                      )}
-
-                      {item.description && (
-                        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                          {item.description}
-                        </p>
-                      )}
-
-                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          {formatTimeRange(item)}
-                        </span>
-                        {item.room && (
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5" />
-                            {item.room}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Ações rápidas */}
-                    {item.source_type === 'task' && (
-                      <div className="mt-4 border-t border-slate-200/60 pt-3 dark:border-slate-800">
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => void handleToggleTask(item)}
-                          className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-900 transition hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-200"
-                        >
-                          <CheckCircle2 className="h-4 w-4" />
-                          {item.task_status === 'completed'
-                            ? 'Reabrir tarefa'
-                            : 'Marcar tarefa como concluída'}
-                        </button>
-                      </div>
-                    )}
-
-                    {item.source_type === 'class' && !item.cancelled && (
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/60 pt-3 dark:border-slate-800">
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                          Frequência:{' '}
-                          {item.attendance_status === 'present'
-                            ? 'Presente'
-                            : item.attendance_status === 'absent'
-                              ? 'Falta'
-                              : 'Não registrada'}
-                        </span>
-                        {isPastClass && (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => void handleAttendance(item, 'present')}
-                              className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
-                                item.attendance_status === 'present'
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-emerald-500/15 text-emerald-800 hover:bg-emerald-500/25 dark:text-emerald-300'
-                              }`}
-                            >
-                              Presente
-                            </button>
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => void handleAttendance(item, 'absent')}
-                              className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
-                                item.attendance_status === 'absent'
-                                  ? 'bg-rose-600 text-white'
-                                  : 'bg-rose-500/15 text-rose-800 hover:bg-rose-500/25 dark:text-rose-300'
-                              }`}
-                            >
-                              Falta
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {item.source_type === 'event' && (
-                      <div className="mt-4 flex justify-end border-t border-slate-200/60 pt-3 dark:border-slate-800">
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => void handleDeleteEvent(item)}
-                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold text-rose-600 transition hover:bg-rose-500/10 dark:text-rose-400"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Excluir evento
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
         </section>
       </div>
 

@@ -5,7 +5,8 @@ const NAV_ITEMS = [
   { to: '/calendario', label: 'Calendário' },
   { to: '/disciplinas', label: 'Disciplinas' },
   { to: '/tarefas', label: 'Tarefas' },
-  { to: '/estudo', label: 'Estudo' },
+  { to: '/estudo', label: 'Anotações' },
+  { to: '/flashcards', label: 'Flashcards' },
   { to: '/perfil', label: 'Perfil', alignRight: true },
 ] as const
 

@@ -359,6 +359,39 @@ export type CalendarItem = {
   reading_pages?: string
 }
 
+export type FlashcardState = 'new' | 'learning' | 'review'
+export type FlashcardRating = 'again' | 'hard' | 'good' | 'easy'
+
+export type Flashcard = {
+  id: string
+  student_subject: string | null
+  subject_name?: string | null
+  deck_name: string
+  front: string
+  back: string
+  hint: string
+  tags: string
+  state: FlashcardState
+  ease_factor: number
+  interval_days: number
+  repetitions: number
+  lapses: number
+  due_at: string
+  is_due: boolean
+  last_reviewed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type FlashcardPayload = {
+  student_subject?: string | null
+  deck_name?: string
+  front: string
+  back: string
+  hint?: string
+  tags?: string
+}
+
 export type AssistantChatMessage = {
   role: 'user' | 'assistant'
   content: string

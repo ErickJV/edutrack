@@ -262,10 +262,10 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
             </Link>
             <div>
               <h1 className="text-2xl font-black tracking-tight text-[#0d3950] dark:text-white sm:text-3xl">
-                Sessão de Estudo
+                Anotações
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Caderno de anotações, ciclos de foco e acompanhamento de leitura acadêmica
+                Bloco de anotações acadêmicas, ciclos de foco e acompanhamento de leitura
               </p>
             </div>
           </div>

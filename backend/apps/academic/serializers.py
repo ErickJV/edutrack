@@ -9,6 +9,7 @@ from .models import (
     AcademicTerm,
     ClassOccurrence,
     ClassSchedule,
+    Flashcard,
     Professor,
     ReadingLog,
     StudentSubject,
@@ -1004,4 +1005,85 @@ class AcademicReadingSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["user"] = self.context["request"].user
         return super().create(validated_data)
+
+
+class FlashcardSerializer(serializers.ModelSerializer):
+    student_subject = serializers.UUIDField(required=False, allow_null=True)
+    subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
+    is_due = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Flashcard
+        fields = (
+            "id",
+            "student_subject",
+            "subject_name",
+            "deck_name",
+            "front",
+            "back",
+            "hint",
+            "tags",
+            "state",
+            "ease_factor",
+            "interval_days",
+            "repetitions",
+            "lapses",
+            "due_at",
+            "is_due",
+            "last_reviewed_at",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "subject_name",
+            "state",
+            "ease_factor",
+            "interval_days",
+            "repetitions",
+            "lapses",
+            "due_at",
+            "is_due",
+            "last_reviewed_at",
+            "created_at",
+            "updated_at",
+        )
+
+    def get_is_due(self, obj) -> bool:
+        return obj.due_at <= timezone.now()
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["student_subject"] = str(instance.student_subject_id) if instance.student_subject_id else None
+        return rep
+
+    def validate_student_subject(self, value):
+        if value is None:
+            return None
+        user = self.context["request"].user
+        enrollment = (
+            StudentSubject.objects.select_related("subject")
+            .filter(id=value, user=user)
+            .first()
+        )
+        if enrollment is not None:
+            return enrollment
+        subj = Subject.objects.filter(id=value).first()
+        if subj is not None:
+            enrollment, _ = StudentSubject.objects.get_or_create(
+                user=user,
+                subject=subj,
+                defaults={"status": StudentSubject.Status.ACTIVE},
+            )
+            return enrollment
+        raise serializers.ValidationError("Disciplina inválida.")
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        if validated_data.get("student_subject") and (
+            not validated_data.get("deck_name") or validated_data.get("deck_name") == "Geral"
+        ):
+            validated_data["deck_name"] = validated_data["student_subject"].subject.name
+        return super().create(validated_data)
+
 

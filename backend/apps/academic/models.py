@@ -473,3 +473,53 @@ class StudyNote(models.Model):
     def __str__(self) -> str:
         return self.title
 
+
+class Flashcard(models.Model):
+    class State(models.TextChoices):
+        NEW = "new", "Novo"
+        LEARNING = "learning", "Aprendendo"
+        REVIEW = "review", "Revisão"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="flashcards",
+    )
+    student_subject = models.ForeignKey(
+        StudentSubject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="flashcards",
+    )
+    deck_name = models.CharField(max_length=120, default="Geral")
+    front = models.TextField()
+    back = models.TextField()
+    hint = models.CharField(max_length=255, blank=True, default="")
+    tags = models.CharField(max_length=200, blank=True, default="")
+
+    # Anki SM-2 spaced repetition state
+    state = models.CharField(
+        max_length=20,
+        choices=State.choices,
+        default=State.NEW,
+    )
+    ease_factor = models.FloatField(default=2.5)
+    interval_days = models.PositiveIntegerField(default=0)
+    repetitions = models.PositiveIntegerField(default=0)
+    lapses = models.PositiveIntegerField(default=0)
+    due_at = models.DateTimeField(default=timezone.now)
+    last_reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("due_at", "-created_at")
+        verbose_name = "flashcard"
+        verbose_name_plural = "flashcards"
+
+    def __str__(self) -> str:
+        return f"[{self.deck_name}] {self.front[:50]}"
+
+

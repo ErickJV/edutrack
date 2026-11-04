@@ -15,6 +15,7 @@ from .models import (
     AcademicTerm,
     ClassOccurrence,
     ClassSchedule,
+    Flashcard,
     Professor,
     ReadingLog,
     StudentSubject,
@@ -34,6 +35,7 @@ from .serializers import (
     ClassOccurrenceWriteSerializer,
     ClassScheduleSerializer,
     DashboardSummarySerializer,
+    FlashcardSerializer,
     ProfessorSerializer,
     ReadingLogSerializer,
     StudentSubjectSelectionSerializer,
@@ -1063,3 +1065,113 @@ class CalendarView(generics.GenericAPIView):
         # Sort by starts_at then id
         items.sort(key=lambda x: (x["starts_at"], x["id"]))
         return Response({"items": items})
+
+
+# ---------------------------------------------------------------------------
+# Flashcards (Anki SM-2 Spaced Repetition)
+# ---------------------------------------------------------------------------
+
+class FlashcardListCreateView(generics.ListCreateAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = FlashcardSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        qs = Flashcard.objects.select_related("student_subject__subject").filter(user=user)
+        ss_id = self.request.query_params.get("student_subject")
+        if ss_id:
+            qs = qs.filter(student_subject_id=ss_id)
+        deck = self.request.query_params.get("deck_name")
+        if deck:
+            qs = qs.filter(deck_name=deck)
+        return qs.order_by("due_at", "-created_at")
+
+
+class FlashcardDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = FlashcardSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return Flashcard.objects.select_related("student_subject__subject").filter(user=user)
+
+
+class FlashcardReviewView(generics.GenericAPIView):
+    """
+    POST /api/v1/flashcards/{id}/review
+    Accepts {"rating": "again" | "hard" | "good" | "easy"}
+    Applies Anki SM-2 scheduling algorithm and returns the updated Flashcard.
+    """
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = FlashcardSerializer
+    pagination_class = None
+
+    def post(self, request, *args, **kwargs):
+        from datetime import timedelta
+        from rest_framework.exceptions import NotFound, ValidationError as DRFValidationError
+
+        user = cast(User, request.user)
+        pk = self.kwargs["pk"]
+        try:
+            card = Flashcard.objects.select_related("student_subject__subject").get(
+                id=pk, user=user
+            )
+        except Flashcard.DoesNotExist as exc:
+            raise NotFound() from exc
+
+        rating = str(request.data.get("rating", "")).strip().lower()
+        if rating not in ("again", "hard", "good", "easy"):
+            raise DRFValidationError({"rating": "Use 'again', 'hard', 'good' ou 'easy'."})
+
+        now = timezone.now()
+        ease = card.ease_factor
+        interval = card.interval_days
+        reps = card.repetitions
+        lapses = card.lapses
+
+        if rating == "again":
+            reps = 0
+            lapses += 1
+            interval = 0
+            ease = max(1.3, round(ease - 0.2, 2))
+            card.state = Flashcard.State.LEARNING
+            card.due_at = now + timedelta(minutes=10)
+        elif rating == "hard":
+            ease = max(1.3, round(ease - 0.15, 2))
+            if interval == 0:
+                interval = 1
+            else:
+                interval = max(1, round(interval * 1.2))
+            card.state = Flashcard.State.REVIEW
+            card.due_at = now + timedelta(days=interval)
+        elif rating == "good":
+            reps += 1
+            if reps == 1:
+                interval = 1
+            elif reps == 2:
+                interval = 3
+            else:
+                interval = max(1, round(interval * ease))
+            card.state = Flashcard.State.REVIEW
+            card.due_at = now + timedelta(days=interval)
+        else:  # easy
+            reps += 1
+            ease = round(ease + 0.15, 2)
+            if reps == 1:
+                interval = 4
+            else:
+                interval = max(4, round(max(1, interval) * ease * 1.3))
+            card.state = Flashcard.State.REVIEW
+            card.due_at = now + timedelta(days=interval)
+
+        card.ease_factor = ease
+        card.interval_days = interval
+        card.repetitions = reps
+        card.lapses = lapses
+        card.last_reviewed_at = now
+        card.save()
+
+        return Response(FlashcardSerializer(card, context={"request": request}).data)
+

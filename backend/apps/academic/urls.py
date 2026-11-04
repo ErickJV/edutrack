@@ -19,6 +19,9 @@ from .views import (
     ClassScheduleListCreateView,
     CurriculumListView,
     DashboardSummaryView,
+    FlashcardDetailView,
+    FlashcardListCreateView,
+    FlashcardReviewView,
     ProfessorDetailView,
     ProfessorListCreateView,
     ReadingLogListView,
@@ -138,5 +141,8 @@ urlpatterns = [
         name="class-occurrence-attendance",
     ),
     path("calendar", CalendarView.as_view(), name="calendar"),
+    path("flashcards", FlashcardListCreateView.as_view(), name="flashcard-list-create"),
+    path("flashcards/<uuid:pk>", FlashcardDetailView.as_view(), name="flashcard-detail"),
+    path("flashcards/<uuid:pk>/review", FlashcardReviewView.as_view(), name="flashcard-review"),
 ]
 

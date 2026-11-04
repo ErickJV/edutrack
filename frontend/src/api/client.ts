@@ -18,6 +18,9 @@ import type {
   ClassSchedulePayload,
   CourseOffering,
   DashboardSummary,
+  Flashcard,
+  FlashcardPayload,
+  FlashcardRating,
   Professor,
   ProfilePayload,
   ProfileUpdatePayload,
@@ -475,6 +478,46 @@ export async function createAcademicEvent(payload: AcademicEventPayload): Promis
 
 export async function deleteAcademicEvent(id: string): Promise<void> {
   await request(`/api/v1/academic-events/${id}`, { method: 'DELETE' }, [204])
+}
+
+// Flashcards (Anki SM-2)
+export async function listFlashcards(params: {
+  student_subject?: string
+  deck_name?: string
+} = {}): Promise<Flashcard[]> {
+  const search = new URLSearchParams()
+  if (params.student_subject) search.set('student_subject', params.student_subject)
+  if (params.deck_name) search.set('deck_name', params.deck_name)
+  const suffix = search.toString() ? `?${search.toString()}` : ''
+  return request<Flashcard[]>(`/api/v1/flashcards${suffix}`)
+}
+
+export async function createFlashcard(payload: FlashcardPayload): Promise<Flashcard> {
+  return request<Flashcard>('/api/v1/flashcards', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, [201])
+}
+
+export async function updateFlashcard(
+  id: string,
+  payload: Partial<FlashcardPayload>,
+): Promise<Flashcard> {
+  return request<Flashcard>(`/api/v1/flashcards/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteFlashcard(id: string): Promise<void> {
+  await request(`/api/v1/flashcards/${id}`, { method: 'DELETE' }, [204])
+}
+
+export async function reviewFlashcard(id: string, rating: FlashcardRating): Promise<Flashcard> {
+  return request<Flashcard>(`/api/v1/flashcards/${id}/review`, {
+    method: 'POST',
+    body: JSON.stringify({ rating }),
+  })
 }
 
 // Clippit Assistant (Gemini 3.8 Flash via Antigravity OAuth)
