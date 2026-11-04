@@ -2,9 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   Bold,
-  Check,
   CheckSquare,
-  ChevronDown,
   FileText,
   FolderPlus,
   Heading1,
@@ -58,21 +56,69 @@ const FOLDER_COLORS = [
 
 export type FontFamilyChoice =
   | 'inter'
+  | 'merriweather'
   | 'montserrat'
   | 'comfortaa'
   | 'segoe'
   | 'arial'
-  | 'merriweather'
   | 'mono'
 
-const FONT_OPTIONS: { id: FontFamilyChoice; label: string; className: string; category: string }[] = [
-  { id: 'inter', label: 'Inter (Padrão)', className: 'font-sans', category: 'Sans-serif' },
-  { id: 'merriweather', label: 'Merriweather', className: 'font-merriweather', category: 'Leitura / Caderno' },
-  { id: 'montserrat', label: 'Montserrat', className: 'font-montserrat', category: 'Geométrica' },
-  { id: 'comfortaa', label: 'Comfortaa', className: 'font-comfortaa', category: 'Arredondada' },
-  { id: 'segoe', label: 'Segoe UI', className: 'font-segoe', category: 'Moderna' },
-  { id: 'arial', label: 'Arial', className: 'font-arial', category: 'Universal' },
-  { id: 'mono', label: 'Monospace', className: 'font-mono', category: 'Técnica' },
+const FONT_OPTIONS: {
+  id: FontFamilyChoice
+  label: string
+  shortLabel: string
+  className: string
+  fontFamilyCss: string
+}[] = [
+  {
+    id: 'inter',
+    label: 'Inter (Padrão)',
+    shortLabel: 'Inter',
+    className: 'font-sans',
+    fontFamilyCss: 'Inter, ui-sans-serif, system-ui, sans-serif',
+  },
+  {
+    id: 'merriweather',
+    label: 'Merriweather (Caderno)',
+    shortLabel: 'Merriweather',
+    className: 'font-merriweather',
+    fontFamilyCss: '"Merriweather", Georgia, serif',
+  },
+  {
+    id: 'montserrat',
+    label: 'Montserrat',
+    shortLabel: 'Montserrat',
+    className: 'font-montserrat',
+    fontFamilyCss: '"Montserrat", sans-serif',
+  },
+  {
+    id: 'comfortaa',
+    label: 'Comfortaa',
+    shortLabel: 'Comfortaa',
+    className: 'font-comfortaa',
+    fontFamilyCss: '"Comfortaa", cursive, sans-serif',
+  },
+  {
+    id: 'segoe',
+    label: 'Segoe UI',
+    shortLabel: 'Segoe UI',
+    className: 'font-segoe',
+    fontFamilyCss: '"Segoe UI", Tahoma, sans-serif',
+  },
+  {
+    id: 'arial',
+    label: 'Arial',
+    shortLabel: 'Arial',
+    className: 'font-arial',
+    fontFamilyCss: 'Arial, Helvetica, sans-serif',
+  },
+  {
+    id: 'mono',
+    label: 'Monospace',
+    shortLabel: 'Mono',
+    className: 'font-mono',
+    fontFamilyCss: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+  },
 ]
 
 const TEXT_COLORS = [
@@ -86,11 +132,11 @@ const TEXT_COLORS = [
 ]
 
 const HIGHLIGHT_COLORS = [
-  { name: 'Marca-texto Amarelo', hex: '#fef08a', text: '#713f12' },
-  { name: 'Marca-texto Verde', hex: '#bbf7d0', text: '#14532d' },
-  { name: 'Marca-texto Ciano', hex: '#a5f3fc', text: '#164e63' },
-  { name: 'Marca-texto Rosa', hex: '#fecdd3', text: '#881337' },
-  { name: 'Marca-texto Lavanda', hex: '#ddd6fe', text: '#4c1d95' },
+  { name: 'Amarelo', hex: '#fef08a' },
+  { name: 'Verde', hex: '#bbf7d0' },
+  { name: 'Ciano', hex: '#a5f3fc' },
+  { name: 'Rosa', hex: '#fecdd3' },
+  { name: 'Lavanda', hex: '#ddd6fe' },
 ]
 
 export type PaperStyleChoice = 'lined' | 'dotted' | 'clean'
@@ -118,18 +164,22 @@ function formatInlineMarkdownToHtml(line: string): string {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/~~(.+?)~~/g, '<del>$1</del>')
-    .replace(/==(.+?)==/g, '<mark style="background-color:#fef08a;padding:1px 4px;border-radius:4px;">$1</mark>')
-    .replace(/`([^`]+)`/g, '<code style="background:rgba(15,23,42,0.08);padding:2px 6px;border-radius:4px;font-family:monospace;">$1</code>')
+    .replace(
+      /==(.+?)==/g,
+      '<mark style="background-color:#fef08a;padding:1px 4px;border-radius:4px;">$1</mark>',
+    )
+    .replace(
+      /`([^`]+)`/g,
+      '<code style="background:rgba(15,23,42,0.08);padding:1px 5px;border-radius:4px;font-family:monospace;">$1</code>',
+    )
 }
 
 /**
- * Converte tanto anotações antigas em Markdown quanto anotações já salvas em HTML visual
- * para HTML limpo renderizável diretamente na folha de anotações.
+ * Converte anotações para HTML limpo perfeitamente alinhado à linha de 32px da folha pautada.
  */
 function noteContentToVisualHtml(content: string): string {
   if (!content || !content.trim()) return ''
   const trimmed = content.trim()
-  // Se já for um documento visual HTML salvo pelo bloco de anotações, preserva
   if (
     trimmed.startsWith('<p') ||
     trimmed.startsWith('<h1') ||
@@ -138,12 +188,13 @@ function noteContentToVisualHtml(content: string): string {
     trimmed.startsWith('<div') ||
     trimmed.startsWith('<ul') ||
     trimmed.startsWith('<ol') ||
-    trimmed.startsWith('<blockquote')
+    trimmed.startsWith('<blockquote') ||
+    trimmed.startsWith('<b') ||
+    trimmed.startsWith('<span')
   ) {
     return content
   }
 
-  // Converte Markdown/ templates de metodologias ativas em blocos visuais ricos
   const lines = content.split('\n')
   const htmlParts: string[] = []
   let inList = false
@@ -164,23 +215,17 @@ function noteContentToVisualHtml(content: string): string {
 
     if (line.startsWith('# ')) {
       closeList()
-      htmlParts.push(
-        `<h2 style="font-size:1.35rem;font-weight:800;margin:0.75rem 0 0.35rem;">${formatInlineMarkdownToHtml(escapeHtml(line.slice(2)))}</h2>`,
-      )
+      htmlParts.push(`<h2>${formatInlineMarkdownToHtml(escapeHtml(line.slice(2)))}</h2>`)
       continue
     }
     if (line.startsWith('## ')) {
       closeList()
-      htmlParts.push(
-        `<h3 style="font-size:1.1rem;font-weight:800;margin:0.65rem 0 0.25rem;">${formatInlineMarkdownToHtml(escapeHtml(line.slice(3)))}</h3>`,
-      )
+      htmlParts.push(`<h3>${formatInlineMarkdownToHtml(escapeHtml(line.slice(3)))}</h3>`)
       continue
     }
     if (line.startsWith('### ')) {
       closeList()
-      htmlParts.push(
-        `<h4 style="font-size:0.98rem;font-weight:700;margin:0.5rem 0 0.2rem;">${formatInlineMarkdownToHtml(escapeHtml(line.slice(4)))}</h4>`,
-      )
+      htmlParts.push(`<h4>${formatInlineMarkdownToHtml(escapeHtml(line.slice(4)))}</h4>`)
       continue
     }
     if (line.startsWith('> ')) {
@@ -189,7 +234,7 @@ function noteContentToVisualHtml(content: string): string {
         .replace(/^>\s*/, '')
         .replace(/^\[!(NOTE|TIP|WARNING|IMPORTANT)\]\s*/i, '')
       htmlParts.push(
-        `<blockquote style="border-left:4px solid #006768;padding:0.5rem 0.85rem;margin:0.5rem 0;background:rgba(0,103,104,0.08);border-radius:0 0.65rem 0.65rem 0;">${formatInlineMarkdownToHtml(escapeHtml(cleanQuote))}</blockquote>`,
+        `<blockquote style="border-left:4px solid #006768;padding:0 0.75rem;background:rgba(0,103,104,0.08);border-radius:0 0.5rem 0.5rem 0;">${formatInlineMarkdownToHtml(escapeHtml(cleanQuote))}</blockquote>`,
       )
       continue
     }
@@ -198,13 +243,13 @@ function noteContentToVisualHtml(content: string): string {
       const checked = line.toLowerCase().includes('[x]')
       const itemText = line.replace(/^[-*]\s+\[([ xX])\]\s+/, '')
       htmlParts.push(
-        `<div data-note-checklist="true" style="display:flex;align-items:center;gap:0.5rem;margin:0.3rem 0;"><input type="checkbox" ${checked ? 'checked' : ''} style="width:16px;height:16px;accent-color:#006768;cursor:pointer;" /><span>${formatInlineMarkdownToHtml(escapeHtml(itemText))}</span></div>`,
+        `<div data-note-checklist="true" style="display:flex;align-items:center;gap:0.5rem;"><input type="checkbox" ${checked ? 'checked' : ''} style="width:15px;height:15px;accent-color:#006768;cursor:pointer;" /><span>${formatInlineMarkdownToHtml(escapeHtml(itemText))}</span></div>`,
       )
       continue
     }
     if (line.startsWith('- ') || line.startsWith('* ')) {
       if (!inList) {
-        htmlParts.push('<ul style="padding-left:1.35rem;list-style-type:disc;margin:0.4rem 0;">')
+        htmlParts.push('<ul>')
         inList = true
       }
       htmlParts.push(`<li>${formatInlineMarkdownToHtml(escapeHtml(line.slice(2)))}</li>`)
@@ -212,7 +257,7 @@ function noteContentToVisualHtml(content: string): string {
     }
 
     closeList()
-    htmlParts.push(`<p style="margin:0.35rem 0;">${formatInlineMarkdownToHtml(line)}</p>`)
+    htmlParts.push(`<p>${formatInlineMarkdownToHtml(line)}</p>`)
   }
 
   closeList()
@@ -245,11 +290,16 @@ export function StudyNotesWorkspace({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Sidebar e estilo do bloco
+  // Estilo do bloco e fonte (persistidos no navegador)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [selectedFont, setSelectedFont] = useState<FontFamilyChoice>('inter')
-  const [paperStyle, setPaperStyle] = useState<PaperStyleChoice>('lined')
-  const [fontMenuOpen, setFontMenuOpen] = useState(false)
+  const [selectedFont, setSelectedFont] = useState<FontFamilyChoice>(() => {
+    const saved = window.localStorage.getItem('edutrack_note_font') as FontFamilyChoice | null
+    return saved && FONT_OPTIONS.some((f) => f.id === saved) ? saved : 'inter'
+  })
+  const [paperStyle, setPaperStyle] = useState<PaperStyleChoice>(() => {
+    const saved = window.localStorage.getItem('edutrack_note_paper') as PaperStyleChoice | null
+    return saved === 'lined' || saved === 'dotted' || saved === 'clean' ? saved : 'lined'
+  })
   const [colorMenuOpen, setColorMenuOpen] = useState(false)
   const [calloutMenuOpen, setCalloutMenuOpen] = useState(false)
 
@@ -273,7 +323,6 @@ export function StudyNotesWorkspace({
 
   const editorRef = useRef<HTMLDivElement>(null)
   const saveTimeoutRef = useRef<number | null>(null)
-  const loadedNoteIdRef = useRef<string | null>(null)
 
   const searchInputId = useId()
   const folderNameInputId = useId()
@@ -282,7 +331,6 @@ export function StudyNotesWorkspace({
   const editorTaskSelectId = useId()
   const editorReadingSelectId = useId()
 
-  // Sincroniza o conteúdo visual do contentEditable quando muda a nota selecionada
   const syncEditorDom = useCallback((rawContent: string) => {
     const html = noteContentToVisualHtml(rawContent)
     if (editorRef.current) {
@@ -290,7 +338,6 @@ export function StudyNotesWorkspace({
     }
   }, [])
 
-  // Carrega pastas e notas ao montar
   useEffect(() => {
     let alive = true
     async function init() {
@@ -305,7 +352,6 @@ export function StudyNotesWorkspace({
 
         if (fetchedNotes.length > 0) {
           const first = fetchedNotes[0]
-          loadedNoteIdRef.current = first.id
           setActiveNoteId(first.id)
           setEditorTitle(first.title)
           const visualHtml = noteContentToVisualHtml(first.content)
@@ -331,7 +377,6 @@ export function StudyNotesWorkspace({
 
   const selectNote = useCallback(
     (note: StudyNote) => {
-      loadedNoteIdRef.current = note.id
       setActiveNoteId(note.id)
       setEditorTitle(note.title)
       const visualHtml = noteContentToVisualHtml(note.content)
@@ -396,7 +441,7 @@ export function StudyNotesWorkspace({
         } catch {
           setSaveStatus('error')
         }
-      }, 800)
+      }, 700)
     },
     [
       activeNoteId,
@@ -436,14 +481,13 @@ export function StudyNotesWorkspace({
     [activeSubject, activeTask, activeReading, selectedFolderId, selectNote],
   )
 
-  // Quando template externo (Feynman, Mapa Mental, Leitura) é injetado
   useEffect(() => {
     if (!externalTemplate) return
     const timer = window.setTimeout(() => {
       const convertedTemplate = noteContentToVisualHtml(externalTemplate)
       if (activeNoteId && editorRef.current) {
         const nextHtml = editorRef.current.innerHTML
-          ? `${editorRef.current.innerHTML}<hr style="margin:1rem 0;border-color:rgba(148,163,184,0.3);" />${convertedTemplate}`
+          ? `${editorRef.current.innerHTML}<hr />${convertedTemplate}`
           : convertedTemplate
         editorRef.current.innerHTML = nextHtml
         setEditorContent(nextHtml)
@@ -532,7 +576,16 @@ export function StudyNotesWorkspace({
     }
   }
 
-  // Comandos visuais WYSIWYG (aplicados diretamente na folha sem mostrar HTML)
+  const handleSelectFont = (fontId: FontFamilyChoice) => {
+    setSelectedFont(fontId)
+    window.localStorage.setItem('edutrack_note_font', fontId)
+  }
+
+  const handleSelectPaperStyle = (style: PaperStyleChoice) => {
+    setPaperStyle(style)
+    window.localStorage.setItem('edutrack_note_paper', style)
+  }
+
   const applyVisualCommand = (command: string, value?: string) => {
     const el = editorRef.current
     if (!el) return
@@ -555,7 +608,7 @@ export function StudyNotesWorkspace({
 
   const handleInsertChecklist = () => {
     insertVisualHtmlBlock(
-      `<div data-note-checklist="true" style="display:flex;align-items:center;gap:0.5rem;margin:0.35rem 0;"><input type="checkbox" style="width:16px;height:16px;accent-color:#006768;cursor:pointer;" /><span>Item para revisar...</span></div><p><br/></p>`,
+      `<div data-note-checklist="true" style="display:flex;align-items:center;gap:0.5rem;"><input type="checkbox" style="width:15px;height:15px;accent-color:#006768;cursor:pointer;" /><span>Item para revisar...</span></div><p><br/></p>`,
     )
   }
 
@@ -563,35 +616,35 @@ export function StudyNotesWorkspace({
     const styles = {
       note: {
         border: '#005063',
-        bg: 'rgba(0, 80, 99, 0.08)',
+        bg: 'rgba(0, 80, 99, 0.09)',
         title: '📌 Anotação de Aula',
       },
       tip: {
         border: '#10b981',
-        bg: 'rgba(16, 185, 129, 0.10)',
+        bg: 'rgba(16, 185, 129, 0.11)',
         title: '💡 Dica / Exemplo Prático',
       },
       warning: {
         border: '#f59e0b',
-        bg: 'rgba(245, 158, 11, 0.12)',
+        bg: 'rgba(245, 158, 11, 0.13)',
         title: '⚠️ Ponto de Atenção',
       },
       exam: {
         border: '#e11d48',
-        bg: 'rgba(225, 29, 72, 0.10)',
-        title: '🎯 Cai na Prova / Revisão Obrigatória',
+        bg: 'rgba(225, 29, 72, 0.11)',
+        title: '🎯 Cai na Prova!',
       },
     }[kind]
 
     insertVisualHtmlBlock(
-      `<div style="border-left:4px solid ${styles.border};background:${styles.bg};padding:0.75rem 1rem;border-radius:0 0.75rem 0.75rem 0;margin:0.65rem 0;"><strong>${styles.title}:</strong> Escreva aqui o ponto principal...</div><p><br/></p>`,
+      `<div style="border-left:4px solid ${styles.border};background:${styles.bg};padding:0 0.85rem;border-radius:0 0.5rem 0.5rem 0;"><strong>${styles.title}:</strong> Escreva aqui o ponto principal...</div><p><br/></p>`,
     )
     setCalloutMenuOpen(false)
   }
 
   const handleInsertTable = () => {
     insertVisualHtmlBlock(
-      `<table style="width:100%;border-collapse:collapse;margin:0.75rem 0;font-size:0.875rem;"><thead><tr style="background:rgba(0,80,99,0.12);"><th style="border:1px solid rgba(148,163,184,0.4);padding:6px 10px;text-align:left;">Tópico / Conceito</th><th style="border:1px solid rgba(148,163,184,0.4);padding:6px 10px;text-align:left;">Explicação / Resumo</th></tr></thead><tbody><tr><td style="border:1px solid rgba(148,163,184,0.4);padding:6px 10px;">Conceito 1</td><td style="border:1px solid rgba(148,163,184,0.4);padding:6px 10px;"> Anotação...</td></tr><tr><td style="border:1px solid rgba(148,163,184,0.4);padding:6px 10px;">Conceito 2</td><td style="border:1px solid rgba(148,163,184,0.4);padding:6px 10px;"> Anotação...</td></tr></tbody></table><p><br/></p>`,
+      `<table style="width:100%;border-collapse:collapse;font-size:0.875rem;"><thead><tr style="background:rgba(0,80,99,0.12);"><th style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;text-align:left;">Tópico / Conceito</th><th style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;text-align:left;">Explicação / Resumo</th></tr></thead><tbody><tr><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Conceito 1</td><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Anotação...</td></tr><tr><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Conceito 2</td><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Anotação...</td></tr></tbody></table><p><br/></p>`,
     )
   }
 
@@ -615,44 +668,29 @@ export function StudyNotesWorkspace({
     })
   }, [notes, selectedFolderId, searchQuery])
 
-  const activeFontClass = useMemo(() => {
-    const found = FONT_OPTIONS.find((f) => f.id === selectedFont)
-    return found ? found.className : 'font-sans'
+  const activeFontOption = useMemo(() => {
+    return FONT_OPTIONS.find((f) => f.id === selectedFont) || FONT_OPTIONS[0]
   }, [selectedFont])
 
-  const paperBackgroundStyle = useMemo((): React.CSSProperties => {
-    if (paperStyle === 'lined') {
-      return {
-        backgroundImage:
-          'repeating-linear-gradient(transparent, transparent 31px, rgba(148, 163, 184, 0.22) 31px, rgba(148, 163, 184, 0.22) 32px)',
-        lineHeight: '32px',
-      }
-    }
-    if (paperStyle === 'dotted') {
-      return {
-        backgroundImage: 'radial-gradient(rgba(148, 163, 184, 0.38) 1.2px, transparent 1.2px)',
-        backgroundSize: '20px 20px',
-        lineHeight: '28px',
-      }
-    }
-    return {
-      lineHeight: '28px',
-    }
+  const paperClassName = useMemo(() => {
+    if (paperStyle === 'lined') return 'notebook-paper-lined'
+    if (paperStyle === 'dotted') return 'notebook-paper-dotted'
+    return 'notebook-paper-clean'
   }, [paperStyle])
 
   return (
     <section
       aria-label="Bloco de Anotações de Estudo"
-      className="flex w-full flex-col rounded-3xl border border-slate-200 bg-white shadow-sm transition dark:border-[#005063]/30 dark:bg-[#081a26]"
+      className="flex w-full flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
     >
       {/* Barra Superior do Bloco de Anotações */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3.5 sm:px-6 dark:border-[#005063]/30">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-3.5 sm:px-6 dark:border-[#005063]/30 dark:bg-[#041019]/60">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setSidebarOpen((prev) => !prev)}
             aria-label={sidebarOpen ? 'Recolher menu de pastas' : 'Expandir menu de pastas'}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-[#005063] dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200 dark:hover:bg-[#081a26]"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-[#005063] dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-200 dark:hover:bg-[#040f17]"
           >
             {sidebarOpen ? (
               <>
@@ -675,92 +713,22 @@ export function StudyNotesWorkspace({
           </div>
         </div>
 
-        {/* Estilo da Folha & Tipografia */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Seletor de Estilo de Folha */}
-          <div
-            role="group"
-            aria-label="Estilo da folha do caderno"
-            className="flex rounded-xl border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-800 dark:bg-[#040f17]"
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => void handleCreateNote()}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
           >
-            {(
-              [
-                { id: 'lined', label: 'Pautada' },
-                { id: 'dotted', label: 'Pontilhada' },
-                { id: 'clean', label: 'Folha Limpa' },
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setPaperStyle(opt.id)}
-                className={`inline-flex min-h-7 items-center rounded-lg px-2.5 text-xs font-bold transition ${
-                  paperStyle === opt.id
-                    ? 'bg-white text-[#0d3950] shadow-xs dark:bg-[#081a26] dark:text-slate-100'
-                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Seletor de Fonte */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setFontMenuOpen((prev) => !prev)}
-              className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-100"
-              title="Escolher fonte do caderno"
-            >
-              <Type className="size-3.5 text-[#005063] dark:text-[#006768]" />
-              <span>{FONT_OPTIONS.find((f) => f.id === selectedFont)?.label || 'Fonte'}</span>
-              <ChevronDown className="size-3 text-slate-400" />
-            </button>
-
-            {fontMenuOpen ? (
-              <div className="absolute top-9.5 right-0 z-40 w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
-                <span className="block px-2.5 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                  Letra do Caderno
-                </span>
-                <div className="space-y-0.5">
-                  {FONT_OPTIONS.map((f) => {
-                    const isSelected = f.id === selectedFont
-                    return (
-                      <button
-                        key={f.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedFont(f.id)
-                          setFontMenuOpen(false)
-                        }}
-                        className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs transition ${
-                          isSelected
-                            ? 'bg-[#005063]/10 font-bold text-[#0d3950] dark:bg-[#005063]/30 dark:text-slate-100'
-                            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#040f17]'
-                        } ${f.className}`}
-                      >
-                        <div>
-                          <div>{f.label}</div>
-                          <span className="text-[10px] text-slate-400">{f.category}</span>
-                        </div>
-                        {isSelected ? (
-                          <Check className="size-3.5 text-[#006768] dark:text-[#005063]" />
-                        ) : null}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : null}
-          </div>
+            <Plus className="size-3.5" aria-hidden="true" />
+            <span>Nova Página</span>
+          </button>
 
           {/* Alternância mobile */}
           <div className="flex items-center gap-2 sm:hidden">
             <button
               type="button"
               onClick={() => setMobileView(mobileView === 'sidebar' ? 'editor' : 'sidebar')}
-              className="inline-flex min-h-8 items-center rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
+              className="inline-flex min-h-9 items-center rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
             >
               {mobileView === 'sidebar' ? 'Abrir Folha →' : '← Notas'}
             </button>
@@ -775,7 +743,7 @@ export function StudyNotesWorkspace({
       ) : null}
 
       {/* Corpo Principal do Bloco de Anotações */}
-      <div className="flex min-h-[640px] flex-1 overflow-hidden">
+      <div className="flex min-h-[680px] flex-1 overflow-hidden">
         {/* Coluna Lateral: Pastas e Lista de Anotações */}
         {sidebarOpen ? (
           <aside
@@ -865,16 +833,8 @@ export function StudyNotesWorkspace({
 
             <div className="mt-3.5 flex items-center justify-between">
               <h4 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                Páginas de Anotação ({filteredNotes.length})
+                Páginas ({filteredNotes.length})
               </h4>
-              <button
-                type="button"
-                onClick={() => void handleCreateNote()}
-                className="inline-flex min-h-7 items-center gap-1 rounded-lg bg-[#0d3950] px-2.5 text-xs font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
-              >
-                <Plus className="size-3.5" aria-hidden="true" />
-                <span>Nova página</span>
-              </button>
             </div>
 
             <div className="mt-2 flex-1 space-y-2 overflow-y-auto pr-1">
@@ -936,20 +896,20 @@ export function StudyNotesWorkspace({
         ) : null}
 
         {/* Área Principal da Folha de Anotações */}
-        <main
-          className={`flex-1 flex-col p-4 sm:p-6 ${
+        <div
+          className={`flex min-w-0 flex-1 flex-col p-4 sm:p-6 ${
             mobileView === 'sidebar' && sidebarOpen ? 'hidden sm:flex' : 'flex'
           }`}
         >
           {activeNoteId ? (
             <div className="flex h-full flex-col">
               {/* Vínculos da Anotação (Pasta, Disciplina, Tarefa, Leitura) */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3 dark:border-slate-800">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-slate-50 px-2.5 py-1 dark:border-slate-800 dark:bg-[#040f17]">
                     <label
                       htmlFor={editorFolderSelectId}
-                      className="text-xs font-bold text-slate-500 dark:text-slate-400"
+                      className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
                     >
                       Pasta:
                     </label>
@@ -961,7 +921,7 @@ export function StudyNotesWorkspace({
                         setEditorFolderId(next)
                         triggerAutoSave({ folder: next || null })
                       }}
-                      className="min-h-8 max-w-[140px] truncate rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                      className="max-w-[140px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
                     >
                       <option value="">(Sem pasta)</option>
                       {folders.map((f) => (
@@ -972,10 +932,10 @@ export function StudyNotesWorkspace({
                     </select>
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-slate-50 px-2.5 py-1 dark:border-slate-800 dark:bg-[#040f17]">
                     <label
                       htmlFor={editorSubjectSelectId}
-                      className="text-xs font-bold text-slate-500 dark:text-slate-400"
+                      className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
                     >
                       Disciplina:
                     </label>
@@ -987,7 +947,7 @@ export function StudyNotesWorkspace({
                         setEditorSubjectId(next)
                         triggerAutoSave({ student_subject: next || null })
                       }}
-                      className="min-h-8 max-w-[170px] truncate rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                      className="max-w-[180px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
                     >
                       <option value="">(Geral)</option>
                       {subjects.map((s) => (
@@ -999,10 +959,10 @@ export function StudyNotesWorkspace({
                   </div>
 
                   {tasks.length > 0 && (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-slate-50 px-2.5 py-1 dark:border-slate-800 dark:bg-[#040f17]">
                       <label
                         htmlFor={editorTaskSelectId}
-                        className="text-xs font-bold text-slate-500 dark:text-slate-400"
+                        className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
                       >
                         Tarefa:
                       </label>
@@ -1014,7 +974,7 @@ export function StudyNotesWorkspace({
                           setEditorTaskId(next)
                           triggerAutoSave({ task: next || null })
                         }}
-                        className="min-h-8 max-w-[150px] truncate rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                        className="max-w-[150px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
                       >
                         <option value="">(Nenhuma)</option>
                         {tasks.map((t) => (
@@ -1027,10 +987,10 @@ export function StudyNotesWorkspace({
                   )}
 
                   {readings.length > 0 && (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-slate-50 px-2.5 py-1 dark:border-slate-800 dark:bg-[#040f17]">
                       <label
                         htmlFor={editorReadingSelectId}
-                        className="text-xs font-bold text-slate-500 dark:text-slate-400"
+                        className="text-[11px] font-bold text-slate-500 dark:text-slate-400"
                       >
                         Leitura:
                       </label>
@@ -1042,7 +1002,7 @@ export function StudyNotesWorkspace({
                           setEditorReadingId(next)
                           triggerAutoSave({ reading: next || null })
                         }}
-                        className="min-h-8 max-w-[150px] truncate rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                        className="max-w-[150px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
                       >
                         <option value="">(Nenhuma)</option>
                         {readings.map((r) => (
@@ -1058,7 +1018,7 @@ export function StudyNotesWorkspace({
                 <button
                   type="button"
                   onClick={() => void handleDeleteCurrentNote()}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                  className="inline-flex min-h-8 items-center gap-1 rounded-xl border border-rose-200/70 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400"
                   title="Excluir página de anotação"
                 >
                   <Trash2 className="size-3.5" aria-hidden="true" />
@@ -1066,251 +1026,315 @@ export function StudyNotesWorkspace({
                 </button>
               </div>
 
-              {/* Barra de Ferramentas Visual (Aplica estilo diretamente na folha sem tags HTML visíveis) */}
+              {/* BARRA DE PERSONALIZAÇÃO UNIFICADA (Opções de Fonte + Estilo da Folha + Formatação Visual) */}
               <div
                 role="toolbar"
-                aria-label="Ferramentas do bloco de anotações"
-                className="mt-3 flex flex-wrap items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 shadow-2xs dark:border-slate-800 dark:bg-[#040f17]"
+                aria-label="Barra de personalização do bloco de anotações"
+                className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50/90 p-2.5 shadow-2xs dark:border-[#005063]/30 dark:bg-[#040f17]"
               >
-                {/* Títulos */}
-                <button
-                  type="button"
-                  onClick={() => applyVisualCommand('formatBlock', 'H2')}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-extrabold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Título de Seção"
-                >
-                  <Heading1 className="size-3.5" />
-                  <span>Título</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyVisualCommand('formatBlock', 'H3')}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Subtítulo"
-                >
-                  <Heading2 className="size-3.5" />
-                  <span>Subtítulo</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyVisualCommand('formatBlock', 'P')}
-                  className="inline-flex min-h-8 items-center rounded-lg px-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                  title="Texto normal"
-                >
-                  Texto
-                </button>
+                {/* LINHA 1 DA BARRA DE PERSONALIZAÇÃO: OPÇÕES DE FONTE E ESTILO DA FOLHA */}
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2 dark:border-slate-800">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-1.5 text-[11px] font-extrabold tracking-wider text-[#005063] uppercase dark:text-cyan-400">
+                      <Type className="size-3.5" />
+                      Fonte:
+                    </span>
+                    {FONT_OPTIONS.map((font) => {
+                      const active = selectedFont === font.id
+                      return (
+                        <button
+                          key={font.id}
+                          type="button"
+                          onClick={() => handleSelectFont(font.id)}
+                          style={{ fontFamily: font.fontFamilyCss }}
+                          className={`inline-flex min-h-7 items-center rounded-lg px-2.5 text-xs transition ${
+                            active
+                              ? 'bg-[#0d3950] font-bold text-white shadow-xs dark:bg-[#005063]'
+                              : 'border border-slate-200/80 bg-white font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300 dark:hover:bg-slate-800'
+                          }`}
+                          title={font.label}
+                        >
+                          {font.shortLabel}
+                        </button>
+                      )
+                    })}
+                  </div>
 
-                <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
+                  {/* Seletor de Estilo da Folha na Barra de Personalização */}
+                  <div
+                    role="group"
+                    aria-label="Estilo da folha do caderno"
+                    className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-[#081a26]"
+                  >
+                    {(
+                      [
+                        { id: 'lined', label: 'Pautada' },
+                        { id: 'dotted', label: 'Pontilhada' },
+                        { id: 'clean', label: 'Folha Limpa' },
+                      ] as const
+                    ).map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleSelectPaperStyle(opt.id)}
+                        className={`inline-flex min-h-7 items-center rounded-lg px-2.5 text-xs font-bold transition ${
+                          paperStyle === opt.id
+                            ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                {/* Formatação de Texto Visual */}
-                <button
-                  type="button"
-                  onClick={() => applyVisualCommand('bold')}
-                  className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs font-black text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Negrito"
-                >
-                  <Bold className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyVisualCommand('italic')}
-                  className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Itálico"
-                >
-                  <Italic className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyVisualCommand('underline')}
-                  className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Sublinhado"
-                >
-                  <Underline className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyVisualCommand('strikeThrough')}
-                  className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Riscado"
-                >
-                  <Strikethrough className="size-3.5" />
-                </button>
-
-                <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
-
-                {/* Marca-texto e Cores Visuais */}
-                <div className="relative">
+                {/* LINHA 2 DA BARRA DE PERSONALIZAÇÃO: TÍTULOS, ESTILOS, MARCA-TEXTO E BLOCOS */}
+                <div className="flex flex-wrap items-center gap-1">
+                  {/* Títulos */}
                   <button
                     type="button"
-                    onClick={() => setColorMenuOpen((prev) => !prev)}
-                    className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Marca-texto e Cor da Caneta"
+                    onClick={() => applyVisualCommand('formatBlock', 'H2')}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-extrabold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Título de Seção"
                   >
-                    <Highlighter className="size-3.5 text-amber-500" />
-                    <span>Marca-texto & Cor</span>
+                    <Heading1 className="size-3.5" />
+                    <span>Título</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyVisualCommand('formatBlock', 'H3')}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Subtítulo"
+                  >
+                    <Heading2 className="size-3.5" />
+                    <span>Subtítulo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyVisualCommand('formatBlock', 'P')}
+                    className="inline-flex min-h-8 items-center rounded-lg px-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Texto normal"
+                  >
+                    Texto
                   </button>
 
-                  {colorMenuOpen && (
-                    <div className="absolute top-9.5 left-0 z-40 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
-                      <p className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-                        Marca-Texto (Selecione o texto e clique)
-                      </p>
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {HIGHLIGHT_COLORS.map((h) => (
+                  <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
+
+                  {/* Formatação de Texto Visual */}
+                  <button
+                    type="button"
+                    onClick={() => applyVisualCommand('bold')}
+                    className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs font-black text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Negrito"
+                  >
+                    <Bold className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyVisualCommand('italic')}
+                    className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Itálico"
+                  >
+                    <Italic className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyVisualCommand('underline')}
+                    className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Sublinhado"
+                  >
+                    <Underline className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyVisualCommand('strikeThrough')}
+                    className="inline-flex min-h-8 w-8 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Riscado"
+                  >
+                    <Strikethrough className="size-3.5" />
+                  </button>
+
+                  <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
+
+                  {/* Marca-texto e Cores Visuais */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setColorMenuOpen((prev) => !prev)}
+                      className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                      title="Marca-texto e Cor da Caneta"
+                    >
+                      <Highlighter className="size-3.5 text-amber-500" />
+                      <span>Marca-texto & Cor</span>
+                    </button>
+
+                    {colorMenuOpen && (
+                      <div className="absolute top-9.5 left-0 z-40 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+                        <p className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                          Marca-Texto (Selecione o texto e clique)
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {HIGHLIGHT_COLORS.map((h) => (
+                            <button
+                              key={h.hex}
+                              type="button"
+                              onClick={() => {
+                                applyVisualCommand('hiliteColor', h.hex)
+                                setColorMenuOpen(false)
+                              }}
+                              className="h-7 w-7 rounded-lg border border-black/10 transition hover:scale-105"
+                              style={{ backgroundColor: h.hex }}
+                              title={h.name}
+                            />
+                          ))}
                           <button
-                            key={h.hex}
                             type="button"
                             onClick={() => {
-                              applyVisualCommand('hiliteColor', h.hex)
+                              applyVisualCommand('hiliteColor', 'transparent')
                               setColorMenuOpen(false)
                             }}
-                            className="h-7 w-7 rounded-lg border border-black/10 transition hover:scale-105"
-                            style={{ backgroundColor: h.hex }}
-                            title={h.name}
-                          />
-                        ))}
+                            className="rounded-lg border border-slate-200 px-2 text-[10px] font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300"
+                          >
+                            Limpar
+                          </button>
+                        </div>
+
+                        <p className="mt-3 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                          Cor da Caneta
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {TEXT_COLORS.map((c) => (
+                            <button
+                              key={c.hex}
+                              type="button"
+                              onClick={() => {
+                                applyVisualCommand('foreColor', c.hex)
+                                setColorMenuOpen(false)
+                              }}
+                              className="h-6 w-6 rounded-full border border-white/20 shadow-xs transition hover:scale-110"
+                              style={{ backgroundColor: c.hex }}
+                              title={c.name}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
+
+                  {/* Listas e Checklists */}
+                  <button
+                    type="button"
+                    onClick={() => applyVisualCommand('insertUnorderedList')}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Lista com marcadores"
+                  >
+                    <List className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyVisualCommand('insertOrderedList')}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Lista numerada"
+                  >
+                    <ListOrdered className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleInsertChecklist}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Inserir item de checklist clicável"
+                  >
+                    <CheckSquare className="size-3.5 text-[#006768] dark:text-cyan-400" />
+                    <span>Checklist</span>
+                  </button>
+
+                  <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
+
+                  {/* Blocos Visuais de Estudo */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setCalloutMenuOpen((prev) => !prev)}
+                      className="inline-flex min-h-8 items-center gap-1 rounded-lg bg-[#0d3950]/10 px-2.5 text-xs font-extrabold text-[#0d3950] hover:bg-[#0d3950]/20 dark:bg-cyan-400/15 dark:text-cyan-300"
+                      title="Inserir caixa de destaque na folha"
+                    >
+                      <Sparkles className="size-3.5" />
+                      <span>Bloco de Destaque</span>
+                    </button>
+
+                    {calloutMenuOpen && (
+                      <div className="absolute top-9.5 left-0 z-40 w-56 space-y-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
                         <button
                           type="button"
-                          onClick={() => {
-                            applyVisualCommand('hiliteColor', 'transparent')
-                            setColorMenuOpen(false)
-                          }}
-                          className="rounded-lg border border-slate-200 px-2 text-[10px] font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300"
+                          onClick={() => handleInsertCallout('note')}
+                          className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-[#0d3950] hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                         >
-                          Limpar
+                          <Info className="size-4 text-[#005063]" />
+                          <span>📌 Anotação de Aula</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertCallout('tip')}
+                          className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                        >
+                          <Lightbulb className="size-4" />
+                          <span>💡 Dica / Exemplo Prático</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertCallout('warning')}
+                          className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/40"
+                        >
+                          <AlertTriangle className="size-4" />
+                          <span>⚠️ Ponto de Atenção</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertCallout('exam')}
+                          className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40"
+                        >
+                          <Palette className="size-4" />
+                          <span>🎯 Cai na Prova!</span>
                         </button>
                       </div>
+                    )}
+                  </div>
 
-                      <p className="mt-3 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-                        Cor da Caneta
-                      </p>
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {TEXT_COLORS.map((c) => (
-                          <button
-                            key={c.hex}
-                            type="button"
-                            onClick={() => {
-                              applyVisualCommand('foreColor', c.hex)
-                              setColorMenuOpen(false)
-                            }}
-                            className="h-6 w-6 rounded-full border border-white/20 shadow-xs transition hover:scale-110"
-                            style={{ backgroundColor: c.hex }}
-                            title={c.name}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
-
-                {/* Listas e Checklists */}
-                <button
-                  type="button"
-                  onClick={() => applyVisualCommand('insertUnorderedList')}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Lista com marcadores"
-                >
-                  <List className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyVisualCommand('insertOrderedList')}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Lista numerada"
-                >
-                  <ListOrdered className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleInsertChecklist}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Inserir item de checklist clicável"
-                >
-                  <CheckSquare className="size-3.5 text-[#006768] dark:text-cyan-400" />
-                  <span>Checklist</span>
-                </button>
-
-                <div className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-800" />
-
-                {/* Blocos Visuais de Estudo (Post-it / Callouts) */}
-                <div className="relative">
                   <button
                     type="button"
-                    onClick={() => setCalloutMenuOpen((prev) => !prev)}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg bg-[#0d3950]/10 px-2.5 text-xs font-extrabold text-[#0d3950] hover:bg-[#0d3950]/20 dark:bg-cyan-400/15 dark:text-cyan-300"
-                    title="Inserir caixa de destaque na folha"
+                    onClick={handleInsertTable}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Inserir tabela resumo"
                   >
-                    <Sparkles className="size-3.5" />
-                    <span>Bloco de Destaque</span>
+                    <TableIcon className="size-3.5" />
+                    <span className="hidden md:inline">Tabela</span>
                   </button>
-
-                  {calloutMenuOpen && (
-                    <div className="absolute top-9.5 left-0 z-40 w-56 space-y-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
-                      <button
-                        type="button"
-                        onClick={() => handleInsertCallout('note')}
-                        className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-[#0d3950] hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        <Info className="size-4 text-[#005063]" />
-                        <span>📌 Anotação de Aula</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleInsertCallout('tip')}
-                        className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-                      >
-                        <Lightbulb className="size-4" />
-                        <span>💡 Dica / Exemplo Prático</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleInsertCallout('warning')}
-                        className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/40"
-                      >
-                        <AlertTriangle className="size-4" />
-                        <span>⚠️ Ponto de Atenção</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleInsertCallout('exam')}
-                        className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40"
-                      >
-                        <Palette className="size-4" />
-                        <span>🎯 Cai na Prova!</span>
-                      </button>
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      insertVisualHtmlBlock(
+                        `<blockquote style="border-left:4px solid #006768;padding:0 0.85rem;background:rgba(0,103,104,0.08);border-radius:0 0.5rem 0.5rem 0;">Citação ou definição do livro...</blockquote><p><br/></p>`,
+                      )
+                    }
+                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    title="Inserir citação"
+                  >
+                    <Quote className="size-3.5" />
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleInsertTable}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Inserir tabela resumo"
-                >
-                  <TableIcon className="size-3.5" />
-                  <span className="hidden md:inline">Tabela</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    insertVisualHtmlBlock(
-                      `<blockquote style="border-left:4px solid #006768;padding:0.5rem 0.85rem;margin:0.5rem 0;background:rgba(0,103,104,0.08);border-radius:0 0.65rem 0.65rem 0;">Citação ou definição do livro...</blockquote><p><br/></p>`,
-                    )
-                  }
-                  className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  title="Inserir citação"
-                >
-                  <Quote className="size-3.5" />
-                </button>
               </div>
 
-              {/* FOLHA DE CADERNO REAL (Sem HTML puro, escrita direta e fluida) */}
-              <div className="mt-4 flex flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-[#fcfbf7] shadow-inner dark:border-[#005063]/40 dark:bg-[#05131d]">
-                {/* Cabeçalho da Folha (Título + Data) */}
-                <div className="border-b-2 border-rose-400/30 px-6 pt-5 pb-3 sm:px-8 dark:border-cyan-500/25">
+              {/* FOLHA DE CADERNO REAL ALINHADA (32px por pauta, sem desvios) */}
+              <div className="mt-3 flex flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-[#fcfbf7] shadow-inner dark:border-[#005063]/40 dark:bg-[#05131d]">
+                {/* Cabeçalho da Folha (Título) */}
+                <div
+                  className={`border-b-2 border-rose-400/35 pt-4 pb-2.5 dark:border-cyan-500/30 ${
+                    paperStyle === 'lined' ? 'pl-[58px] pr-7' : 'px-8'
+                  }`}
+                >
                   <input
                     type="text"
                     value={editorTitle}
@@ -1321,11 +1345,12 @@ export function StudyNotesWorkspace({
                     }}
                     placeholder="Título da sua anotação..."
                     aria-label="Título da anotação"
-                    className={`w-full border-0 bg-transparent p-0 text-xl font-black tracking-tight text-[#0d3950] placeholder:text-slate-400 focus:ring-0 focus:outline-hidden sm:text-2xl dark:text-white ${activeFontClass}`}
+                    style={{ fontFamily: activeFontOption.fontFamilyCss }}
+                    className={`w-full border-0 bg-transparent p-0 text-xl font-black tracking-tight text-[#0d3950] placeholder:text-slate-400 focus:ring-0 focus:outline-hidden sm:text-2xl dark:text-white ${activeFontOption.className}`}
                   />
                 </div>
 
-                {/* Corpo Editável da Folha */}
+                {/* Corpo Editável da Folha Pautada / Pontilhada / Limpa */}
                 <div
                   ref={editorRef}
                   contentEditable
@@ -1340,7 +1365,10 @@ export function StudyNotesWorkspace({
                   }}
                   onClick={(e) => {
                     const target = e.target as HTMLElement
-                    if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+                    if (
+                      target.tagName === 'INPUT' &&
+                      (target as HTMLInputElement).type === 'checkbox'
+                    ) {
                       const inp = target as HTMLInputElement
                       if (inp.checked) {
                         inp.setAttribute('checked', 'checked')
@@ -1354,14 +1382,14 @@ export function StudyNotesWorkspace({
                       }
                     }
                   }}
-                  style={paperBackgroundStyle}
+                  style={{ fontFamily: activeFontOption.fontFamilyCss }}
                   data-placeholder="Comece a escrever suas anotações de aula, resumos ou ideias aqui..."
-                  className={`min-h-[420px] flex-1 overflow-y-auto px-6 py-4 text-base text-slate-900 focus:outline-hidden sm:px-8 dark:text-slate-100 empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] ${activeFontClass}`}
+                  className={`notebook-editor ${paperClassName} min-h-[448px] flex-1 overflow-y-auto text-base text-slate-900 focus:outline-hidden dark:text-slate-100 empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] ${activeFontOption.className}`}
                 />
               </div>
 
               {/* Rodapé da Folha com Estatísticas e Status de Salvamento */}
-              <footer className="mt-3 flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-slate-500 dark:text-slate-400">
+              <footer className="mt-3 flex flex-wrap items-center justify-between gap-3 pt-1 text-xs text-slate-500 dark:text-slate-400">
                 <div className="flex items-center gap-3">
                   <span>
                     <strong>{noteStats.words}</strong> palavras
@@ -1373,6 +1401,10 @@ export function StudyNotesWorkspace({
                   <span>·</span>
                   <span>
                     ~<strong>{noteStats.readingTimeMinutes}</strong> min de leitura
+                  </span>
+                  <span>·</span>
+                  <span>
+                    Fonte: <strong>{activeFontOption.shortLabel}</strong>
                   </span>
                 </div>
 
@@ -1402,7 +1434,7 @@ export function StudyNotesWorkspace({
                 Seu Bloco de Anotações
               </h4>
               <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
-                Crie páginas de anotação por disciplina, destaque pontos importantes com marca-texto
+                Crie páginas de anotação por disciplina, escolha a fonte na barra de personalização
                 e organize tudo em folhas pautadas, pontilhadas ou limpas.
               </p>
               <button
@@ -1415,7 +1447,7 @@ export function StudyNotesWorkspace({
               </button>
             </div>
           )}
-        </main>
+        </div>
       </div>
 
       {/* Modal de Nova Pasta */}
