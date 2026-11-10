@@ -400,12 +400,14 @@ export function StudyDocumentsHub({
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.txt,.md"
+              accept=".pdf,.pptx,.ppt,.docx,.doc,.odp,.odt,.txt,.md,.csv,.rtf"
               className="hidden"
               onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  void handleFileUpload(e.target.files[0])
+                const file = e.target.files?.[0]
+                if (file) {
+                  void handleFileUpload(file)
                 }
+                e.target.value = ''
               }}
             />
             <Upload className="mx-auto mb-1 size-5 text-[#006768] dark:text-cyan-400" />
@@ -413,8 +415,20 @@ export function StudyDocumentsHub({
               {isUploading ? 'Processando páginas...' : 'Enviar PDF, Slide ou Documento'}
             </p>
             <p className="text-[10px] text-slate-500 dark:text-slate-400">
-              Extrai o texto e cita automaticamente a página de origem
+              Suporta .pdf, .pptx, .docx, .txt e .md com citação de página
             </p>
+            <button
+              type="button"
+              disabled={isUploading}
+              onClick={(e) => {
+                e.stopPropagation()
+                fileInputRef.current?.click()
+              }}
+              className="mt-2 inline-flex min-h-7 items-center gap-1 rounded-xl bg-[#0d3950] px-3 py-1 text-[11px] font-bold text-white shadow-2xs transition hover:bg-[#005063] disabled:opacity-50 dark:bg-[#005063] dark:hover:bg-[#006768]"
+            >
+              <Upload className="size-3" />
+              <span>{isUploading ? 'Enviando...' : 'Selecionar arquivo'}</span>
+            </button>
           </div>
         </div>
 
@@ -1104,15 +1118,29 @@ export function StudyDocumentsHub({
           </>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center space-y-3 p-8 text-center">
+            {message && (
+              <div className="mb-2 w-full max-w-md">
+                <Alert tone={message.type === 'error' ? 'error' : 'success'}>{message.text}</Alert>
+              </div>
+            )}
             <BookOpen className="size-12 text-slate-300 dark:text-slate-700" />
             <h3 className="text-base font-black text-[#0d3950] dark:text-slate-200">
               Selecione um Documento ou Faça Upload
             </h3>
             <p className="max-w-sm text-xs text-slate-500 dark:text-slate-400">
-              Envie apresentações, apostilas ou livros para gerar resumos com citação de página,
-              explicação de tópicos complexos, mapas mentais, simulados de 10 questões e flashcards
-              Anki.
+              Envie apresentações (.pptx), apostilas (.pdf) ou documentos (.docx, .txt, .md) para
+              gerar resumos com citação de página, explicação de tópicos complexos, mapas mentais,
+              simulados de 10 questões e flashcards Anki.
             </p>
+            <button
+              type="button"
+              disabled={isUploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#0d3950] px-5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#005063] disabled:opacity-50 dark:bg-[#005063] dark:hover:bg-[#006768]"
+            >
+              <Upload className="size-4" />
+              <span>{isUploading ? 'Processando documento...' : 'Enviar PDF, Slide ou Documento'}</span>
+            </button>
           </div>
         )}
       </div>

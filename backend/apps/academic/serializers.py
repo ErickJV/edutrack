@@ -1207,11 +1207,11 @@ class StudyDocumentPageSerializer(serializers.ModelSerializer):
             "page_number",
             "content",
             "token_count",
-            "created_at",
         )
 
 
 class StudyDocumentSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=255, required=False, allow_blank=True)
     pages = StudyDocumentPageSerializer(many=True, read_only=True)
     pages_count = serializers.IntegerField(source="page_count", read_only=True)
     student_subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)

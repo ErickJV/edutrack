@@ -625,23 +625,15 @@ export async function uploadStudyDocument(
 ): Promise<StudyDocument> {
   const formData = new FormData()
   formData.append('file', file)
-  if (metadata?.title) formData.append('title', metadata.title)
+  formData.append('title', metadata?.title?.trim() || file.name)
   if (metadata?.student_subject) formData.append('student_subject', metadata.student_subject)
   if (metadata?.folder) formData.append('folder', metadata.folder)
   if (metadata?.topic) formData.append('topic', metadata.topic)
 
-  const response = await fetch(`${API_ORIGIN}/api/v1/study-documents`, {
+  return request<StudyDocument>('/api/v1/study-documents', {
     method: 'POST',
     body: formData,
-    credentials: 'include',
   })
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new ApiError(errorData.detail || 'Erro ao enviar documento.', response.status)
-  }
-
-  return response.json()
 }
 
 export async function deleteStudyDocument(id: string): Promise<void> {

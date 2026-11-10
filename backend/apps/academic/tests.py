@@ -1,3 +1,4 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
 
@@ -221,5 +222,26 @@ class FlashcardsAndNotesQualityTests(TestCase):
         self.assertEqual(submit_data["percentage"], 20.0)
         self.assertEqual(len(submit_data["feedback"]), 10)
         self.assertTrue(submit_data["feedback"][0]["is_correct"])
+
+        # 4. Valida upload multipart real via API (/api/v1/study-documents) e listagem direta
+        uploaded = SimpleUploadedFile(
+            "slides_normalizacao.md",
+            b"# Normalizacao de Dados\nDependencias funcionais e formas normais em bancos relacionais.",
+            content_type="text/markdown",
+        )
+        upload_resp = self.client.post(
+            "/api/v1/study-documents",
+            {"file": uploaded},
+            format="multipart",
+        )
+        self.assertEqual(upload_resp.status_code, 201)
+        uploaded_json = upload_resp.json()
+        self.assertEqual(uploaded_json["title"], "slides_normalizacao.md")
+        self.assertGreaterEqual(uploaded_json["page_count"], 1)
+
+        list_resp = self.client.get("/api/v1/study-documents")
+        self.assertEqual(list_resp.status_code, 200)
+        self.assertIsInstance(list_resp.json(), list)
+        self.assertGreaterEqual(len(list_resp.json()), 2)
 
 

@@ -1,11 +1,15 @@
 import os
 import re
+import xml.etree.ElementTree as ET
+import zipfile
 from typing import Any, cast
 from uuid import UUID
 
+from django.db import models
 from django.utils import timezone
 from rest_framework import generics, status as drf_status
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.accounts.models import User
@@ -1674,6 +1678,8 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
 class StudyDocumentListCreateView(generics.ListCreateAPIView):
     serializer_class = StudyDocumentSerializer
     permission_classes = (IsAuthenticatedOr401,)
+    pagination_class = None
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def get_queryset(self):
         user = cast(User, self.request.user)
@@ -1692,14 +1698,101 @@ class StudyDocumentListCreateView(generics.ListCreateAPIView):
         search = self.request.query_params.get("search")
         if search:
             qs = qs.filter(
-                models_q := (
-                    models.Q(title__icontains=search)
-                    | models.Q(topic__icontains=search)
-                    | models.Q(pages__content__icontains=search)
-                )
+                models.Q(title__icontains=search)
+                | models.Q(topic__icontains=search)
+                | models.Q(pages__content__icontains=search)
             ).distinct()
 
         return qs
+
+    @staticmethod
+    def _extract_pages_from_uploaded_file(uploaded_file, ext: str, fallback_title: str) -> list[tuple[int, str]]:
+        pages_data: list[tuple[int, str]] = []
+        if not uploaded_file:
+            return pages_data
+
+        try:
+            uploaded_file.seek(0)
+        except Exception:
+            pass
+
+        if ext == "pdf":
+            try:
+                import pypdf
+                reader = pypdf.PdfReader(uploaded_file)
+                for i, page in enumerate(reader.pages):
+                    extracted_text = (page.extract_text() or "").strip()
+                    if extracted_text:
+                        pages_data.append((i + 1, extracted_text))
+            except Exception:
+                pass
+        elif ext in ("pptx", "odp"):
+            try:
+                uploaded_file.seek(0)
+                with zipfile.ZipFile(uploaded_file) as zf:
+                    slide_files = sorted(
+                        [n for n in zf.namelist() if n.startswith("ppt/slides/slide") and n.endswith(".xml")],
+                        key=lambda name: int(re.sub(r"\D", "", name) or "0"),
+                    )
+                    for idx, slide_name in enumerate(slide_files, start=1):
+                        xml_bytes = zf.read(slide_name)
+                        root = ET.fromstring(xml_bytes)
+                        texts = [node.text.strip() for node in root.iter() if node.text and node.text.strip()]
+                        if texts:
+                            pages_data.append((idx, "\n".join(texts)))
+            except Exception:
+                pass
+        elif ext in ("docx", "odt"):
+            try:
+                uploaded_file.seek(0)
+                with zipfile.ZipFile(uploaded_file) as zf:
+                    xml_target = "word/document.xml" if "word/document.xml" in zf.namelist() else "content.xml"
+                    if xml_target in zf.namelist():
+                        xml_bytes = zf.read(xml_target)
+                        root = ET.fromstring(xml_bytes)
+                        paragraphs: list[str] = []
+                        for elem in root.iter():
+                            if elem.tag.endswith("}p") or elem.tag == "p":
+                                p_text = "".join(t.text for t in elem.iter() if t.text).strip()
+                                if p_text:
+                                    paragraphs.append(p_text)
+                        full_doc_text = "\n\n".join(paragraphs)
+                        if full_doc_text:
+                            words = full_doc_text.split()
+                            chunk_size = 350
+                            for i in range(0, max(len(words), 1), chunk_size):
+                                chunk = " ".join(words[i : i + chunk_size]).strip()
+                                if chunk:
+                                    pages_data.append(((i // chunk_size) + 1, chunk))
+            except Exception:
+                pass
+        elif ext in ("txt", "md", "csv", "doc", "ppt", "rtf"):
+            try:
+                uploaded_file.seek(0)
+                content = uploaded_file.read().decode("utf-8", errors="ignore").strip()
+                if content:
+                    words = content.split()
+                    chunk_size = 400
+                    for i in range(0, max(len(words), 1), chunk_size):
+                        chunk = " ".join(words[i : i + chunk_size]).strip()
+                        if chunk:
+                            pages_data.append(((i // chunk_size) + 1, chunk))
+            except Exception:
+                pass
+
+        try:
+            uploaded_file.seek(0)
+        except Exception:
+            pass
+
+        if not pages_data:
+            pages_data.append(
+                (
+                    1,
+                    f"Documento '{fallback_title}' carregado com sucesso para estudo e análise cognitiva.",
+                )
+            )
+        return pages_data
 
     def perform_create(self, serializer):
         user = cast(User, self.request.user)
@@ -1708,42 +1801,22 @@ class StudyDocumentListCreateView(generics.ListCreateAPIView):
         file_name = uploaded_file.name if uploaded_file else ""
         ext = file_name.split(".")[-1].lower() if "." in file_name else "pdf"
 
-        # Auto extract pages
-        pages_data = []
-        if uploaded_file:
-            if ext == "pdf":
-                try:
-                    import pypdf
-                    reader = pypdf.PdfReader(uploaded_file)
-                    for i, page in enumerate(reader.pages):
-                        extracted_text = (page.extract_text() or "").strip()
-                        if extracted_text:
-                            pages_data.append((i + 1, extracted_text))
-                except Exception:
-                    pass
-            elif ext in ["txt", "md"]:
-                try:
-                    uploaded_file.seek(0)
-                    content = uploaded_file.read().decode("utf-8", errors="ignore")
-                    pages_data.append((1, content))
-                except Exception:
-                    pass
+        raw_title = (serializer.validated_data.get("title") or "").strip()
+        title = raw_title or file_name or "Documento de Estudo"
 
-        page_count = max(len(pages_data), 1) if pages_data else 1
-
-        title = serializer.validated_data.get("title")
-        if not title:
-            title = file_name or "Documento de Estudo"
+        pages_data = self._extract_pages_from_uploaded_file(uploaded_file, ext, title)
+        page_count = max(len(pages_data), 1)
+        extracted_full_text = "\n\n".join(text for _, text in pages_data)
 
         doc = serializer.save(
             user=user,
             title=title,
             file_size=file_size,
-            file_type=ext,
+            file_type=ext[:20],
             page_count=page_count,
+            extracted_text=extracted_full_text,
         )
 
-        # Save pages
         for page_num, text in pages_data:
             token_est = len(text.split())
             StudyDocumentPage.objects.create(
@@ -1757,6 +1830,7 @@ class StudyDocumentListCreateView(generics.ListCreateAPIView):
 class StudyDocumentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StudyDocumentSerializer
     permission_classes = (IsAuthenticatedOr401,)
+    pagination_class = None
 
     def get_queryset(self):
         user = cast(User, self.request.user)

@@ -8,6 +8,7 @@ import {
   Check,
   CheckSquare,
   ChevronDown,
+  Eraser,
   FileText,
   FolderPlus,
   Heading1,
@@ -368,8 +369,6 @@ export function StudyNotesWorkspace({
   const [editorReadingId, setEditorReadingId] = useState<string>('')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
-  const [mobileView, setMobileView] = useState<'sidebar' | 'editor'>('sidebar')
-
   // Modal de pasta
   const [folderModalOpen, setFolderModalOpen] = useState(false)
   const [folderName, setFolderName] = useState('')
@@ -443,7 +442,6 @@ export function StudyNotesWorkspace({
       setEditorReadingId(note.reading || '')
       setSaveStatus('idle')
       setAiBanner('')
-      setMobileView('editor')
       window.setTimeout(() => syncEditorDom(visualHtml), 0)
     },
     [syncEditorDom],
@@ -554,7 +552,6 @@ export function StudyNotesWorkspace({
         void handleCreateNote(convertedTemplate, 'Anotação Guiada')
       }
       onClearExternalTemplate?.()
-      setMobileView('editor')
     }, 0)
     return () => window.clearTimeout(timer)
   }, [
@@ -579,7 +576,6 @@ export function StudyNotesWorkspace({
         setActiveNoteId(null)
         setEditorTitle('')
         setEditorContent('')
-        setMobileView('sidebar')
       }
       const updatedFolders = await listStudyFolders()
       setFolders(updatedFolders)
@@ -678,6 +674,36 @@ export function StudyNotesWorkspace({
     if (!el) return
     el.focus()
     document.execCommand(command, false, value)
+    const html = el.innerHTML
+    setEditorContent(html)
+    triggerAutoSave({ content: html })
+  }
+
+  const handleClearFormatting = () => {
+    const el = editorRef.current
+    if (!el) return
+    el.focus()
+    const selection = window.getSelection()
+    if (selection && !selection.isCollapsed && el.contains(selection.anchorNode)) {
+      document.execCommand('removeFormat', false)
+      document.execCommand('hiliteColor', false, 'transparent')
+      document.execCommand('formatBlock', false, 'P')
+      const plainSelected = selection.toString()
+      if (plainSelected.trim()) {
+        const cleanHtml = plainSelected
+          .split(/\r?\n/)
+          .map((line) => (line.trim() ? `<p>${escapeHtml(line)}</p>` : '<p><br/></p>'))
+          .join('')
+        document.execCommand('insertHTML', false, cleanHtml)
+      }
+    } else {
+      const plainAll = el.innerText || stripHtmlForPreview(el.innerHTML)
+      const cleanHtml = plainAll
+        .split(/\r?\n/)
+        .map((line) => (line.trim() ? `<p>${escapeHtml(line)}</p>` : '<p><br/></p>'))
+        .join('')
+      el.innerHTML = cleanHtml
+    }
     const html = el.innerHTML
     setEditorContent(html)
     triggerAutoSave({ content: html })
@@ -917,18 +943,6 @@ export function StudyNotesWorkspace({
             <Plus className="size-3.5" aria-hidden="true" />
             <span>Nova Página</span>
           </button>
-
-          {activeTab !== 'documents' && (
-            <div className="flex items-center gap-2 sm:hidden">
-              <button
-                type="button"
-                onClick={() => setMobileView(mobileView === 'sidebar' ? 'editor' : 'sidebar')}
-                className="inline-flex min-h-8 items-center rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
-              >
-                {mobileView === 'sidebar' ? 'Abrir Folha →' : '← Notas'}
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -964,15 +978,11 @@ export function StudyNotesWorkspace({
           />
         </div>
       ) : (
-        /* Corpo Principal Ocupando o Máximo da Tela (Folha de Anotações) */
-        <div className="flex flex-1 overflow-hidden">
+        /* Corpo Principal Ocupando o Máximo da Tela (Folha de Anotações sempre visível de cara em qualquer tamanho de tela) */
+        <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
           {/* Coluna Lateral Compacta: Pastas e Lista de Anotações */}
           {sidebarOpen ? (
-            <aside
-              className={`w-full shrink-0 flex-col border-r border-slate-200 bg-slate-50/60 p-3 transition-all duration-300 lg:w-60 xl:w-64 dark:border-[#005063]/30 dark:bg-[#040f17]/40 ${
-                mobileView === 'editor' ? 'hidden sm:flex' : 'flex'
-              }`}
-            >
+            <aside className="flex max-h-56 w-full shrink-0 flex-col border-b border-slate-200 bg-slate-50/60 p-3 transition-all duration-300 md:max-h-none md:w-52 md:border-r md:border-b-0 lg:w-60 xl:w-64 dark:border-[#005063]/30 dark:bg-[#040f17]/40">
               <div className="flex items-center justify-between">
                 <h4 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                   Cadernos ({folders.length})
@@ -1097,12 +1107,8 @@ export function StudyNotesWorkspace({
             </aside>
           ) : null}
 
-          {/* Área Principal da Folha de Anotações (Máximo Espaço da Tela) */}
-          <div
-            className={`flex min-w-0 flex-1 flex-col p-3 sm:p-4 ${
-              mobileView === 'sidebar' && sidebarOpen ? 'hidden sm:flex' : 'flex'
-            }`}
-          >
+          {/* Área Principal da Folha de Anotações (Sempre Visível em Qualquer Tamanho de Tela) */}
+          <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
             {activeNoteId ? (
               <div className="flex h-full flex-1 flex-col">
                 {/* PAINEL DE EDIÇÃO E VÍNCULOS EM 2 FAIXAS ORGANIZADAS E RESPONSIVAS */}
@@ -1420,6 +1426,18 @@ export function StudyNotesWorkspace({
                           </div>
                         )}
                       </div>
+
+                      <div className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-700" />
+
+                      <button
+                        type="button"
+                        onClick={handleClearFormatting}
+                        className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-rose-600 dark:text-slate-200 dark:hover:bg-[#040f17] dark:hover:text-rose-400"
+                        title="Limpar formatação do texto selecionado (ou da folha atual)"
+                      >
+                        <Eraser className="size-3.5 text-rose-500" />
+                        <span>Limpar formatação</span>
+                      </button>
                     </div>
 
                     {/* GRUPO 4: LISTAS, CHECKLIST E ELEMENTOS DE ESTUDO */}
