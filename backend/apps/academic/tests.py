@@ -223,11 +223,35 @@ class FlashcardsAndNotesQualityTests(TestCase):
         self.assertEqual(len(submit_data["feedback"]), 10)
         self.assertTrue(submit_data["feedback"][0]["is_correct"])
 
-        # 4. Valida upload multipart real via API (/api/v1/study-documents) e listagem direta
-        uploaded = SimpleUploadedFile(
-            "slides_normalizacao.md",
-            b"# Normalizacao de Dados\nDependencias funcionais e formas normais em bancos relacionais.",
+        # 4. Valida upload multipart real via API (/api/v1/study-documents), bloqueio de .txt/.md e proteção SQLi
+        rejected_md = SimpleUploadedFile(
+            "notas.md",
+            b"# Markdown nao permitido",
             content_type="text/markdown",
+        )
+        reject_resp = self.client.post(
+            "/api/v1/study-documents",
+            {"file": rejected_md},
+            format="multipart",
+        )
+        self.assertEqual(reject_resp.status_code, 400)
+
+        sqli_file = SimpleUploadedFile(
+            "apostila.pdf",
+            b"%PDF-1.4 Normalizacao de Dados",
+            content_type="application/pdf",
+        )
+        sqli_resp = self.client.post(
+            "/api/v1/study-documents",
+            {"file": sqli_file, "title": "Teste'; DROP TABLE academic_studydocument; --"},
+            format="multipart",
+        )
+        self.assertEqual(sqli_resp.status_code, 400)
+
+        uploaded = SimpleUploadedFile(
+            "apostila_normalizacao.pdf",
+            b"%PDF-1.4 Normalizacao de Dados e Formas Normais",
+            content_type="application/pdf",
         )
         upload_resp = self.client.post(
             "/api/v1/study-documents",
@@ -236,8 +260,10 @@ class FlashcardsAndNotesQualityTests(TestCase):
         )
         self.assertEqual(upload_resp.status_code, 201)
         uploaded_json = upload_resp.json()
-        self.assertEqual(uploaded_json["title"], "slides_normalizacao.md")
+        self.assertEqual(uploaded_json["title"], "apostila_normalizacao.pdf")
         self.assertGreaterEqual(uploaded_json["page_count"], 1)
+        self.assertTrue(len(uploaded_json["pages"]) >= 1)
+        self.assertIn("summary", uploaded_json["analysis_cache"])
 
         list_resp = self.client.get("/api/v1/study-documents")
         self.assertEqual(list_resp.status_code, 200)

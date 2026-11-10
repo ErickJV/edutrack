@@ -2,9 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 
-import { listCurriculum, saveStudentSubjects } from '../api/client'
+import {
+  createCurriculumSubject,
+  listCurriculum,
+  listStudentSubjects,
+  saveStudentSubjects,
+} from '../api/client'
 import type { AcademicSubject, StudentSubject } from '../api/types'
 import { Alert } from './Feedback'
 import { PrimaryButton, Select } from './FormControls'
@@ -20,21 +25,33 @@ function academicPeriodForSemester(semester: number): string {
 
 export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelectionModalProps) {
   const [curriculum, setCurriculum] = useState<AcademicSubject[]>([])
-  const [selectedSemester, setSelectedSemester] = useState(1)
+  const [enrolledSubjectIds, setEnrolledSubjectIds] = useState<string[]>([])
+  const [selectedSemester, setSelectedSemester] = useState(2)
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  // Criação rápida de disciplina ministrada no semestre
+  const [newSubjName, setNewSubjName] = useState('')
+  const [newSubjHours, setNewSubjHours] = useState('80')
+  const [creatingSubj, setCreatingSubj] = useState(false)
+
   useEffect(() => {
     if (!open) return
     setLoading(true)
     setError('')
-    listCurriculum()
-      .then((subjects) => {
+    Promise.all([listCurriculum(), listStudentSubjects().catch(() => [] as StudentSubject[])])
+      .then(([subjects, activeEnrollments]) => {
         setCurriculum(subjects)
-        const firstSemester = subjects[0]?.semester || 1
-        setSelectedSemester(firstSemester)
+        const activeIds = activeEnrollments.map((item) => item.subject.id)
+        setEnrolledSubjectIds(activeIds)
+        const currentSem =
+          activeEnrollments[0]?.subject.semester ||
+          subjects.find((s) => s.semester === 2)?.semester ||
+          subjects[0]?.semester ||
+          1
+        setSelectedSemester(currentSem)
       })
       .catch(() => setError('Não foi possível carregar a matriz curricular.'))
       .finally(() => setLoading(false))
@@ -51,8 +68,44 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
     [curriculum, selectedSemester],
   )
   useEffect(() => {
-    setSelectedSubjectIds(semesterSubjects.map((subject) => subject.id))
-  }, [semesterSubjects])
+    const enrolledInThisSemester = semesterSubjects
+      .filter((s) => enrolledSubjectIds.includes(s.id))
+      .map((s) => s.id)
+    if (enrolledInThisSemester.length > 0) {
+      setSelectedSubjectIds(enrolledInThisSemester)
+    } else {
+      setSelectedSubjectIds(semesterSubjects.map((subject) => subject.id))
+    }
+  }, [semesterSubjects, enrolledSubjectIds])
+
+  async function handleAddCustomSubject() {
+    const trimmed = newSubjName.trim()
+    if (!trimmed) return
+    setCreatingSubj(true)
+    setError('')
+    try {
+      const hours = Number.parseInt(newSubjHours, 10) || 80
+      const created = await createCurriculumSubject({
+        name: trimmed,
+        semester: selectedSemester,
+        workload_hours: hours,
+      })
+      setCurriculum((prev) => {
+        const filtered = prev.filter((item) => item.id !== created.id)
+        return [...filtered, created]
+      })
+      setSelectedSubjectIds((prev) => (prev.includes(created.id) ? prev : [...prev, created.id]))
+      setNewSubjName('')
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : 'Não foi possível adicionar a disciplina ao semestre.',
+      )
+    } finally {
+      setCreatingSubj(false)
+    }
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -170,6 +223,40 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
                   })}
                 </div>
               )}
+
+              <div className="mt-4 border-t border-slate-200 pt-4 dark:border-[#005063]/30">
+                <p className="text-xs font-extrabold uppercase tracking-wider text-[#0d3950] dark:text-slate-200">
+                  Adicionar disciplina realmente ministrada no {selectedSemester}º semestre
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    value={newSubjName}
+                    onChange={(e) => setNewSubjName(e.target.value)}
+                    placeholder="Nome da disciplina ministrada..."
+                    className="min-h-10 flex-1 rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-[#0d3950] focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                  />
+                  <input
+                    type="number"
+                    min={10}
+                    max={400}
+                    value={newSubjHours}
+                    onChange={(e) => setNewSubjHours(e.target.value)}
+                    placeholder="80h"
+                    aria-label="Carga horária"
+                    className="min-h-10 w-24 rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-[#0d3950] focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                  />
+                  <button
+                    type="button"
+                    disabled={creatingSubj || !newSubjName.trim()}
+                    onClick={() => void handleAddCustomSubject()}
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#005063] px-3.5 text-xs font-extrabold text-white transition hover:bg-[#006768] disabled:opacity-50"
+                  >
+                    <Plus size={15} />
+                    <span>{creatingSubj ? 'Adicionando...' : 'Incluir'}</span>
+                  </button>
+                </div>
+              </div>
             </section>
           </div>
 

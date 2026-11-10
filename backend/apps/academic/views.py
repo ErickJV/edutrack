@@ -59,31 +59,51 @@ from .serializers import (
 )
 
 
-class CurriculumListView(generics.ListAPIView):
+class CurriculumListView(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticatedOr401,)
     serializer_class = SubjectSerializer
     pagination_class = None
 
-    def get_queryset(self):
+    def _get_user_course(self):
         user = cast(User, self.request.user)
-        if not user.course_offering_id:
+        if not user.course_offering_id or user.course_offering is None:
             raise PermissionDenied(
                 "Complete seu perfil acadêmico antes de consultar a matriz curricular."
             )
-        course_offering = user.course_offering
-        if course_offering is None:
-            raise PermissionDenied(
-                "Complete seu perfil acadêmico antes de consultar a matriz curricular."
-            )
+        return user.course_offering.course
+
+    def get_queryset(self):
+        course = self._get_user_course()
         Subject.objects.filter(
-            course=course_offering.course,
+            course=course,
             name__iexact="Application Data Persistence",
         ).exclude(semester=1).update(semester=1)
         return (
             Subject.objects.select_related("course")
-            .filter(course=course_offering.course, active=True)
+            .filter(course=course, active=True)
             .order_by("semester", "name")
         )
+
+    def perform_create(self, serializer):
+        course = self._get_user_course()
+        name = serializer.validated_data.get("name", "").strip()
+        semester = serializer.validated_data.get("semester", 1)
+        workload_hours = serializer.validated_data.get("workload_hours", 80)
+        code = serializer.validated_data.get("code", "").strip()
+        description = serializer.validated_data.get("description", "").strip()
+        existing = Subject.objects.filter(course=course, name__iexact=name).first()
+        if existing:
+            existing.semester = semester
+            existing.workload_hours = workload_hours
+            if code:
+                existing.code = code
+            if description:
+                existing.description = description
+            existing.active = True
+            existing.save()
+            serializer.instance = existing
+        else:
+            serializer.save(course=course, active=True)
 
 
 class ProfessorListCreateView(generics.ListCreateAPIView):
@@ -128,25 +148,6 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
             course=current_course,
             name__iexact="Application Data Persistence",
         ).exclude(semester=1).update(semester=1)
-        course_enrollments = StudentSubject.objects.filter(
-            user=user,
-            subject__course=current_course,
-            subject__active=True,
-            status=StudentSubject.Status.ACTIVE,
-        )
-        if not course_enrollments.exists():
-            first_sem_subjects = Subject.objects.filter(
-                course=current_course, semester=1, active=True
-            )
-            for subj in first_sem_subjects:
-                enrollment, _ = StudentSubject.objects.get_or_create(
-                    user=user,
-                    subject=subj,
-                    defaults={"status": StudentSubject.Status.ACTIVE},
-                )
-                if enrollment.status != StudentSubject.Status.ACTIVE:
-                    enrollment.status = StudentSubject.Status.ACTIVE
-                    enrollment.save(update_fields=("status", "updated_at"))
 
         queryset = (
             StudentSubject.objects.select_related("subject", "subject__course")
@@ -1689,13 +1690,19 @@ class StudyDocumentListCreateView(generics.ListCreateAPIView):
 
         subject_id = self.request.query_params.get("subject")
         if subject_id:
-            qs = qs.filter(student_subject_id=subject_id)
+            try:
+                qs = qs.filter(student_subject_id=UUID(str(subject_id)))
+            except (ValueError, TypeError):
+                return qs.none()
 
         folder_id = self.request.query_params.get("folder")
         if folder_id:
-            qs = qs.filter(folder_id=folder_id)
+            try:
+                qs = qs.filter(folder_id=UUID(str(folder_id)))
+            except (ValueError, TypeError):
+                return qs.none()
 
-        search = self.request.query_params.get("search")
+        search = (self.request.query_params.get("search") or "").replace("\x00", "").strip()[:120]
         if search:
             qs = qs.filter(
                 models.Q(title__icontains=search)
@@ -1766,13 +1773,16 @@ class StudyDocumentListCreateView(generics.ListCreateAPIView):
                                     pages_data.append(((i // chunk_size) + 1, chunk))
             except Exception:
                 pass
-        elif ext in ("txt", "md", "csv", "doc", "ppt", "rtf"):
+        elif ext in ("doc", "ppt"):
             try:
                 uploaded_file.seek(0)
-                content = uploaded_file.read().decode("utf-8", errors="ignore").strip()
+                raw_text = uploaded_file.read().decode("latin-1", errors="ignore")
+                printable = re.findall(r"[A-Za-zÀ-ÿ0-9 ,.;:?!()\-/]{6,}", raw_text)
+                decoded_chunks = [s.strip() for s in printable]
+                content = "\n".join(c for c in decoded_chunks if len(c) > 10).strip()
                 if content:
                     words = content.split()
-                    chunk_size = 400
+                    chunk_size = 350
                     for i in range(0, max(len(words), 1), chunk_size):
                         chunk = " ".join(words[i : i + chunk_size]).strip()
                         if chunk:
@@ -1789,7 +1799,7 @@ class StudyDocumentListCreateView(generics.ListCreateAPIView):
             pages_data.append(
                 (
                     1,
-                    f"Documento '{fallback_title}' carregado com sucesso para estudo e análise cognitiva.",
+                    f"Arquivo '{fallback_title}' carregado com sucesso. Este documento contém elementos gráficos ou páginas digitalizadas prontas para visualização e estudo.",
                 )
             )
         return pages_data
@@ -1798,11 +1808,14 @@ class StudyDocumentListCreateView(generics.ListCreateAPIView):
         user = cast(User, self.request.user)
         uploaded_file = self.request.FILES.get("file")
         file_size = uploaded_file.size if uploaded_file else 0
-        file_name = uploaded_file.name if uploaded_file else ""
-        ext = file_name.split(".")[-1].lower() if "." in file_name else "pdf"
+        raw_file_name = os.path.basename(uploaded_file.name) if uploaded_file and uploaded_file.name else "documento.pdf"
+        safe_file_name = re.sub(r"[^a-zA-Z0-9._\-À-ÿ ]", "_", raw_file_name).strip() or "documento.pdf"
+        if uploaded_file:
+            uploaded_file.name = safe_file_name
+        ext = safe_file_name.rsplit(".", 1)[-1].lower() if "." in safe_file_name else "pdf"
 
         raw_title = (serializer.validated_data.get("title") or "").strip()
-        title = raw_title or file_name or "Documento de Estudo"
+        title = raw_title or safe_file_name or "Documento de Estudo"
 
         pages_data = self._extract_pages_from_uploaded_file(uploaded_file, ext, title)
         page_count = max(len(pages_data), 1)
@@ -1817,14 +1830,52 @@ class StudyDocumentListCreateView(generics.ListCreateAPIView):
             extracted_text=extracted_full_text,
         )
 
+        created_pages: list[StudyDocumentPage] = []
         for page_num, text in pages_data:
             token_est = len(text.split())
-            StudyDocumentPage.objects.create(
+            p_obj = StudyDocumentPage.objects.create(
                 document=doc,
                 page_number=page_num,
                 content=text,
                 token_count=token_est,
             )
+            created_pages.append(p_obj)
+
+        # Gera automaticamente a análise cognitiva inicial para que todas as abas abram de imediato pós-upload
+        try:
+            analyzer = StudyDocumentAIAnalyzeView()
+            initial_analysis = analyzer._generate_cognitive_analysis(doc, created_pages, extracted_full_text)
+            doc.analysis_cache = initial_analysis
+            doc.save(update_fields=["analysis_cache"])
+        except Exception:
+            pass
+
+
+class StudyDocumentFileServeView(generics.GenericAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+
+    def get(self, request, pk, *args, **kwargs):
+        import mimetypes
+        from django.http import FileResponse, Http404
+
+        user = cast(User, request.user)
+        doc = StudyDocument.objects.filter(id=pk, user=user).first()
+        if not doc or not doc.file:
+            raise Http404("Arquivo não encontrado.")
+        try:
+            file_handle = doc.file.open("rb")
+        except Exception as exc:
+            raise Http404("Arquivo indisponível.") from exc
+
+        content_type, _ = mimetypes.guess_type(doc.file.name)
+        response = FileResponse(
+            file_handle,
+            content_type=content_type or "application/octet-stream",
+        )
+        safe_filename = re.sub(r'["\\]', "", os.path.basename(doc.file.name))
+        response["Content-Disposition"] = f'inline; filename="{safe_filename}"'
+        response["X-Frame-Options"] = "SAMEORIGIN"
+        return response
 
 
 class StudyDocumentDetailView(generics.RetrieveUpdateDestroyAPIView):

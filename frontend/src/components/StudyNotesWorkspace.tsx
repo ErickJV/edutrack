@@ -874,7 +874,7 @@ export function StudyNotesWorkspace({
                 }`}
               >
                 <Sparkles className="size-3.5 text-amber-500" aria-hidden="true" />
-                Central de Documentos & IA
+                Upload de arquivos
               </button>
             </div>
           )}
@@ -1149,7 +1149,7 @@ export function StudyNotesWorkspace({
                         <option value="">🎓 Disciplina (Geral)</option>
                         {subjects.map((s) => (
                           <option key={s.id} value={s.id}>
-                            🎓 {s.subject.name}
+                            🎓 {s.subject.name} · {s.subject.semester}º sem
                           </option>
                         ))}
                       </select>

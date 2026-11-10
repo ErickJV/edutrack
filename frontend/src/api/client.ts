@@ -204,6 +204,23 @@ export async function listCurriculum(): Promise<AcademicSubject[]> {
   return request<AcademicSubject[]>('/api/v1/curriculum')
 }
 
+export async function createCurriculumSubject(payload: {
+  name: string
+  semester: number
+  workload_hours?: number
+  code?: string
+  description?: string
+}): Promise<AcademicSubject> {
+  return request<AcademicSubject>(
+    '/api/v1/curriculum',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    [200, 201],
+  )
+}
+
 export async function listStudentSubjects(): Promise<StudentSubject[]> {
   return request<StudentSubject[]>('/api/v1/student-subjects')
 }
@@ -222,6 +239,8 @@ export async function updateStudentSubject(
     custom_workload_hours?: number | null
     professor_id?: string | null
     term_id?: string | null
+    subject_name?: string
+    subject_semester?: number
   },
 ): Promise<StudentSubject> {
   return request<StudentSubject>(`/api/v1/student-subjects/${id}`, {

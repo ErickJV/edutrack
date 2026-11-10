@@ -1,3 +1,6 @@
+import os
+import re
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -24,6 +27,11 @@ from .models import (
 
 class SubjectSerializer(serializers.ModelSerializer):
     course_name = serializers.CharField(source="course.name", read_only=True)
+    name = serializers.CharField(min_length=2, max_length=160, trim_whitespace=True)
+    semester = serializers.IntegerField(min_value=1, max_value=12, default=1)
+    workload_hours = serializers.IntegerField(min_value=10, max_value=2000, default=80, required=False)
+    code = serializers.CharField(max_length=30, required=False, allow_blank=True, default="")
+    description = serializers.CharField(required=False, allow_blank=True, default="")
 
     class Meta:
         model = Subject
@@ -38,7 +46,7 @@ class SubjectSerializer(serializers.ModelSerializer):
             "description",
             "active",
         )
-        read_only_fields = fields
+        read_only_fields = ("id", "course", "course_name", "active")
 
 
 class AcademicTermSerializer(serializers.ModelSerializer):
@@ -460,10 +468,22 @@ class StudentSubjectUpdateSerializer(serializers.ModelSerializer):
     )
     professor_id = serializers.UUIDField(required=False, allow_null=True)
     term_id = serializers.UUIDField(required=False, allow_null=True)
+    subject_name = serializers.CharField(
+        required=False, allow_blank=False, min_length=2, max_length=160, trim_whitespace=True
+    )
+    subject_semester = serializers.IntegerField(required=False, min_value=1, max_value=12)
 
     class Meta:
         model = StudentSubject
-        fields = ("id", "professor_name", "custom_workload_hours", "professor_id", "term_id")
+        fields = (
+            "id",
+            "professor_name",
+            "custom_workload_hours",
+            "professor_id",
+            "term_id",
+            "subject_name",
+            "subject_semester",
+        )
 
     def validate_professor_id(self, value):
         if value is None:
@@ -484,6 +504,20 @@ class StudentSubjectUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Semestre letivo não encontrado.") from exc
 
     def update(self, instance, validated_data):
+        subj_name = validated_data.pop("subject_name", None)
+        subj_semester = validated_data.pop("subject_semester", None)
+        if subj_name or subj_semester:
+            subj = instance.subject
+            subj_fields = []
+            if subj_name and subj.name != subj_name:
+                subj.name = subj_name
+                subj_fields.append("name")
+            if subj_semester and subj.semester != subj_semester:
+                subj.semester = subj_semester
+                subj_fields.append("semester")
+            if subj_fields:
+                subj.save(update_fields=subj_fields)
+
         if "professor_id" in validated_data:
             prof = validated_data.pop("professor_id")
             instance.professor = prof
@@ -877,10 +911,9 @@ class StudyNoteSerializer(serializers.ModelSerializer):
         queryset=StudyFolder.objects.all(), required=False, allow_null=True
     )
     folder_name = serializers.CharField(source="folder.name", read_only=True)
-    student_subject = serializers.PrimaryKeyRelatedField(
-        queryset=StudentSubject.objects.all(), required=False, allow_null=True
-    )
+    student_subject = serializers.UUIDField(required=False, allow_null=True)
     subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
+    subject_semester = serializers.IntegerField(source="student_subject.subject.semester", read_only=True)
     task = serializers.PrimaryKeyRelatedField(
         queryset=AcademicTask.objects.all(), required=False, allow_null=True
     )
@@ -894,6 +927,11 @@ class StudyNoteSerializer(serializers.ModelSerializer):
     )
     content = serializers.CharField(required=False, default="", allow_blank=True)
     methodology = serializers.CharField(required=False, default="", allow_blank=True, max_length=50)
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["student_subject"] = str(instance.student_subject_id) if instance.student_subject_id else None
+        return rep
 
     def validate_title(self, value: str) -> str:
         cleaned = (value or "").strip()
@@ -909,6 +947,7 @@ class StudyNoteSerializer(serializers.ModelSerializer):
             "folder_name",
             "student_subject",
             "subject_name",
+            "subject_semester",
             "task",
             "task_title",
             "reading",
@@ -923,6 +962,7 @@ class StudyNoteSerializer(serializers.ModelSerializer):
             "id",
             "folder_name",
             "subject_name",
+            "subject_semester",
             "task_title",
             "reading_title",
             "created_at",
@@ -937,11 +977,35 @@ class StudyNoteSerializer(serializers.ModelSerializer):
         return value
 
     def validate_student_subject(self, value):
-        if value is not None:
-            user = self.context["request"].user
+        if value is None:
+            return None
+        user = self.context["request"].user
+        if isinstance(value, StudentSubject):
             if value.user_id != user.id:
                 raise serializers.ValidationError("A disciplina informada não pertence ao usuário.")
-        return value
+            return value
+        enrollment = (
+            StudentSubject.objects.select_related("subject")
+            .filter(id=value, user=user)
+            .first()
+        )
+        if enrollment is not None:
+            if enrollment.status != StudentSubject.Status.ACTIVE:
+                enrollment.status = StudentSubject.Status.ACTIVE
+                enrollment.save(update_fields=("status", "updated_at"))
+            return enrollment
+        subj = Subject.objects.filter(id=value, active=True).first()
+        if subj is not None:
+            enrollment, _ = StudentSubject.objects.get_or_create(
+                user=user,
+                subject=subj,
+                defaults={"status": StudentSubject.Status.ACTIVE},
+            )
+            if enrollment.status != StudentSubject.Status.ACTIVE:
+                enrollment.status = StudentSubject.Status.ACTIVE
+                enrollment.save(update_fields=("status", "updated_at"))
+            return enrollment
+        raise serializers.ValidationError("A disciplina informada não pertence ao usuário.")
 
     def validate_task(self, value):
         if value is not None:
@@ -1210,13 +1274,34 @@ class StudyDocumentPageSerializer(serializers.ModelSerializer):
         )
 
 
+ALLOWED_STUDY_DOC_EXTENSIONS = {"pdf", "pptx", "ppt", "docx", "doc", "odp", "odt"}
+MAX_STUDY_DOC_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB
+SQLI_SUSPICIOUS_PATTERN = re.compile(
+    r"(\bUNION\s+SELECT\b|\bDROP\s+TABLE\b|\bINSERT\s+INTO\b|\bDELETE\s+FROM\b|\bUPDATE\s+\w+\s+SET\b|--|/\*|\*/|\bxp_cmdshell\b|\bEXEC\s*\(|\'\s*OR\s*\'1\'\s*=\s*\'1)",
+    re.IGNORECASE,
+)
+
+
+def _sanitize_safe_text(value: str, field_label: str = "campo") -> str:
+    cleaned = (value or "").replace("\x00", "").strip()
+    if SQLI_SUSPICIOUS_PATTERN.search(cleaned):
+        raise serializers.ValidationError(f"Conteúdo inválido ou não permitido no {field_label}.")
+    return cleaned
+
+
 class StudyDocumentSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    student_subject = serializers.UUIDField(required=False, allow_null=True)
     pages = StudyDocumentPageSerializer(many=True, read_only=True)
     pages_count = serializers.IntegerField(source="page_count", read_only=True)
     student_subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
     folder_name = serializers.CharField(source="folder.name", read_only=True)
     file_url = serializers.SerializerMethodField()
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["student_subject"] = str(instance.student_subject_id) if instance.student_subject_id else None
+        return rep
 
     class Meta:
         model = StudyDocument
@@ -1234,20 +1319,50 @@ class StudyDocumentSerializer(serializers.ModelSerializer):
             "folder",
             "folder_name",
             "topic",
+            "extracted_text",
             "analysis_cache",
             "pages",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("file_size", "page_count", "file_type", "analysis_cache", "created_at", "updated_at")
+        read_only_fields = (
+            "file_size",
+            "page_count",
+            "file_type",
+            "extracted_text",
+            "analysis_cache",
+            "created_at",
+            "updated_at",
+        )
 
     def get_file_url(self, obj) -> str | None:
         if obj.file:
+            path = f"/api/v1/study-documents/{obj.id}/file"
             request = self.context.get("request")
             if request is not None:
-                return request.build_absolute_uri(obj.file.url)
-            return obj.file.url
+                return request.build_absolute_uri(path)
+            return path
         return None
+
+    def validate_file(self, uploaded_file):
+        if not uploaded_file:
+            raise serializers.ValidationError("Envie um arquivo válido.")
+        raw_name = os.path.basename(uploaded_file.name or "")
+        _sanitize_safe_text(raw_name, "nome do arquivo")
+        ext = raw_name.rsplit(".", 1)[-1].lower() if "." in raw_name else ""
+        if ext not in ALLOWED_STUDY_DOC_EXTENSIONS:
+            raise serializers.ValidationError(
+                "Formato não permitido. Envie apenas PDF, Apresentação (.pptx, .ppt, .odp) ou Documento (.docx, .doc, .odt)."
+            )
+        if uploaded_file.size > MAX_STUDY_DOC_SIZE_BYTES:
+            raise serializers.ValidationError("O arquivo excede o tamanho máximo permitido de 25 MB.")
+        return uploaded_file
+
+    def validate_title(self, value: str) -> str:
+        return _sanitize_safe_text(value, "título")
+
+    def validate_topic(self, value: str) -> str:
+        return _sanitize_safe_text(value, "tópico")
 
     def validate_student_subject(self, value):
         if value is None:
@@ -1259,6 +1374,20 @@ class StudyDocumentSerializer(serializers.ModelSerializer):
             return value
         enrollment = StudentSubject.objects.filter(id=value, user=user).first()
         if enrollment is not None:
+            if enrollment.status != StudentSubject.Status.ACTIVE:
+                enrollment.status = StudentSubject.Status.ACTIVE
+                enrollment.save(update_fields=("status", "updated_at"))
+            return enrollment
+        subj = Subject.objects.filter(id=value, active=True).first()
+        if subj is not None:
+            enrollment, _ = StudentSubject.objects.get_or_create(
+                user=user,
+                subject=subj,
+                defaults={"status": StudentSubject.Status.ACTIVE},
+            )
+            if enrollment.status != StudentSubject.Status.ACTIVE:
+                enrollment.status = StudentSubject.Status.ACTIVE
+                enrollment.save(update_fields=("status", "updated_at"))
             return enrollment
         raise serializers.ValidationError("Disciplina não encontrada.")
 

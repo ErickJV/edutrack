@@ -491,7 +491,7 @@ export type StudyDocumentPage = {
   page_number: number
   content: string
   token_count: number
-  created_at: string
+  created_at?: string
 }
 
 export type ComplexTopic = {
@@ -544,6 +544,7 @@ export type StudyDocument = {
   folder?: string | null
   folder_name?: string | null
   topic?: string
+  extracted_text?: string
   analysis_cache?: StudyDocumentAnalysis | null
   pages?: StudyDocumentPage[]
   created_at: string

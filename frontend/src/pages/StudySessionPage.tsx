@@ -102,7 +102,7 @@ export function StudySessionPage() {
     if (activeTask) {
       return subjects.find((s) => s.id === activeTask.student_subject) || null
     }
-    return subjects[0] || null
+    return null
   }, [activeTask, subjects])
 
   const readingSummary = useMemo(
@@ -336,7 +336,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                     className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-extrabold text-slate-600 transition hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white"
                   >
                     <Sparkles className="size-3.5 text-amber-500" aria-hidden="true" />
-                    Central de Documentos & IA
+                    Upload de arquivos
                   </button>
                 </div>
 
