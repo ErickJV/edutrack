@@ -71,6 +71,10 @@ class CurriculumListView(generics.ListAPIView):
             raise PermissionDenied(
                 "Complete seu perfil acadêmico antes de consultar a matriz curricular."
             )
+        Subject.objects.filter(
+            course=course_offering.course,
+            name__iexact="Application Data Persistence",
+        ).exclude(semester=1).update(semester=1)
         return (
             Subject.objects.select_related("course")
             .filter(course=course_offering.course, active=True)
@@ -116,6 +120,10 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
                 "Complete seu perfil acadêmico antes de selecionar matérias ativas."
             )
         current_course = user.course_offering.course
+        Subject.objects.filter(
+            course=current_course,
+            name__iexact="Application Data Persistence",
+        ).exclude(semester=1).update(semester=1)
         course_enrollments = StudentSubject.objects.filter(
             user=user,
             subject__course=current_course,
@@ -1285,65 +1293,60 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
         count: int,
     ) -> list[dict[str, str]]:
         """
-        Motor Semântico de Elaboração de Flashcards por Raciocínio Lógico.
-        Classifica proposições da anotação nos eixos cognitivos de Avaliação Crítica,
-        Finalidade e Abstração Seletiva, Análise Multivariável / Tomada de Decisão,
-        Trade-offs Arquiteturais e Causa-Efeito / Pensamento Contrafactual.
+        Motor Anki Atômico (Princípio do Mínimo de Informação - 20 Rules of Formulating Knowledge):
+        Elabora perguntas curtas, diretas e de leitura rápida (máx ~90 caracteres no front),
+        mantendo o estímulo ao raciocínio lógico (causa-efeito, decisão, trade-off e validação).
         """
         cards: list[dict[str, str]] = []
         seen_signatures: set[str] = set()
 
+        def short_label(txt: str, max_len: int = 38) -> str:
+            t = re.sub(r"\s+", " ", txt).strip(" .;:,-\"'“”")
+            if len(t) <= max_len:
+                return t
+            cut = t[:max_len].rsplit(" ", 1)[0]
+            return (cut if len(cut) >= 12 else t[:max_len]) + "…"
+
         def add_card(front: str, back: str, hint: str, tags: str) -> None:
-            sig = front[:80].lower()
+            sig = front[:65].lower()
             if sig not in seen_signatures and len(cards) < count:
                 seen_signatures.add(sig)
                 cards.append({
-                    "front": front.strip(),
+                    "front": front.strip()[:140],
                     "back": back.strip(),
                     "hint": hint.strip()[:255],
                     "tags": tags.strip()[:255],
                 })
 
-        context_clause = (
-            f"em {core_theme} ({subject_title})"
-            if subject_title and subject_title.lower() not in core_theme.lower() and subject_title != "Estudos Acadêmicos"
-            else f"em {core_theme}"
-        )
+        short_theme = short_label(core_theme, 32)
 
         for ln in lines:
             if len(cards) >= count:
                 break
 
-            match = re.match(r"^([^:–—\-]{2,70})\s*[:–—\-]\s*(.{10,})$", ln)
+            match = re.match(r"^([^:–—\-]{2,70})\s*[:–—\-]\s*(.{8,})$", ln)
             prefix = match.group(1).strip() if match else ""
             body = match.group(2).strip() if match else ln.strip()
             prefix_lower = prefix.lower()
             full_lower = ln.lower()
 
-            # EIXO 1: Validação Crítica / Pergunta Norteadora / Critério de Aderência
+            # EIXO 1: Validação Crítica / Critério de Aderência
             quoted_q = re.search(r"[\"“”']([^\"“”']+\?)[\"“”']|([^:]+?\?)", body)
             if quoted_q or "aderente" in full_lower or "específica" in full_lower:
-                guiding_question = (
-                    (quoted_q.group(1) or quoted_q.group(2)).strip()
-                    if quoted_q
-                    else body.strip(" \"'“”")
-                )
                 concept_focus = (
-                    prefix
+                    short_label(prefix, 28)
                     if prefix and not cls.META_PREFIX_REGEX.match(prefix) and not cls._is_generic_title(prefix)
-                    else core_theme
+                    else short_theme
                 )
                 add_card(
-                    front=(
-                        f"Em {concept_focus}, por que a pergunta \"{guiding_question}\" é o critério decisivo de aderência prática?"
-                    ),
+                    front=f"Como validar o critério decisivo de aderência em {concept_focus}?",
                     back=(
-                        f"• Critério Lógico: Valida se a solução atende às restrições reais da aplicação específica.\n"
-                        f"• Risco de Falha: Evita sobre-engenharia (complexidade desnecessária) ou sub-especificação (lacunas nas regras).\n"
-                        f"• Regra: Cada componente do modelo deve resolver uma necessidade direta do domínio."
+                        f"• Pergunta-Chave: A solução é aderente o suficiente para esta aplicação específica?\n"
+                        f"• Evita: Sobre-engenharia (complexidade acidental) ou sub-especificação.\n"
+                        f"• Regra: Cada elemento deve resolver uma restrição real do domínio."
                     ),
-                    hint="Aderência ao problema real vs. modelo genérico ou complexo demais",
-                    tags="anki, aderencia, decisao",
+                    hint="Aderência à aplicação específica vs. complexidade acidental",
+                    tags="anki, aderencia, validacao",
                 )
                 continue
 
@@ -1354,20 +1357,18 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
                 or "interesse da situação" in full_lower
             ):
                 add_card(
-                    front=(
-                        f"Em {core_theme}, qual é a razão lógica para \"{body}\"?"
-                    ),
+                    front=f"Qual é a razão lógica da abstração seletiva em {short_theme}?",
                     back=(
-                        f"• Foco da Abstração: {body}.\n"
-                        f"• Por que Seletivo? Modelar tudo gera ruído cognitivo e custo inviável; omitir o essencial invalida a aplicação.\n"
-                        f"• Aplicação: Filtrar apenas as variáveis críticas para a situação."
+                        f"• Objetivo: {body}.\n"
+                        f"• Por quê? Modelar tudo gera ruído e custo; omitir o essencial invalida a solução.\n"
+                        f"• Prática: Filtrar apenas o que impacta o problema."
                     ),
-                    hint="Princípio da abstração seletiva: essência vs. ruído",
+                    hint="Foco nos aspectos relevantes da realidade vs. ruído",
                     tags="anki, abstracao, objetivo",
                 )
                 continue
 
-            # EIXO 3: Análise Multivariável e Tomada de Decisão em Cenário Prático
+            # EIXO 3: Análise Multivariável e Fatores de Decisão
             comma_items = [item.strip(" .;") for item in body.split(",") if len(item.strip(" .;")) >= 3]
             if (
                 "fatores" in prefix_lower
@@ -1378,20 +1379,18 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
             ):
                 factors_summary = body.rstrip(".")
                 add_card(
-                    front=(
-                        f"Quais fatores técnicos e humanos ({factors_summary}) condicionam a decisão em {core_theme}?"
-                    ),
+                    front=f"Quais fatores técnicos e humanos condicionam decisões em {short_theme}?",
                     back=(
-                        f"• Fatores Críticos: {factors_summary}.\n"
-                        f"• Relação Prática: Escopo e requisitos definem formalismo/protótipos; tecnologias dependem da maturidade e experiência da equipe.\n"
-                        f"• Risco: Ignorar qualquer dessas variáveis inviabiliza a entrega."
+                        f"• Variáveis: {factors_summary}.\n"
+                        f"• Causa-Efeito: Escopo e requisitos definem o rigor; tecnologia depende da maturidade da equipe.\n"
+                        f"• Risco: Ignorar uma variável inviabiliza o projeto."
                     ),
-                    hint="Interdependência entre escopo, requisitos, tecnologia e equipe",
-                    tags="anki, tomada-de-decisao, fatores",
+                    hint="Requisitos, escopo, tecnologia e experiência da equipe",
+                    tags="anki, fatores, decisao",
                 )
                 continue
 
-            # EIXO 4: Trade-offs de Abstração, Complexidade, Manutenção e Evolução
+            # EIXO 4: Trade-offs entre Requisitos e Código
             if (
                 "mais detalhad" in full_lower
                 or "menos complex" in full_lower
@@ -1401,100 +1400,79 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
                 or ";" in body
             ):
                 add_card(
-                    front=(
-                        f"Em {core_theme}, qual o trade-off ideal entre requisitos e código final ({body})?"
-                    ),
+                    front=f"Qual é o trade-off ideal entre requisitos e código em {short_theme}?",
                     back=(
-                        f"• Ponto Ótimo: Mais detalhado que requisitos brutos (dá precisão) e menos complexo que o código (dá clareza).\n"
-                        f"• Benefício Prático: Fácil entendimento, manutenção ágil e evolução contínua.\n"
-                        f"• Causa e Efeito: Evita ambiguidade sem antecipar detalhes acidentais de implementação."
+                        f"• Equilíbrio: Mais detalhado que requisitos (precisão) e menos complexo que o código (clareza).\n"
+                        f"• Ganho: Fácil entendimento, manutenção ágil e evolução contínua."
                     ),
-                    hint="Equilíbrio entre precisão conceitual e facilidade de manutenção",
+                    hint="Detalhamento vs. Simplicidade de manutenção",
                     tags="anki, trade-offs, arquitetura",
                 )
                 continue
 
-            # EIXO 5: Conceito Técnico Real com Raciocínio de Causa, Efeito e Pensamento Contrafactual
+            # EIXO 5: Conceito Técnico Curto e Direto
             if prefix and not cls.META_PREFIX_REGEX.match(prefix) and not cls._is_generic_title(prefix):
+                clean_p = short_label(prefix, 32)
                 add_card(
-                    front=(
-                        f"Qual é a função lógica de \"{prefix}\" em {core_theme} e o que ocorre se for violado?"
-                    ),
+                    front=f"Qual o papel de \"{clean_p}\" em {short_theme} e o efeito de sua falha?",
                     back=(
-                        f"• Papel no Domínio: {body}.\n"
-                        f"• Se Violado: Perda de consistência estrutural e falhas em casos-limite do sistema.\n"
-                        f"• Validação: Verificar aderência nas regras da aplicação."
+                        f"• Função: {body}.\n"
+                        f"• Falha: Perda de consistência estrutural no domínio."
                     ),
-                    hint=f"Função de {prefix[:30]} e risco de sua ausência",
+                    hint=f"Papel e impacto de {clean_p}",
                     tags="anki, causa-e-efeito, conceito",
                 )
-            elif len(body) >= 25:
+            elif len(body) >= 15:
+                snippet = short_label(body, 38)
                 add_card(
-                    front=(
-                        f"Por que a premissa \"{body}\" é necessária em {core_theme}?"
-                    ),
+                    front=f"Por que a regra \"{snippet}\" é necessária em {short_theme}?",
                     back=(
-                        f"• Proposição: {body}.\n"
-                        f"• Justificativa: Atua como restrição orientadora para evitar decisões arbitrárias.\n"
-                        f"• Validação: Garantir consistência prática nos fluxos da disciplina."
+                        f"• Regra: {body}.\n"
+                        f"• Impacto: Previne ambiguidades e garante consistência prática."
                     ),
-                    hint="Condição lógica necessária para o problema",
-                    tags="anki, premissa, raciocinio",
+                    hint="Restrição lógica do domínio",
+                    tags="anki, regra, raciocinio",
                 )
 
-        # Complemento analítico de domínio se o número de cartões pedidos for maior que as proposições da nota
+        # Fallbacks curtos, diretos e analíticos (estilo Anki clássico)
         analytical_fallbacks = [
             {
-                "front": (
-                    f"Em um problema complexo de {core_theme} ({subject_title}), qual raciocínio lógico deve guiar a escolha "
-                    f"entre uma solução altamente acoplada/otimizada e uma arquitetura modular e evolutiva?"
-                ),
+                "front": f"Acoplamento vs. Modularidade em {short_theme}: como decidir?",
                 "back": (
-                    f"• Análise de Trade-off: Soluções fortemente acopladas podem reduzir latência imediata, mas elevam exponencialmente o custo de manutenção diante de mudanças de requisitos em {core_theme}.\n"
-                    f"• Critério de Decisão: Avaliar a taxa esperada de mudança do domínio, o tamanho do projeto e a necessidade de evolução contínua em {subject_title}.\n"
-                    f"• Conclusão Lógica: Priorizar clareza, coesão e facilidade de manutenção sempre que o sistema precisar evoluir."
+                    f"• Acoplado: Menor latência inicial, mas alto custo de mudança.\n"
+                    f"• Modular: Ideal quando {short_theme} exige manutenção e evolução contínua."
                 ),
-                "hint": "Pondere o custo de mudança futura vs. ganho imediato",
-                "tags": "ia, raciocinio-logico, trade-offs",
+                "hint": "Custo de evolução vs. ganho imediato",
+                "tags": "anki, trade-offs",
             },
             {
-                "front": (
-                    f"Como aplicar o pensamento contrafactual para validar se uma decisão técnica em {core_theme} "
-                    f"realmente resolve a causa-raiz do problema em {subject_title}?"
-                ),
+                "front": f"Como validar se uma solução em {short_theme} ataca a causa-raiz?",
                 "back": (
-                    f"• Teste Contrafactual: Perguntar 'Se alterarmos o volume de dados, os requisitos ou a tecnologia base, esta modelagem em {core_theme} continua coerente ou entra em colapso?'.\n"
-                    f"• Diagnóstico de Causa-Raiz: Separa sintomas superficiais das restrições estruturais do domínio.\n"
-                    f"• Resultado: Garante que a solução seja aderente ao contexto real e resiliente à evolução."
+                    f"• Teste Contrafactual: Se o volume ou requisito mudar, o modelo se mantém íntegro?\n"
+                    f"• Objetivo: Separar sintomas superficiais de restrições reais."
                 ),
-                "hint": "Teste os limites da solução alterando as variáveis do cenário",
-                "tags": "ia, raciocinio-logico, validacao",
+                "hint": "Teste de estresse de variáveis",
+                "tags": "anki, causa-raiz",
             },
             {
-                "front": (
-                    f"De que forma o excesso de detalhamento precoce (sobre-engenharia) e a falta de especificação "
-                    f"afetam de maneiras opostas o sucesso de um projeto em {core_theme}?"
-                ),
+                "front": f"Sub-especificação vs. Sobre-engenharia em {short_theme}: qual o efeito?",
                 "back": (
-                    f"• Sub-especificação: Deixa lacunas lógicas que forçam decisões improvisadas durante a codificação em {subject_title}, gerando retrabalho.\n"
-                    f"• Sobre-engenharia (Over-engineering): Introduz complexidade acidental antes de validar se o modelo é aderente à aplicação específica.\n"
-                    f"• Ponto de Equilíbrio: Capturar exatamente os aspectos da realidade de interesse da situação, mantendo o modelo mais detalhado que os requisitos e menos complexo que o código."
+                    f"• Sub-especificação: Gera improviso e retrabalho no código.\n"
+                    f"• Sobre-engenharia: Complexidade precoce sem ganho real.\n"
+                    f"• Meta: Capturar apenas os aspectos essenciais da situação."
                 ),
-                "hint": "Compare os riscos da ambiguidade com os riscos da complexidade acidental",
-                "tags": "ia, raciocinio-logico, sintese",
+                "hint": "Ambiguidade vs. Complexidade acidental",
+                "tags": "anki, sintese",
             },
             {
-                "front": (
-                    f"Ao revisar {core_theme} antes de uma avaliação prática de {subject_title}, quais perguntas "
-                    f"de causa e efeito permitem comprovar domínio profundo do tema (além da simples memorização)?"
-                ),
+                "front": f"Quais 3 perguntas validam o domínio prático de {short_theme}?",
                 "back": (
-                    f"1. Por que este modelo/solução existe e qual problema real ele abstrai?\n"
-                    f"2. Quais fatores técnicos e humanos (requisitos, tamanho do projeto, tecnologia, experiência) condicionam sua aplicação?\n"
-                    f"3. Quais são os trade-offs assumidos e sob qual cenário esta abordagem deixa de ser aderente?"
+                    f"1. Qual problema real este conceito resolve?\n"
+                    f"2. Quais fatores técnicos e humanos condicionam seu uso?\n"
+                    f"3. Em qual cenário esta abordagem falha?"
                 ),
-                "hint": "Por que existe + Quais variáveis condicionam + Quais os limites/trade-offs",
-                "tags": "ia, raciocinio-logico, revisao-profunda",
+                "hint": "Por que existe + Condições + Limites",
+                "tags": "anki, revisao",
             },
         ]
 
@@ -1615,17 +1593,17 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
         if api_key:
             try:
                 prompt = (
-                    f"Você é um professor universitário sênior especialista em aprendizagem baseada em problemas, "
-                    f"método socrático e Taxonomia de Bloom (níveis de Aplicação, Análise, Avaliação e Síntese).\n"
-                    f"Elabore exatamente {count} flashcards de alta profundidade em português do Brasil sobre:\n"
+                    f"Você é um especialista em cartões de repetição espaçada (Anki - Princípio do Mínimo de Informação) "
+                    f"combinado com raciocínio lógico universitário.\n"
+                    f"Elabore exatamente {count} flashcards em português do Brasil sobre:\n"
                     f"- Disciplina: {subject_title}\n"
                     f"- Tema Central: {core_theme}\n"
                     f"- Conteúdo da Anotação: {clean_source[:4000] if clean_source else full_context_label}\n\n"
-                    f"REGRAS OBRIGATÓRIAS DE QUALIDADE:\n"
-                    f"1. PROIBIDO gerar perguntas superficiais de mera definição de nomenclatura (ex.: 'O que é X?', 'Defina Y', 'O que significa Objetivo?').\n"
-                    f"2. PROIBIDO usar títulos genéricos como 'Nova anotação' ou fragmentos conversacionais ('Temos que considerar', 'Nossos modelos') como conceitos isolados.\n"
-                    f"3. Cada pergunta ('front') DEVE estimular o raciocínio lógico: análise de cenários práticos, relações de causa e efeito, avaliação de trade-offs técnicos, validação crítica de aderência ou pensamento contrafactual ('o que acontece se esta premissa for violada?').\n"
-                    f"4. Cada resposta ('back') DEVE ser estruturada em tópicos claros contendo o raciocínio lógico, a justificativa causal e a implicação prática.\n\n"
+                    f"REGRAS OBRIGATÓRIAS (ESTILO ANKI AUTÊNTICO):\n"
+                    f"1. PERGUNTAS CURTAS E ATÔMICAS: O campo 'front' DEVE ter apenas 1 frase curta e direta (entre 6 e 14 palavras, máximo absoluto de 95 caracteres). Jamais escreva parágrafos longos ou enfileire listas dentro da pergunta.\n"
+                    f"2. RACIOCÍNIO LÓGICO DIRETO: Embora curta, a pergunta não deve ser superficial; deve cobrar causa e efeito, critério de decisão, trade-off ou consequência de falha.\n"
+                    f"3. PROIBIDO usar 'Nova anotação' ou fragmentos soltos ('Temos que considerar', 'Nossos modelos') como conceitos.\n"
+                    f"4. RESPOSTA CONCISA: O campo 'back' deve ter no máximo 2 a 3 tópicos curtos e objetivos.\n\n"
                     f"Retorne APENAS um JSON array válido onde cada objeto tem as chaves: "
                     f"\"front\", \"back\", \"hint\" e \"tags\"."
                 )

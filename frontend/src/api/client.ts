@@ -607,11 +607,11 @@ export async function listStudyDocuments(params?: {
   if (params?.folder) query.set('folder', params.folder)
   if (params?.search) query.set('search', params.search)
   const qs = query.toString()
-  return request<StudyDocument[]>(`/api/v1/academic/study-documents${qs ? `?${qs}` : ''}`)
+  return request<StudyDocument[]>(`/api/v1/study-documents${qs ? `?${qs}` : ''}`)
 }
 
 export async function getStudyDocument(id: string): Promise<StudyDocument> {
-  return request<StudyDocument>(`/api/v1/academic/study-documents/${id}`)
+  return request<StudyDocument>(`/api/v1/study-documents/${id}`)
 }
 
 export async function uploadStudyDocument(
@@ -630,7 +630,7 @@ export async function uploadStudyDocument(
   if (metadata?.folder) formData.append('folder', metadata.folder)
   if (metadata?.topic) formData.append('topic', metadata.topic)
 
-  const response = await fetch(`${API_ORIGIN}/api/v1/academic/study-documents`, {
+  const response = await fetch(`${API_ORIGIN}/api/v1/study-documents`, {
     method: 'POST',
     body: formData,
     credentials: 'include',
@@ -645,19 +645,19 @@ export async function uploadStudyDocument(
 }
 
 export async function deleteStudyDocument(id: string): Promise<void> {
-  return request<void>(`/api/v1/academic/study-documents/${id}`, {
+  return request<void>(`/api/v1/study-documents/${id}`, {
     method: 'DELETE',
   })
 }
 
 export async function analyzeStudyDocumentWithAI(id: string): Promise<StudyDocumentAnalysis> {
-  return request<StudyDocumentAnalysis>(`/api/v1/academic/study-documents/${id}/ai-analyze`, {
+  return request<StudyDocumentAnalysis>(`/api/v1/study-documents/${id}/ai-analyze`, {
     method: 'POST',
   })
 }
 
 export async function generateStudyQuiz(documentId: string): Promise<StudyQuiz> {
-  return request<StudyQuiz>(`/api/v1/academic/study-documents/${documentId}/quiz`, {
+  return request<StudyQuiz>(`/api/v1/study-documents/${documentId}/quiz`, {
     method: 'POST',
     body: JSON.stringify({ action: 'generate' }),
   })
@@ -668,7 +668,7 @@ export async function submitStudyQuiz(
   quizId: string,
   answers: Record<string, number>,
 ): Promise<QuizSubmissionResult> {
-  return request<QuizSubmissionResult>(`/api/v1/academic/study-documents/${documentId}/quiz`, {
+  return request<QuizSubmissionResult>(`/api/v1/study-documents/${documentId}/quiz`, {
     method: 'POST',
     body: JSON.stringify({ action: 'submit', quiz_id: quizId, answers }),
   })

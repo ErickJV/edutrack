@@ -9,13 +9,11 @@ import {
   CheckCircle2,
   XCircle,
   HelpCircle,
-  Folder,
   Layers,
   ArrowRight,
   RefreshCw,
   Plus,
   Trash2,
-  ChevronRight,
   ExternalLink,
   Copy,
   Check,
@@ -45,12 +43,14 @@ interface StudyDocumentsHubProps {
   subjects: StudentSubject[]
   folders: StudyFolder[]
   onOpenNoteWithContent?: (title: string, content: string) => void
+  embedded?: boolean
 }
 
 export function StudyDocumentsHub({
   subjects,
   folders,
   onOpenNoteWithContent,
+  embedded = false,
 }: StudyDocumentsHubProps) {
   const [documents, setDocuments] = useState<StudyDocument[]>([])
   const [loading, setLoading] = useState(true)
@@ -108,7 +108,7 @@ export function StudyDocumentsHub({
   }
 
   useEffect(() => {
-    loadDocuments()
+    void loadDocuments()
   }, [selectedSubjectId])
 
   useEffect(() => {
@@ -140,7 +140,7 @@ export function StudyDocumentsHub({
       }
     }
 
-    fetchDetail()
+    void fetchDetail()
   }, [selectedDocId])
 
   const handleFileUpload = async (file: File) => {
@@ -150,11 +150,14 @@ export function StudyDocumentsHub({
     try {
       const doc = await uploadStudyDocument(file, {
         title: uploadTitle.trim() || file.name,
-        student_subject: uploadSubjectId || undefined,
+        student_subject: uploadSubjectId || selectedSubjectId || undefined,
         folder: uploadFolderId || undefined,
         topic: uploadTopic.trim() || undefined,
       })
-      setMessage({ type: 'success', text: `Documento "${doc.title}" enviado e processado com sucesso!` })
+      setMessage({
+        type: 'success',
+        text: `Documento "${doc.title}" enviado e indexado por páginas com sucesso!`,
+      })
       setUploadTitle('')
       setUploadTopic('')
       await loadDocuments()
@@ -174,7 +177,7 @@ export function StudyDocumentsHub({
       if (selectedDocId === docId) {
         setSelectedDocId(null)
       }
-      loadDocuments()
+      void loadDocuments()
     } catch {
       setMessage({ type: 'error', text: 'Erro ao excluir o documento.' })
     }
@@ -233,7 +236,10 @@ export function StudyDocumentsHub({
     try {
       if (onOpenNoteWithContent) {
         onOpenNoteWithContent(title, markdownContent)
-        setMessage({ type: 'success', text: 'Conteúdo transferido para o seu Caderno de Anotações!' })
+        setMessage({
+          type: 'success',
+          text: 'Conteúdo inserido diretamente na sua Folha de Anotações!',
+        })
         return
       }
 
@@ -249,13 +255,17 @@ export function StudyDocumentsHub({
     }
   }
 
-  const handleExportFlashcardsToAnki = async (concepts: Array<{ term: string; definition: string; citation: string }>) => {
+  const handleExportFlashcardsToAnki = async (
+    concepts: Array<{ term: string; definition: string; citation: string }>,
+  ) => {
     if (!concepts.length || !selectedDoc) return
     try {
       let count = 0
+      const shortDocTitle =
+        selectedDoc.title.length > 28 ? `${selectedDoc.title.slice(0, 28)}…` : selectedDoc.title
       for (const c of concepts) {
         await createFlashcard({
-          front: `O que define ${c.term} no contexto de ${selectedDoc.title}?`,
+          front: `Qual a função de "${c.term}" (${shortDocTitle})?`,
           back: `• ${c.definition}\n• Fonte: ${c.citation}`,
           deck_name: selectedDoc.student_subject_name || selectedDoc.title,
           student_subject: selectedDoc.student_subject || null,
@@ -263,7 +273,10 @@ export function StudyDocumentsHub({
         })
         count++
       }
-      setMessage({ type: 'success', text: `${count} flashcards gerados e adicionados ao seu deck Anki com sucesso!` })
+      setMessage({
+        type: 'success',
+        text: `${count} flashcards concisos adicionados ao seu deck Anki com sucesso!`,
+      })
     } catch {
       setMessage({ type: 'error', text: 'Erro ao exportar flashcards para o Anki.' })
     }
@@ -276,50 +289,94 @@ export function StudyDocumentsHub({
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-full w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
-      {/* Sidebar: Documentos & Upload */}
-      <div className="w-full lg:w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col flex-shrink-0">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-base flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-primary" />
-              Central de Documentos
+    <div
+      className={`flex h-full w-full flex-col lg:flex-row ${
+        embedded
+          ? 'bg-white text-[#0d3950] dark:bg-[#081a26] dark:text-slate-100'
+          : 'overflow-hidden rounded-2xl border border-slate-200 bg-white text-[#0d3950] shadow-xs dark:border-[#005063]/30 dark:bg-[#081a26] dark:text-slate-100'
+      }`}
+    >
+      {/* Coluna Lateral: Documentos & Upload */}
+      <div className="flex w-full shrink-0 flex-col border-b border-slate-200 bg-slate-50/70 lg:w-80 lg:border-r lg:border-b-0 xl:w-88 dark:border-[#005063]/30 dark:bg-[#040f17]/50">
+        <div className="space-y-3 border-b border-slate-200 p-3.5 dark:border-[#005063]/30">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-black text-[#0d3950] dark:text-white">
+              <BookOpen className="size-4 text-[#006768] dark:text-cyan-400" />
+              Materiais & Documentos IA
             </h2>
-            <span className="text-xs bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">
-              {documents.length} docs
+            <span className="rounded-full bg-[#0d3950]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#0d3950] dark:bg-cyan-400/15 dark:text-cyan-300">
+              {documents.length} {documents.length === 1 ? 'arquivo' : 'arquivos'}
             </span>
           </div>
 
-          {/* Filtro de Disciplina */}
-          <select
-            value={selectedSubjectId}
-            onChange={(e) => setSelectedSubjectId(e.target.value)}
-            className="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 focus:ring-1 focus:ring-primary focus:outline-none"
-          >
-            <option value="">Todas as Disciplinas</option>
-            {subjects.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.subject.name}
-              </option>
-            ))}
-          </select>
+          {/* Filtro de Disciplina Sem Truncamento */}
+          <div>
+            <label className="mb-1 block text-[10px] font-extrabold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+              Filtrar por Disciplina
+            </label>
+            <select
+              aria-label="Filtrar documentos por disciplina"
+              value={selectedSubjectId}
+              onChange={(e) => setSelectedSubjectId(e.target.value)}
+              className="min-h-8 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-[#0d3950] focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+            >
+              <option value="">🎓 Todas as Disciplinas</option>
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  🎓 {s.subject.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          {/* Busca */}
+          {/* Busca em Arquivos e Páginas */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-400" />
             <input
-              type="text"
-              placeholder="Buscar em arquivos e páginas..."
+              type="search"
+              placeholder="Pesquisar em documentos e páginas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && loadDocuments()}
-              className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-1 focus:ring-primary focus:outline-none"
+              onKeyDown={(e) => e.key === 'Enter' && void loadDocuments()}
+              className="min-h-8 w-full rounded-xl border border-slate-200 bg-white py-1.5 pr-2.5 pl-8 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
             />
           </div>
         </div>
 
-        {/* Dropzone de Upload */}
-        <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+        {/* Configuração Rápida de Vínculo + Dropzone de Upload */}
+        <div className="space-y-2 border-b border-slate-200 bg-white/60 p-3 dark:border-[#005063]/30 dark:bg-[#081a26]/40">
+          <div className="grid grid-cols-1 gap-2">
+            <select
+              aria-label="Disciplina para o novo documento"
+              value={uploadSubjectId}
+              onChange={(e) => setUploadSubjectId(e.target.value)}
+              className="min-h-8 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-[#0d3950] focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#040f17] dark:text-slate-100"
+            >
+              <option value="">📚 Vincular à disciplina (opcional)</option>
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  📚 {s.subject.name}
+                </option>
+              ))}
+            </select>
+
+            {folders.length > 0 && (
+              <select
+                aria-label="Pasta para o novo documento"
+                value={uploadFolderId}
+                onChange={(e) => setUploadFolderId(e.target.value)}
+                className="min-h-8 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-[#0d3950] focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#040f17] dark:text-slate-100"
+              >
+                <option value="">📁 Vincular ao caderno/pasta (opcional)</option>
+                {folders.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    📁 {f.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           <div
             onDragOver={(e) => {
               e.preventDefault()
@@ -330,14 +387,14 @@ export function StudyDocumentsHub({
               e.preventDefault()
               setDragActive(false)
               if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                handleFileUpload(e.dataTransfer.files[0])
+                void handleFileUpload(e.dataTransfer.files[0])
               }
             }}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors ${
+            className={`cursor-pointer rounded-2xl border-2 border-dashed p-3 text-center transition ${
               dragActive
-                ? 'border-primary bg-primary/5'
-                : 'border-slate-300 dark:border-slate-700 hover:border-primary/50'
+                ? 'border-[#006768] bg-[#005063]/10'
+                : 'border-slate-300 hover:border-[#005063] hover:bg-slate-50 dark:border-slate-700 dark:hover:border-cyan-400/50 dark:hover:bg-[#040f17]'
             }`}
           >
             <input
@@ -347,25 +404,27 @@ export function StudyDocumentsHub({
               className="hidden"
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
-                  handleFileUpload(e.target.files[0])
+                  void handleFileUpload(e.target.files[0])
                 }
               }}
             />
-            <Upload className="w-5 h-5 mx-auto text-primary mb-1 animate-pulse" />
-            <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              {isUploading ? 'Processando páginas...' : 'Upload de PDF ou Slide'}
+            <Upload className="mx-auto mb-1 size-5 text-[#006768] dark:text-cyan-400" />
+            <p className="text-xs font-extrabold text-[#0d3950] dark:text-slate-200">
+              {isUploading ? 'Processando páginas...' : 'Enviar PDF, Slide ou Documento'}
             </p>
-            <p className="text-[10px] text-slate-500">Extrai texto e organiza por páginas</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              Extrai o texto e cita automaticamente a página de origem
+            </p>
           </div>
         </div>
 
         {/* Lista de Documentos */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="max-h-64 flex-1 space-y-1.5 overflow-y-auto p-2.5 lg:max-h-none">
           {loading ? (
             <div className="p-4 text-center text-xs text-slate-500">Carregando materiais...</div>
           ) : documents.length === 0 ? (
             <div className="p-6 text-center text-xs text-slate-400">
-              Nenhum documento encontrado. Envie uma apresentação ou PDF para começar!
+              Nenhum documento encontrado. Envie um PDF ou apresentação para analisar com IA!
             </div>
           ) : (
             documents.map((doc) => {
@@ -374,30 +433,36 @@ export function StudyDocumentsHub({
                 <div
                   key={doc.id}
                   onClick={() => setSelectedDocId(doc.id)}
-                  className={`group flex items-start justify-between p-2.5 rounded-lg text-left cursor-pointer transition-all ${
+                  className={`group flex cursor-pointer items-start justify-between rounded-xl border p-2.5 text-left transition ${
                     isSelected
-                      ? 'bg-primary/10 border border-primary/30 text-primary font-medium'
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-transparent text-slate-700 dark:text-slate-300'
+                      ? 'border-[#006768] bg-[#dce6ef]/70 font-bold text-[#0d3950] shadow-2xs dark:border-cyan-500/60 dark:bg-[#081a26] dark:text-white'
+                      : 'border-slate-200/80 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-300 dark:hover:bg-[#081a26]/60'
                   }`}
                 >
-                  <div className="flex items-start gap-2.5 min-w-0">
-                    <FileText className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isSelected ? 'text-primary' : 'text-slate-400'}`} />
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <FileText
+                      className={`mt-0.5 size-4 shrink-0 ${
+                        isSelected ? 'text-[#006768] dark:text-cyan-400' : 'text-slate-400'
+                      }`}
+                    />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold truncate leading-tight">{doc.title}</p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                        {doc.student_subject_name || 'Sem disciplina'} • {doc.page_count} {doc.page_count === 1 ? 'pág' : 'págs'}
+                      <p className="break-words text-xs font-extrabold leading-snug">{doc.title}</p>
+                      <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                        {doc.student_subject_name || 'Geral'} • {doc.page_count}{' '}
+                        {doc.page_count === 1 ? 'pág' : 'págs'}
                       </p>
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleDelete(doc.id, doc.title)
+                      void handleDelete(doc.id, doc.title)
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 text-slate-400 rounded transition-opacity"
+                    className="rounded p-1 text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-rose-500"
                     title="Excluir documento"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="size-3.5" />
                   </button>
                 </div>
               )
@@ -406,56 +471,59 @@ export function StudyDocumentsHub({
         </div>
       </div>
 
-      {/* Main Panel: Análise Cognitiva & Leitura */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-white dark:bg-slate-900">
+      {/* Painel Principal: Análise Cognitiva & Leitura */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-[#081a26]">
         {selectedDoc ? (
           <>
             {/* Header do Documento Selecionado */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-slate-900">
+            <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50/50 p-4 sm:flex-row sm:items-center dark:border-[#005063]/30 dark:bg-[#041019]/50">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-lg bg-[#0d3950] px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase dark:bg-[#005063]">
                     {selectedDoc.file_type.toUpperCase()}
                   </span>
-                  <h1 className="text-lg font-bold truncate text-slate-900 dark:text-white">
+                  <h1 className="break-words text-base font-black text-[#0d3950] sm:text-lg dark:text-white">
                     {selectedDoc.title}
                   </h1>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {selectedDoc.student_subject_name && `Disciplina: ${selectedDoc.student_subject_name} • `}
-                  {selectedDoc.page_count} páginas processadas
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  {selectedDoc.student_subject_name &&
+                    `Disciplina: ${selectedDoc.student_subject_name} • `}
+                  {selectedDoc.page_count} páginas indexadas
                   {selectedDoc.topic && ` • Tópico: ${selectedDoc.topic}`}
                 </p>
               </div>
 
               {/* Botões de Ação da IA */}
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
-                  onClick={handleRunAIAnalysis}
+                  type="button"
+                  onClick={() => void handleRunAIAnalysis()}
                   disabled={analyzingAI}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-white text-xs font-medium rounded-lg shadow-sm transition-all disabled:opacity-50"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3.5 py-1.5 text-xs font-extrabold text-white shadow-xs transition hover:bg-[#005063] disabled:opacity-50 dark:bg-[#005063] dark:hover:bg-[#006768]"
                 >
-                  <Sparkles className={`w-3.5 h-3.5 ${analyzingAI ? 'animate-spin' : ''}`} />
-                  {analyzingAI ? 'Analisando...' : 'Análise Cognitiva Completa'}
+                  <Sparkles className={`size-3.5 text-amber-300 ${analyzingAI ? 'animate-spin' : ''}`} />
+                  {analyzingAI ? 'Analisando material...' : 'Análise Cognitiva Completa'}
                 </button>
 
                 <button
-                  onClick={handleGenerateQuiz}
+                  type="button"
+                  onClick={() => void handleGenerateQuiz()}
                   disabled={generatingQuiz}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 transition-all disabled:opacity-50"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-extrabold text-[#0d3950] transition hover:bg-slate-100 disabled:opacity-50 dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-slate-100 dark:hover:bg-[#0d3950]/40"
                 >
-                  <Brain className="w-3.5 h-3.5 text-amber-500" />
+                  <Brain className="size-3.5 text-amber-500" />
                   {generatingQuiz ? 'Criando Simulado...' : 'Simulado 10 Questões'}
                 </button>
               </div>
             </div>
 
             {/* Abas do Hub Cognitivo */}
-            <div className="flex items-center gap-1 px-4 border-b border-slate-200 dark:border-slate-800 overflow-x-auto text-xs bg-slate-50/50 dark:bg-slate-950/50">
+            <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-200 bg-slate-50/80 px-3 text-xs dark:border-[#005063]/30 dark:bg-[#040f17]/60">
               {[
                 { id: 'summary', label: '1. Resumo & Citações' },
                 { id: 'complex', label: '2. Tópicos Complexos' },
-                { id: 'concepts', label: '3. Conceitos-Chave' },
+                { id: 'concepts', label: '3. Conceitos & Flashcards' },
                 { id: 'mentalmap', label: '4. Mapa Mental' },
                 { id: 'roadmap', label: '5. Roteiro de Estudos' },
                 { id: 'quiz', label: '6. Simulado (10Q)' },
@@ -464,11 +532,12 @@ export function StudyDocumentsHub({
               ].map((tab) => (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-3 py-2.5 font-medium border-b-2 whitespace-nowrap transition-colors ${
+                  className={`border-b-2 px-3 py-2.5 font-extrabold whitespace-nowrap transition-colors ${
                     activeTab === tab.id
-                      ? 'border-primary text-primary bg-white dark:bg-slate-900'
-                      : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'border-[#006768] bg-white text-[#0d3950] dark:border-cyan-400 dark:bg-[#081a26] dark:text-white'
+                      : 'border-transparent text-slate-500 hover:text-[#0d3950] dark:text-slate-400 dark:hover:text-slate-200'
                   }`}
                 >
                   {tab.label}
@@ -478,33 +547,36 @@ export function StudyDocumentsHub({
 
             {/* Mensagem Toast */}
             {message && (
-              <div className="px-4 py-2">
+              <div className="px-4 pt-3">
                 <Alert tone={message.type === 'error' ? 'error' : 'success'}>{message.text}</Alert>
               </div>
             )}
 
             {/* Conteúdo da Aba */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+            <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
               {loadingDoc ? (
-                <div className="flex items-center justify-center h-48 text-slate-500 text-xs">
+                <div className="flex h-48 items-center justify-center text-xs text-slate-500">
                   Carregando conteúdo...
                 </div>
               ) : !analysis && activeTab !== 'reader' && activeTab !== 'quiz' ? (
-                <div className="text-center py-12 max-w-md mx-auto space-y-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-                    <Sparkles className="w-6 h-6" />
+                <div className="mx-auto max-w-md space-y-4 py-12 text-center">
+                  <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[#005063]/10 text-[#005063] dark:bg-cyan-400/15 dark:text-cyan-300">
+                    <Sparkles className="size-6" />
                   </div>
-                  <h3 className="text-base font-semibold">Análise Cognitiva Disponível</h3>
+                  <h3 className="text-base font-black text-[#0d3950] dark:text-white">
+                    Análise Cognitiva Disponível
+                  </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Clique no botão abaixo para extrair conceitos, tópicos complexos, mapa mental e citações automáticas
-                    de página deste material.
+                    Extraia resumo estruturado, explicação de tópicos complexos, exemplos práticos,
+                    mapa mental, flashcards Anki e citações de página deste documento.
                   </p>
                   <button
-                    onClick={handleRunAIAnalysis}
+                    type="button"
+                    onClick={() => void handleRunAIAnalysis()}
                     disabled={analyzingAI}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-primary/90 transition-all"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#0d3950] px-5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <Sparkles className="size-4 text-amber-300" />
                     Iniciar Análise por IA
                   </button>
                 </div>
@@ -512,33 +584,39 @@ export function StudyDocumentsHub({
                 <>
                   {/* TAB 1: RESUMO */}
                   {activeTab === 'summary' && analysis && (
-                    <div className="space-y-4 max-w-4xl">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-sm flex items-center gap-2">
-                          <BookOpen className="w-4 h-4 text-primary" />
+                    <div className="max-w-4xl space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="flex items-center gap-2 text-sm font-black text-[#0d3950] dark:text-white">
+                          <BookOpen className="size-4 text-[#006768] dark:text-cyan-400" />
                           Síntese Conceitual Estruturada
                         </h3>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <button
+                            type="button"
                             onClick={() => handleCopy('summary', analysis.summary)}
-                            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300"
+                            className="inline-flex min-h-8 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#040f17] dark:text-slate-200"
                           >
-                            {copiedId === 'summary' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                            {copiedId === 'summary' ? (
+                              <Check className="size-3.5 text-emerald-500" />
+                            ) : (
+                              <Copy className="size-3.5" />
+                            )}
                             Copiar
                           </button>
                           <button
+                            type="button"
                             onClick={() =>
-                              handleSaveToNotes(`Resumo: ${selectedDoc.title}`, analysis.summary)
+                              void handleSaveToNotes(`Resumo: ${selectedDoc.title}`, analysis.summary)
                             }
-                            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20"
+                            className="inline-flex min-h-8 items-center gap-1 rounded-xl bg-[#0d3950] px-3 text-xs font-extrabold text-white hover:bg-[#005063] dark:bg-[#005063]"
                           >
-                            <Plus className="w-3.5 h-3.5" />
-                            Salvar no Caderno
+                            <Plus className="size-3.5" />
+                            Enviar para Folha de Anotações
                           </button>
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 prose prose-slate dark:prose-invert max-w-none text-xs leading-relaxed whitespace-pre-wrap">
+                      <div className=" rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-xs leading-relaxed whitespace-pre-wrap text-slate-800 dark:border-[#005063]/30 dark:bg-[#040f17]/60 dark:text-slate-200">
                         {analysis.summary}
                       </div>
                     </div>
@@ -546,23 +624,27 @@ export function StudyDocumentsHub({
 
                   {/* TAB 2: TÓPICOS COMPLEXOS */}
                   {activeTab === 'complex' && analysis && (
-                    <div className="space-y-4 max-w-4xl">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-sm flex items-center gap-2">
-                          <HelpCircle className="w-4 h-4 text-amber-500" />
+                    <div className="max-w-4xl space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="flex items-center gap-2 text-sm font-black text-[#0d3950] dark:text-white">
+                          <HelpCircle className="size-4 text-amber-500" />
                           Explicação dos Tópicos Mais Complexos & Exemplos de Aplicação
                         </h3>
                         <button
+                          type="button"
                           onClick={() => {
                             const md = analysis.complex_topics
-                              .map((t) => `### ${t.topic} (${t.citation})\n\n${t.explanation}\n\n**Exemplo de Aplicação:**\n${t.example}`)
+                              .map(
+                                (t) =>
+                                  `### ${t.topic} (${t.citation})\n\n${t.explanation}\n\n**Exemplo de Aplicação:**\n${t.example}`,
+                              )
                               .join('\n\n---\n\n')
-                            handleSaveToNotes(`Tópicos Complexos: ${selectedDoc.title}`, md)
+                            void handleSaveToNotes(`Tópicos Complexos: ${selectedDoc.title}`, md)
                           }}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20"
+                          className="inline-flex min-h-8 items-center gap-1 rounded-xl bg-[#0d3950] px-3 text-xs font-extrabold text-white hover:bg-[#005063] dark:bg-[#005063]"
                         >
-                          <Plus className="w-3.5 h-3.5" />
-                          Salvar no Caderno
+                          <Plus className="size-3.5" />
+                          Enviar para Folha de Anotações
                         </button>
                       </div>
 
@@ -570,21 +652,21 @@ export function StudyDocumentsHub({
                         {analysis.complex_topics.map((item, idx) => (
                           <div
                             key={idx}
-                            className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 space-y-2 shadow-sm"
+                            className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs dark:border-[#005063]/30 dark:bg-[#040f17]/60"
                           >
-                            <div className="flex items-start justify-between gap-2">
-                              <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <h4 className="text-sm font-black text-[#0d3950] dark:text-white">
                                 {item.topic}
                               </h4>
-                              <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full flex-shrink-0">
+                              <span className="shrink-0 rounded-full bg-[#005063]/10 px-2.5 py-0.5 text-[10px] font-extrabold text-[#0d3950] dark:bg-cyan-400/15 dark:text-cyan-300">
                                 {item.citation}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                            <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300">
                               {item.explanation}
                             </p>
-                            <div className="mt-2 p-2.5 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
-                              <p className="text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
+                            <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50/80 p-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+                              <p className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
                                 💡 Exemplo Prático: {item.example}
                               </p>
                             </div>
@@ -596,39 +678,40 @@ export function StudyDocumentsHub({
 
                   {/* TAB 3: CONCEITOS-CHAVE & FLASHCARDS */}
                   {activeTab === 'concepts' && analysis && (
-                    <div className="space-y-4 max-w-4xl">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <h3 className="font-semibold text-sm flex items-center gap-2">
-                          <Layers className="w-4 h-4 text-blue-500" />
-                          Glossário de Conceitos-Chave
+                    <div className="max-w-4xl space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="flex items-center gap-2 text-sm font-black text-[#0d3950] dark:text-white">
+                          <Layers className="size-4 text-[#006768] dark:text-cyan-400" />
+                          Conceitos-Chave Identificados
                         </h3>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <button
-                            onClick={() => handleExportFlashcardsToAnki(analysis.key_concepts)}
-                            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 font-medium"
+                            type="button"
+                            onClick={() => void handleExportFlashcardsToAnki(analysis.key_concepts)}
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3.5 text-xs font-extrabold text-white hover:bg-[#005063] dark:bg-[#005063]"
                           >
-                            <Brain className="w-3.5 h-3.5" />
-                            Gerar Flashcards Anki
+                            <Brain className="size-3.5 text-amber-300" />
+                            Gerar Flashcards Anki Concisos
                           </button>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         {analysis.key_concepts.map((kc, idx) => (
                           <div
                             key={idx}
-                            className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 flex flex-col justify-between"
+                            className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-3.5 dark:border-[#005063]/30 dark:bg-[#040f17]/60"
                           >
                             <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="font-bold text-xs text-slate-900 dark:text-white">
+                              <div className="mb-1.5 flex items-center justify-between gap-2">
+                                <span className="text-xs font-black text-[#0d3950] dark:text-white">
                                   {kc.term}
                                 </span>
-                                <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                                <span className="rounded-lg bg-[#005063]/10 px-2 py-0.5 text-[10px] font-bold text-[#0d3950] dark:bg-cyan-400/15 dark:text-cyan-300">
                                   {kc.citation}
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                              <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                                 {kc.definition}
                               </p>
                             </div>
@@ -640,41 +723,43 @@ export function StudyDocumentsHub({
 
                   {/* TAB 4: MAPA MENTAL */}
                   {activeTab === 'mentalmap' && analysis && (
-                    <div className="space-y-4 max-w-4xl">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-sm flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-purple-500" />
+                    <div className="max-w-4xl space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="flex items-center gap-2 text-sm font-black text-[#0d3950] dark:text-white">
+                          <Sparkles className="size-4 text-amber-500" />
                           Mapa Mental Hierárquico
                         </h3>
                         <button
+                          type="button"
                           onClick={() => handleCopy('mermaid', analysis.mental_map_mermaid)}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                          className="inline-flex min-h-8 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#040f17] dark:text-slate-200"
                         >
-                          <Copy className="w-3.5 h-3.5" />
-                          Copiar Código Mermaid
+                          <Copy className="size-3.5" />
+                          Copiar Estrutura Mermaid
                         </button>
                       </div>
 
-                      {/* Visualização Estruturada em Cards Hierárquicos */}
-                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-4">
+                      <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-4 dark:border-[#005063]/30 dark:bg-[#040f17]/50">
                         <div className="flex items-center justify-center">
-                          <div className="px-4 py-2 rounded-lg bg-primary text-white font-bold text-xs text-center shadow">
+                          <div className="rounded-xl bg-[#0d3950] px-4 py-2 text-center text-xs font-extrabold text-white shadow-xs dark:bg-[#005063]">
                             {selectedDoc.title}
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+                        <div className="grid grid-cols-1 gap-3 pt-2 md:grid-cols-2 lg:grid-cols-3">
                           {analysis.key_concepts.map((c, i) => (
                             <div
                               key={i}
-                              className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60"
+                              className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-[#081a26]"
                             >
-                              <div className="flex items-center gap-1.5 text-primary text-xs font-semibold mb-1">
-                                <ArrowRight className="w-3 h-3" />
+                              <div className="mb-1 flex items-center gap-1.5 text-xs font-extrabold text-[#005063] dark:text-cyan-400">
+                                <ArrowRight className="size-3" />
                                 {c.term}
                               </div>
-                              <p className="text-[11px] text-slate-600 dark:text-slate-400">{c.definition}</p>
-                              <span className="inline-block mt-2 text-[10px] text-slate-500 bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">
+                              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                                {c.definition}
+                              </p>
+                              <span className="mt-2 inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                 {c.citation}
                               </span>
                             </div>
@@ -686,23 +771,27 @@ export function StudyDocumentsHub({
 
                   {/* TAB 5: ROTEIRO DE ESTUDOS */}
                   {activeTab === 'roadmap' && analysis && (
-                    <div className="space-y-4 max-w-4xl">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-sm flex items-center gap-2">
-                          <BookOpen className="w-4 h-4 text-emerald-500" />
+                    <div className="max-w-4xl space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="flex items-center gap-2 text-sm font-black text-[#0d3950] dark:text-white">
+                          <BookOpen className="size-4 text-emerald-500" />
                           Roteiro de Estudos Guiado por Metas
                         </h3>
                         <button
+                          type="button"
                           onClick={() => {
                             const md = analysis.study_roadmap
-                              .map((s) => `### Passo ${s.step}: ${s.goal} (${s.recommended_pages})\n${s.action}`)
+                              .map(
+                                (s) =>
+                                  `### Passo ${s.step}: ${s.goal} (${s.recommended_pages})\n${s.action}`,
+                              )
                               .join('\n\n')
-                            handleSaveToNotes(`Roteiro de Estudos: ${selectedDoc.title}`, md)
+                            void handleSaveToNotes(`Roteiro de Estudos: ${selectedDoc.title}`, md)
                           }}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20"
+                          className="inline-flex min-h-8 items-center gap-1 rounded-xl bg-[#0d3950] px-3 text-xs font-extrabold text-white hover:bg-[#005063] dark:bg-[#005063]"
                         >
-                          <Plus className="w-3.5 h-3.5" />
-                          Salvar no Caderno
+                          <Plus className="size-3.5" />
+                          Enviar para Folha de Anotações
                         </button>
                       </div>
 
@@ -710,21 +799,23 @@ export function StudyDocumentsHub({
                         {analysis.study_roadmap.map((step) => (
                           <div
                             key={step.step}
-                            className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40"
+                            className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#005063]/30 dark:bg-[#040f17]/60"
                           >
-                            <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center flex-shrink-0">
+                            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                               {step.step}
                             </span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2 mb-1">
-                                <h4 className="font-semibold text-xs text-slate-900 dark:text-white">
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                                <h4 className="text-xs font-extrabold text-[#0d3950] dark:text-white">
                                   {step.goal}
                                 </h4>
-                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded">
+                                <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                                   {step.recommended_pages}
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-400">{step.action}</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-300">
+                                {step.action}
+                              </p>
                             </div>
                           </div>
                         ))}
@@ -734,118 +825,132 @@ export function StudyDocumentsHub({
 
                   {/* TAB 6: SIMULADO DE 10 QUESTÕES */}
                   {activeTab === 'quiz' && (
-                    <div className="space-y-4 max-w-4xl">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="max-w-4xl space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <h3 className="font-semibold text-sm flex items-center gap-2">
-                            <Brain className="w-4 h-4 text-amber-500" />
+                          <h3 className="flex items-center gap-2 text-sm font-black text-[#0d3950] dark:text-white">
+                            <Brain className="size-4 text-amber-500" />
                             Simulado de Fixação (10 Perguntas)
                           </h3>
-                          <p className="text-xs text-slate-500">
-                            Perguntas aprofundadas com citações das páginas e diagnóstico de reforço.
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Questões analíticas com citação da página do documento e diagnóstico de reforço.
                           </p>
                         </div>
                         <button
-                          onClick={handleGenerateQuiz}
+                          type="button"
+                          onClick={() => void handleGenerateQuiz()}
                           disabled={generatingQuiz}
-                          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                          className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] hover:bg-slate-50 dark:border-slate-700 dark:bg-[#040f17] dark:text-slate-200"
                         >
-                          <RefreshCw className={`w-3.5 h-3.5 ${generatingQuiz ? 'animate-spin' : ''}`} />
+                          <RefreshCw className={`size-3.5 ${generatingQuiz ? 'animate-spin' : ''}`} />
                           Gerar Novo Simulado
                         </button>
                       </div>
 
                       {currentQuiz ? (
                         <div className="space-y-6">
-                          {/* Resumo do Resultado se já finalizou */}
                           {quizResult && (
-                            <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 flex items-center justify-between">
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#006768]/40 bg-[#005063]/10 p-4 dark:bg-[#005063]/20">
                               <div>
-                                <h4 className="font-bold text-sm text-primary">Resultado do Simulado</h4>
-                                <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                                  Você acertou <strong>{quizResult.score}</strong> de <strong>{quizResult.total_questions}</strong> questões ({quizResult.percentage}%).
+                                <h4 className="text-sm font-black text-[#0d3950] dark:text-white">
+                                  Resultado do Simulado
+                                </h4>
+                                <p className="mt-0.5 text-xs text-slate-700 dark:text-slate-200">
+                                  Você acertou <strong>{quizResult.score}</strong> de{' '}
+                                  <strong>{quizResult.total_questions}</strong> questões (
+                                  {quizResult.percentage}%).
                                 </p>
                               </div>
                               <button
+                                type="button"
                                 onClick={() => {
                                   const text = quizResult.feedback
-                                    .map((f, i) => `Questão ${i + 1}: ${f.is_correct ? 'Acertou' : 'Errou'}\n${f.explanation}`)
+                                    .map(
+                                      (f, i) =>
+                                        `Questão ${i + 1}: ${f.is_correct ? 'Acertou' : 'Errou'}\n${f.explanation}`,
+                                    )
                                     .join('\n\n')
-                                  handleSaveToNotes(`Resultado Simulado: ${selectedDoc.title}`, text)
+                                  void handleSaveToNotes(
+                                    `Resultado Simulado: ${selectedDoc.title}`,
+                                    text,
+                                  )
                                 }}
-                                className="text-xs px-3 py-1.5 rounded-lg bg-primary text-white font-medium"
+                                className="rounded-xl bg-[#0d3950] px-3.5 py-2 text-xs font-extrabold text-white hover:bg-[#005063] dark:bg-[#005063]"
                               >
-                                Salvar no Caderno
+                                Enviar para Folha de Anotações
                               </button>
                             </div>
                           )}
 
-                          {/* Lista das 10 Perguntas */}
                           <div className="space-y-4">
                             {currentQuiz.questions.map((q, idx) => {
                               const qId = String(q.id)
                               const userAns = quizAnswers[qId]
-                              const feedback = quizResult?.feedback.find((f) => f.question_id === qId)
+                              const feedback = quizResult?.feedback.find(
+                                (f) => f.question_id === qId,
+                              )
 
                               return (
                                 <div
                                   key={q.id}
-                                  className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 space-y-3"
+                                  className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#005063]/30 dark:bg-[#040f17]/60"
                                 >
                                   <div className="flex items-start justify-between gap-2">
-                                    <h4 className="font-semibold text-xs text-slate-900 dark:text-white leading-relaxed">
-                                      <span className="text-primary font-bold mr-1.5">{idx + 1}.</span>
+                                    <h4 className="text-xs leading-relaxed font-extrabold text-[#0d3950] dark:text-white">
+                                      <span className="mr-1.5 font-black text-[#006768] dark:text-cyan-400">
+                                        {idx + 1}.
+                                      </span>
                                       {q.question}
                                     </h4>
-                                    <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded flex-shrink-0">
+                                    <span className="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                       {q.citation}
                                     </span>
                                   </div>
 
-                                  {/* Opções */}
                                   <div className="space-y-2">
                                     {q.options.map((opt, optIdx) => {
                                       const isSelected = userAns === optIdx
                                       let optionClass =
-                                        'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                        'border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/60'
 
                                       if (feedback) {
                                         if (optIdx === q.correct_option_index) {
                                           optionClass =
-                                            'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-medium'
+                                            'border-emerald-500 bg-emerald-50 font-bold text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
                                         } else if (isSelected && !feedback.is_correct) {
                                           optionClass =
-                                            'border-red-500 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200'
+                                            'border-rose-500 bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200'
                                         }
                                       } else if (isSelected) {
-                                        optionClass = 'border-primary bg-primary/10 text-primary font-medium'
+                                        optionClass =
+                                          'border-[#006768] bg-[#005063]/10 font-bold text-[#0d3950] dark:border-cyan-400 dark:bg-cyan-400/15 dark:text-white'
                                       }
 
                                       return (
                                         <button
                                           key={optIdx}
+                                          type="button"
                                           disabled={!!quizResult}
                                           onClick={() =>
                                             setQuizAnswers((prev) => ({ ...prev, [qId]: optIdx }))
                                           }
-                                          className={`w-full text-left p-2.5 rounded-lg border text-xs flex items-center justify-between transition-all ${optionClass}`}
+                                          className={`flex w-full items-center justify-between rounded-xl border p-2.5 text-left text-xs transition ${optionClass}`}
                                         >
                                           <span>{opt}</span>
                                           {feedback && optIdx === q.correct_option_index && (
-                                            <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 ml-2" />
+                                            <CheckCircle2 className="ml-2 size-4 shrink-0 text-emerald-500" />
                                           )}
                                           {feedback && isSelected && !feedback.is_correct && (
-                                            <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 ml-2" />
+                                            <XCircle className="ml-2 size-4 shrink-0 text-rose-500" />
                                           )}
                                         </button>
                                       )
                                     })}
                                   </div>
 
-                                  {/* Explicação e Citação após submeter */}
                                   {feedback && (
-                                    <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
-                                      <p className="font-semibold text-slate-900 dark:text-white mb-0.5">
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300">
+                                      <p className="mb-0.5 font-extrabold text-[#0d3950] dark:text-white">
                                         💡 Justificativa Fundamentada:
                                       </p>
                                       <p>{feedback.explanation}</p>
@@ -858,29 +963,36 @@ export function StudyDocumentsHub({
 
                           {!quizResult && (
                             <button
-                              onClick={handleSubmitQuiz}
-                              disabled={submittingQuiz || Object.keys(quizAnswers).length < currentQuiz.questions.length}
-                              className="w-full py-3 bg-primary text-white text-xs font-bold rounded-xl shadow-md hover:bg-primary/90 transition-all disabled:opacity-50"
+                              type="button"
+                              onClick={() => void handleSubmitQuiz()}
+                              disabled={
+                                submittingQuiz ||
+                                Object.keys(quizAnswers).length < currentQuiz.questions.length
+                              }
+                              className="w-full rounded-xl bg-[#0d3950] py-3 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#005063] disabled:opacity-50 dark:bg-[#005063]"
                             >
                               {submittingQuiz
                                 ? 'Corrigindo...'
                                 : Object.keys(quizAnswers).length < currentQuiz.questions.length
-                                ? `Responda todas as 10 perguntas (${Object.keys(quizAnswers).length}/10)`
-                                : 'Finalizar e Corrigir Simulado'}
+                                  ? `Responda todas as 10 perguntas (${Object.keys(quizAnswers).length}/10)`
+                                  : 'Finalizar e Corrigir Simulado'}
                             </button>
                           )}
                         </div>
                       ) : (
-                        <div className="text-center py-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                          <Brain className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-                          <p className="text-xs font-semibold">Nenhum simulado ativo no momento</p>
-                          <p className="text-[11px] text-slate-500 mb-4">
-                            Clique abaixo para gerar 10 perguntas baseadas nas páginas deste documento.
+                        <div className="rounded-2xl border-2 border-dashed border-slate-200 py-12 text-center dark:border-slate-800">
+                          <Brain className="mx-auto mb-2 size-8 text-amber-500" />
+                          <p className="text-xs font-extrabold text-[#0d3950] dark:text-white">
+                            Nenhum simulado ativo no momento
+                          </p>
+                          <p className="mb-4 text-[11px] text-slate-500 dark:text-slate-400">
+                            Gere 10 perguntas baseadas nas páginas deste documento.
                           </p>
                           <button
-                            onClick={handleGenerateQuiz}
+                            type="button"
+                            onClick={() => void handleGenerateQuiz()}
                             disabled={generatingQuiz}
-                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium text-xs rounded-lg shadow-sm"
+                            className="rounded-xl bg-[#0d3950] px-4 py-2 text-xs font-extrabold text-white shadow-xs hover:bg-[#005063] dark:bg-[#005063]"
                           >
                             Gerar Simulado 10Q
                           </button>
@@ -891,42 +1003,43 @@ export function StudyDocumentsHub({
 
                   {/* TAB 7: REFORÇO & MATERIAIS COMPLEMENTARES */}
                   {activeTab === 'reinforcement' && analysis && (
-                    <div className="space-y-6 max-w-4xl">
-                      {/* Assuntos que precisam de reforço */}
+                    <div className="max-w-4xl space-y-6">
                       <div className="space-y-3">
-                        <h3 className="font-semibold text-sm flex items-center gap-2 text-red-600 dark:text-red-400">
-                          <HelpCircle className="w-4 h-4" />
+                        <h3 className="flex items-center gap-2 text-sm font-black text-rose-600 dark:text-rose-400">
+                          <HelpCircle className="size-4" />
                           Assuntos que Precisam de Reforço
                         </h3>
-                        <div className="p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/20 space-y-2">
+                        <div className="space-y-2 rounded-2xl border border-rose-200 bg-rose-50/50 p-4 dark:border-rose-900/50 dark:bg-rose-950/20">
                           {analysis.reinforcement_topics.map((t, i) => (
-                            <div key={i} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
-                              <span className="text-red-500 font-bold">•</span>
+                            <div
+                              key={i}
+                              className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300"
+                            >
+                              <span className="font-bold text-rose-500">•</span>
                               <p>{t}</p>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* Materiais Complementares Sugeridos */}
                       <div className="space-y-3">
-                        <h3 className="font-semibold text-sm flex items-center gap-2 text-primary">
-                          <BookOpen className="w-4 h-4" />
-                          Pesquisa de Materiais Complementares Sugeridos pela IA
+                        <h3 className="flex items-center gap-2 text-sm font-black text-[#0d3950] dark:text-white">
+                          <BookOpen className="size-4 text-[#006768] dark:text-cyan-400" />
+                          Materiais Complementares Sugeridos pela IA
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                           {analysis.complementary_materials.map((mat, i) => (
                             <div
                               key={i}
-                              className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40"
+                              className="rounded-2xl border border-slate-200 bg-white p-3.5 dark:border-[#005063]/30 dark:bg-[#040f17]/60"
                             >
-                              <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                              <span className="rounded bg-[#005063]/10 px-2 py-0.5 text-[10px] font-extrabold text-[#0d3950] dark:bg-cyan-400/15 dark:text-cyan-300">
                                 {mat.type}
                               </span>
-                              <h4 className="font-bold text-xs mt-2 text-slate-900 dark:text-white">
+                              <h4 className="mt-2 text-xs font-extrabold text-[#0d3950] dark:text-white">
                                 {mat.title}
                               </h4>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
                                 {mat.description}
                               </p>
                             </div>
@@ -938,10 +1051,10 @@ export function StudyDocumentsHub({
 
                   {/* TAB: LEITOR DE PÁGINAS */}
                   {activeTab === 'reader' && (
-                    <div className="space-y-4 max-w-4xl">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-sm flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-primary" />
+                    <div className="max-w-4xl space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="flex items-center gap-2 text-sm font-black text-[#0d3950] dark:text-white">
+                          <FileText className="size-4 text-[#006768] dark:text-cyan-400" />
                           Conteúdo Extraído por Página
                         </h3>
                         {selectedDoc.file_url && (
@@ -949,9 +1062,9 @@ export function StudyDocumentsHub({
                             href={selectedDoc.file_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-xs text-primary hover:underline"
+                            className="flex items-center gap-1 text-xs font-bold text-[#005063] hover:underline dark:text-cyan-400"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <ExternalLink className="size-3.5" />
                             Abrir Arquivo Original
                           </a>
                         )}
@@ -962,24 +1075,24 @@ export function StudyDocumentsHub({
                           {selectedDoc.pages.map((p) => (
                             <div
                               key={p.id}
-                              className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 space-y-2"
+                              className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#005063]/30 dark:bg-[#040f17]/60"
                             >
-                              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                                <span className="font-bold text-xs text-primary">
+                              <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
+                                <span className="text-xs font-extrabold text-[#005063] dark:text-cyan-400">
                                   Página {p.page_number}
                                 </span>
                                 <span className="text-[10px] text-slate-400">
                                   ~{p.token_count} palavras
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-mono">
+                              <p className="font-mono text-xs leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300">
                                 {p.content}
                               </p>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-500 py-6 text-center">
+                        <p className="py-6 text-center text-xs text-slate-500">
                           Nenhum texto de página indexado para este arquivo.
                         </p>
                       )}
@@ -990,14 +1103,15 @@ export function StudyDocumentsHub({
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
-            <BookOpen className="w-12 h-12 text-slate-300 dark:text-slate-700" />
-            <h3 className="text-base font-semibold text-slate-700 dark:text-slate-300">
+          <div className="flex flex-1 flex-col items-center justify-center space-y-3 p-8 text-center">
+            <BookOpen className="size-12 text-slate-300 dark:text-slate-700" />
+            <h3 className="text-base font-black text-[#0d3950] dark:text-slate-200">
               Selecione um Documento ou Faça Upload
             </h3>
-            <p className="text-xs text-slate-500 max-w-sm">
-              Envie apresentações, apostilas ou livros para desbloquear resumos automáticos, mapas mentais, simulados
-              completos e flashcards.
+            <p className="max-w-sm text-xs text-slate-500 dark:text-slate-400">
+              Envie apresentações, apostilas ou livros para gerar resumos com citação de página,
+              explicação de tópicos complexos, mapas mentais, simulados de 10 questões e flashcards
+              Anki.
             </p>
           </div>
         )}

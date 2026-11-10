@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BookOpen, FileText, LogOut, Plus } from 'lucide-react'
+import { BookOpen, FileText, LogOut, Plus, Sparkles } from 'lucide-react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import {
   createAcademicReading,
@@ -35,9 +35,6 @@ import { ReadingStreakTracker } from '../components/ReadingStreakTracker'
 import { StudyNotesWorkspace } from '../components/StudyNotesWorkspace'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { calculateReadingSummary } from '../utils/readingStats'
-import { StudyDocumentsHub } from '../components/StudyDocumentsHub'
-import { listStudyFolders } from '../api/client'
-import type { StudyFolder } from '../api/types'
 
 export function StudySessionPage() {
   const { signOut } = useAuth()
@@ -52,7 +49,6 @@ export function StudySessionPage() {
   const [subjects, setSubjects] = useState<StudentSubject[]>([])
   const [readings, setReadings] = useState<AcademicReading[]>([])
   const [readingLogs, setReadingLogs] = useState<ReadingLog[]>([])
-  const [folders, setFolders] = useState<StudyFolder[]>([])
   const [selectedTaskId, setSelectedTaskId] = useState<string>(taskIdFromQuery)
   const [selectedMethodology, setSelectedMethodology] = useState<StudyMethodologyKey | ''>(
     'feynman',
@@ -72,18 +68,16 @@ export function StudySessionPage() {
     setLoading(true)
     setError('')
     try {
-      const [loadedTasks, loadedSubjects, loadedReadings, loadedLogs, loadedFolders] = await Promise.all([
+      const [loadedTasks, loadedSubjects, loadedReadings, loadedLogs] = await Promise.all([
         listAcademicTasks(),
         listStudentSubjects(),
         listAcademicReadings(),
         listReadingLogs(),
-        listStudyFolders(),
       ])
       setTasks(loadedTasks)
       setSubjects(loadedSubjects)
       setReadings(loadedReadings)
       setReadingLogs(loadedLogs)
-      setFolders(loadedFolders)
 
       if (taskIdFromQuery && loadedTasks.some((t) => t.id === taskIdFromQuery)) {
         setSelectedTaskId(taskIdFromQuery)
@@ -256,7 +250,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
       <div className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-4 px-2 py-3 sm:px-4 sm:py-4">
         {error ? <Alert tone="error">{error}</Alert> : null}
 
-        {activeTab === 'workspace' && (
+        {(activeTab === 'workspace' || activeTab === 'documents') && (
           <div className="flex flex-1 flex-col gap-4">
             {showFocusTools && (
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -273,7 +267,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
               </div>
             )}
 
-            {/* Bloco de Anotações Ocupando o Máximo Possível da Tela com os Controles na Barra do Bloco */}
+            {/* Bloco de Anotações Ocupando o Máximo Possível da Tela com Documentos & IA Integrados */}
             <div className="flex flex-1 flex-col">
               <StudyNotesWorkspace
                 activeSubject={activeSubject}
@@ -297,7 +291,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
         {/* ABA 2: PAINEL DE LEITURA ACADÊMICA */}
         {activeTab === 'readings' && (
           <div className="space-y-6 rounded-3xl border border-slate-200/90 bg-white p-5 shadow-lg dark:border-[#005063]/30 dark:bg-[#081a26]">
-            {/* Barra de Topo com o Alternador Anotações | Leituras */}
+            {/* Barra de Topo com o Alternador Anotações | Leituras | Documentos & IA */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-[#005063]/30">
               <div>
                 <h3 className="text-lg font-black text-[#0d3950] dark:text-white">
@@ -312,7 +306,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 <div
                   role="tablist"
                   aria-label="Seção de Anotações"
-                  className="flex rounded-xl border border-slate-200 bg-slate-100/80 p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
+                  className="flex flex-wrap rounded-xl border border-slate-200 bg-slate-100/80 p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
                 >
                   <button
                     type="button"
@@ -333,6 +327,16 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                   >
                     <BookOpen className="size-3.5" aria-hidden="true" />
                     Leituras ({readings.length})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={false}
+                    onClick={() => switchTab('documents')}
+                    className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-extrabold text-slate-600 transition hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white"
+                  >
+                    <Sparkles className="size-3.5 text-amber-500" aria-hidden="true" />
+                    Central de Documentos & IA
                   </button>
                 </div>
 
@@ -395,59 +399,6 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {/* ABA 3: CENTRAL DE DOCUMENTOS & IA COGNITIVA */}
-        {activeTab === 'documents' && (
-          <div className="flex flex-1 flex-col min-h-[680px]">
-            <div className="flex items-center justify-between pb-3">
-              <div
-                role="tablist"
-                aria-label="Seção de Anotações"
-                className="flex rounded-xl border border-slate-200 bg-white p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={false}
-                  onClick={() => switchTab('workspace')}
-                  className="inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold text-slate-600 transition hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white"
-                >
-                  <FileText className="size-3.5" aria-hidden="true" />
-                  Anotações
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={false}
-                  onClick={() => switchTab('readings')}
-                  className="inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold text-slate-600 transition hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white"
-                >
-                  <BookOpen className="size-3.5" aria-hidden="true" />
-                  Leituras ({readings.length})
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={true}
-                  onClick={() => switchTab('documents')}
-                  className="inline-flex min-h-7 items-center gap-1.5 rounded-lg bg-[#0d3950] px-2.5 text-xs font-extrabold text-white shadow-xs dark:bg-[#005063]"
-                >
-                  <BookOpen className="size-3.5 text-amber-400" aria-hidden="true" />
-                  Central de Documentos & IA
-                </button>
-              </div>
-            </div>
-
-            <StudyDocumentsHub
-              subjects={subjects}
-              folders={folders}
-              onOpenNoteWithContent={(title, content) => {
-                setPendingTemplate(`# ${title}\n\n${content}`)
-                switchTab('workspace')
-              }}
-            />
           </div>
         )}
       </div>

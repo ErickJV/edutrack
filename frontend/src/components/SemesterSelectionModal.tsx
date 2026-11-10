@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ChevronDown, Check, LoaderCircle, X } from 'lucide-react'
+import { X } from 'lucide-react'
 
 import { listCurriculum, saveStudentSubjects } from '../api/client'
 import type { AcademicSubject, StudentSubject } from '../api/types'
@@ -14,8 +14,8 @@ type SemesterSelectionModalProps = {
   onClose: () => void
   onSaved: (subjects: StudentSubject[]) => void
 }
-function academicPeriodForSemester(): string {
-  return `${new Date().getFullYear()}/1`
+function academicPeriodForSemester(semester: number): string {
+  return `${new Date().getFullYear()}/${semester}`
 }
 
 export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelectionModalProps) {
@@ -41,7 +41,13 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
   }, [open])
 
   const semesterSubjects = useMemo(
-    () => curriculum.filter((subject) => subject.semester === selectedSemester && subject.active),
+    () =>
+      curriculum.filter(
+        (subject) =>
+          subject.semester === selectedSemester &&
+          subject.active &&
+          !(selectedSemester === 2 && subject.name.toLowerCase().includes('application data persistence')),
+      ),
     [curriculum, selectedSemester],
   )
   useEffect(() => {
@@ -58,7 +64,7 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
     setError('')
     try {
       const saved = await saveStudentSubjects({
-        semester_period: academicPeriodForSemester(),
+        semester_period: academicPeriodForSemester(selectedSemester),
         subject_ids: selectedSubjectIds,
       })
       onSaved?.(saved)

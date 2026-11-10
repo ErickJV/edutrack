@@ -21,8 +21,8 @@ class FlashcardsAndNotesQualityTests(TestCase):
         self.subject = Subject.objects.create(
             course=self.course,
             name="Application Data Persistence",
-            code="ADP01",
-            semester=3,
+            code="ADS101",
+            semester=1,
             workload_hours=80,
         )
         self.term = AcademicTerm.objects.create(
