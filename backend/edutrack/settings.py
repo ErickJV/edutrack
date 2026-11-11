@@ -193,8 +193,8 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.accounts.exceptions.api_exception_handler",
 }
 SPECTACULAR_SETTINGS = {
-    "TITLE": "EduTrack API",
-    "DESCRIPTION": "API acadêmica de autenticação e perfil do EduTrack.",
+    "TITLE": "Impatrack API",
+    "DESCRIPTION": "API acadêmica de autenticação e perfil do Impatrack.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
@@ -219,8 +219,8 @@ EMAIL_PORT = int(os.getenv("EMAIL_PORT", "1025"))
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", False)
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "EduTrack <nao-responda@edutrack.local>")
-ACCOUNT_EMAIL_SUBJECT_PREFIX = "[EduTrack] "
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Impatrack <nao-responda@impatrack.dev>")
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "[Impatrack] "
 
 SESSION_COOKIE_NAME = "edutrack_session"
 SESSION_COOKIE_HTTPONLY = True

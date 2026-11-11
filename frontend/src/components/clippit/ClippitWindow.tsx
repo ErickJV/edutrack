@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Minus, RotateCcw, Send, X } from 'lucide-react';
 import { sendAssistantChat } from '../../api/client';
 import type { AssistantChatMessage } from '../../api/types';
 import { ClippitAnimation } from './ClippitAnimation';
@@ -11,23 +12,23 @@ interface ClippitWindowProps {
 }
 
 const QUICK_ACTIONS = [
-  'O que estudar hoje?',
-  'Próximas provas',
-  'Minhas faltas',
-  'Tarefas atrasadas',
+  { label: 'O que estudar hoje?', icon: '📚' },
+  { label: 'Próximas provas', icon: '📅' },
+  { label: 'Minhas faltas', icon: '⚠️' },
+  { label: 'Tarefas atrasadas', icon: '⏳' },
 ];
 
 const INITIAL_MESSAGE: AssistantChatMessage = {
   role: 'assistant',
   content:
-    'Olá! Eu sou o **Clippit**, seu copiloto acadêmico no EduTrack! 📎\n\n' +
+    'Olá! Eu sou o **Clippit**, seu copiloto acadêmico no Impatrack! 📎\n\n' +
     'Estou aqui para ajudar com suas disciplinas, tarefas, provas agendadas e controle de faltas. ' +
     'Como posso ajudar você hoje?',
   animation: 'wave',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
 };
 
-// Renderizador simples de Markdown retro (negrito, itálico, listas e quebras de linha)
+// Renderizador aprimorado de Markdown mantendo o feeling nostálgico com tipografia moderna
 function renderRetroMarkdown(content: string): React.ReactNode {
   const lines = content.split('\n');
 
@@ -35,18 +36,44 @@ function renderRetroMarkdown(content: string): React.ReactNode {
     // Títulos ###
     if (line.startsWith('### ')) {
       return (
-        <h4 key={idx} className="font-bold text-xs uppercase tracking-wide mt-2 mb-1 text-slate-800">
+        <h4
+          key={idx}
+          className="font-bold text-xs uppercase tracking-wider mt-2.5 mb-1 text-[#0d3950] dark:text-[#a8d5e5] border-b border-amber-200/50 dark:border-amber-800/40 pb-0.5"
+        >
           {line.replace('### ', '')}
         </h4>
       );
     }
-    // Listas com hífen
-    if (line.trim().startsWith('- ')) {
+    // Títulos ##
+    if (line.startsWith('## ')) {
+      return (
+        <h3
+          key={idx}
+          className="font-extrabold text-sm text-[#0d3950] dark:text-[#a8d5e5] mt-2.5 mb-1 border-b border-amber-200/50 dark:border-amber-800/40 pb-0.5"
+        >
+          {line.replace('## ', '')}
+        </h3>
+      );
+    }
+    // Listas com hífen ou asterisco
+    if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
       const itemText = line.trim().substring(2);
       return (
-        <div key={idx} className="flex items-start space-x-1.5 ml-2 my-0.5">
-          <span className="text-slate-600 font-bold">•</span>
-          <span>{parseInlineFormatting(itemText)}</span>
+        <div key={idx} className="flex items-start space-x-2 ml-1 my-1">
+          <span className="text-amber-500 font-bold leading-relaxed shrink-0">•</span>
+          <span className="leading-relaxed">{parseInlineFormatting(itemText)}</span>
+        </div>
+      );
+    }
+    // Listas numeradas (ex: 1. 2.)
+    const numberedMatch = line.trim().match(/^(\d+)\.\s+(.*)$/);
+    if (numberedMatch) {
+      return (
+        <div key={idx} className="flex items-start space-x-2 ml-1 my-1">
+          <span className="text-amber-600 dark:text-amber-400 font-bold text-xs leading-relaxed shrink-0">
+            {numberedMatch[1]}.
+          </span>
+          <span className="leading-relaxed">{parseInlineFormatting(numberedMatch[2])}</span>
         </div>
       );
     }
@@ -56,7 +83,7 @@ function renderRetroMarkdown(content: string): React.ReactNode {
     }
     // Parágrafo padrão
     return (
-      <p key={idx} className="my-0.5 leading-relaxed">
+      <p key={idx} className="my-1 leading-relaxed">
         {parseInlineFormatting(line)}
       </p>
     );
@@ -90,7 +117,7 @@ function parseInlineFormatting(text: string): React.ReactNode {
 
     if (firstMatch.type === 'bold') {
       parts.push(
-        <strong key={keyIndex++} className="font-semibold text-slate-900">
+        <strong key={keyIndex++} className="font-bold text-slate-900 dark:text-white">
           {firstMatch.match[2]}
         </strong>
       );
@@ -99,7 +126,7 @@ function parseInlineFormatting(text: string): React.ReactNode {
       parts.push(
         <code
           key={keyIndex++}
-          className="bg-slate-200 text-slate-800 text-[10px] px-1 py-0.5 rounded font-mono"
+          className="bg-amber-100/80 dark:bg-amber-900/40 text-amber-950 dark:text-amber-200 text-[11px] px-1.5 py-0.5 rounded-md font-mono border border-amber-200/60 dark:border-amber-800/60"
         >
           {firstMatch.match[1]}
         </code>
@@ -198,79 +225,101 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
 
   return (
     <div
-      className="win98-window fixed bottom-24 right-4 sm:right-6 z-50 w-[92vw] sm:w-[410px] max-w-[420px] h-[550px] max-h-[85vh] flex flex-col shadow-2xl text-[12px]"
+      className="clippy-window-animate fixed bottom-24 right-4 sm:right-6 z-50 w-[94vw] sm:w-[420px] max-w-[440px] h-[580px] max-h-[85vh] flex flex-col rounded-3xl bg-white/95 dark:bg-[#0c1824]/95 backdrop-blur-xl border border-slate-200/90 dark:border-slate-700/80 shadow-2xl shadow-indigo-950/20 dark:shadow-black/70 overflow-hidden text-xs"
       role="dialog"
-      aria-label="Clippit - Assistente EduTrack"
+      aria-label="Clippit - Assistente Impatrack"
     >
-      {/* Barra de Título Windows 98 */}
-      <div className="win98-title-bar">
-        <div className="flex items-center space-x-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
-          <span className="text-sm">📎</span>
-          <span>Clippit - Assistente EduTrack</span>
+      {/* Barra de Título Moderna com Feeling Nostálgico */}
+      <div className="bg-gradient-to-r from-[#005063] via-[#0d3950] to-[#1e3a8a] text-white px-4 py-2.5 flex items-center justify-between select-none border-b border-white/10 shrink-0">
+        <div className="flex items-center space-x-2">
+          <span className="flex items-center justify-center size-6 rounded-lg bg-white/15 text-amber-300 text-xs shadow-2xs">
+            📎
+          </span>
+          <div className="flex items-center space-x-1.5">
+            <span className="font-bold tracking-tight text-sm">Clippit AI</span>
+            <span className="bg-white/15 text-white/90 text-[10px] px-2 py-0.5 rounded-full font-medium tracking-wide">
+              Copiloto Impatrack
+            </span>
+          </div>
         </div>
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1.5">
           {onMinimize && (
             <button
               onClick={onMinimize}
-              className="win98-btn win98-btn-title"
+              className="size-7 rounded-lg flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 active:scale-95 transition-all cursor-pointer"
               title="Minimizar"
+              aria-label="Minimizar assistente"
             >
-              _
+              <Minus className="size-3.5" />
             </button>
           )}
           <button
             onClick={onClose}
-            className="win98-btn win98-btn-title"
+            className="size-7 rounded-lg flex items-center justify-center text-white/80 hover:text-white hover:bg-rose-500/80 active:scale-95 transition-all cursor-pointer"
             title="Fechar"
+            aria-label="Fechar assistente"
           >
-            ✕
+            <X className="size-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Topo com avatar animado e banner */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#808080] bg-[#c0c0c0]">
-        <div className="flex items-center space-x-2">
-          <ClippitAnimation
-            animation={currentAnimation}
-            size={64}
+      {/* Hero do Clippy com Avatar Interativo e Status */}
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900/60 dark:to-[#0c1824] border-b border-slate-200/80 dark:border-slate-800/80 shrink-0">
+        <div className="flex items-center space-x-3">
+          <div
+            className="relative group cursor-pointer"
             onClick={handleClippyClick}
-            title="Clique para brincar com o Clippit!"
-          />
-          <div>
-            <div className="font-bold text-xs text-slate-900">Clippit AI</div>
-            <div className="text-[11px] text-slate-700">
-              {isLoading ? 'Pensando com Gemini 3.8...' : 'Pronto para ajudar!'}
+            title="Clique para ver animações do Clippit!"
+          >
+            <div className="size-13 rounded-2xl bg-gradient-to-br from-amber-100/80 to-amber-50/30 dark:from-amber-950/40 dark:to-slate-800/40 p-1 flex items-center justify-center border border-amber-200/60 dark:border-amber-700/40 shadow-xs group-hover:scale-105 active:scale-95 transition-transform">
+              <ClippitAnimation
+                animation={currentAnimation}
+                size={48}
+                className="drop-shadow-xs"
+              />
             </div>
           </div>
+          <div>
+            <div className="flex items-center space-x-1.5">
+              <span className="font-bold text-xs text-slate-800 dark:text-white">Assistente de Estudos</span>
+              <span className="flex items-center space-x-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/50 px-1.5 py-0.2 rounded-full">
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Online</span>
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              {isLoading ? 'Pensando com Gemini 3.8...' : 'Pronto para tirar dúvidas e organizar sua rotina'}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={handleClearChat}
-            className="win98-btn text-[10px] px-2 py-0.5"
-            title="Limpar histórico de mensagens"
-          >
-            Limpar
-          </button>
-        </div>
+        <button
+          onClick={handleClearChat}
+          className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl text-[11px] font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer"
+          title="Limpar histórico de mensagens"
+        >
+          <RotateCcw className="size-3" />
+          <span>Limpar</span>
+        </button>
       </div>
 
-      {/* Botões de Ações Acadêmicas Rápidas */}
-      <div className="px-2 py-1.5 bg-[#dfdfdf] border-b border-[#808080] flex flex-wrap gap-1">
+      {/* Sugestões Rápidas de Ações Acadêmicas */}
+      <div className="px-3 py-2 bg-slate-50/60 dark:bg-slate-900/30 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center gap-1.5 overflow-x-auto clippy-scroll shrink-0">
         {QUICK_ACTIONS.map((action) => (
           <button
-            key={action}
-            onClick={() => handleSendMessage(action)}
+            key={action.label}
+            onClick={() => handleSendMessage(action.label)}
             disabled={isLoading}
-            className="win98-btn text-[10px] py-0.5 px-1.5 whitespace-nowrap disabled:opacity-50"
+            className="inline-flex items-center space-x-1 text-[11px] font-medium py-1 px-2.5 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs hover:bg-amber-50 hover:text-amber-900 hover:border-amber-300 dark:hover:bg-amber-950/30 dark:hover:text-amber-200 dark:hover:border-amber-700/60 transition-all whitespace-nowrap disabled:opacity-50 active:scale-95 cursor-pointer"
           >
-            {action}
+            <span>{action.icon}</span>
+            <span>{action.label}</span>
           </button>
         ))}
       </div>
 
       {/* Área de Histórico de Mensagens */}
-      <div className="win98-inset win98-scroll flex-1 p-2.5 overflow-y-auto space-y-2.5 m-1">
+      <div className="clippy-scroll flex-1 p-3.5 overflow-y-auto space-y-3">
         {messages.map((msg, index) => {
           const isAssistant = msg.role === 'assistant';
           return (
@@ -279,18 +328,23 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
               className={`flex flex-col ${isAssistant ? 'items-start' : 'items-end'}`}
             >
               <div
-                className={`max-w-[88%] p-2 text-[11px] ${
-                  isAssistant ? 'win98-chat-bubble-assistant' : 'win98-chat-bubble-user'
+                className={`max-w-[88%] p-3 text-[12px] ${
+                  isAssistant ? 'clippy-bubble-assistant' : 'clippy-bubble-user'
                 }`}
               >
                 {isAssistant && (
-                  <div className="flex items-center space-x-1 text-[10px] text-slate-600 font-bold mb-1 border-b border-black/10 pb-0.5">
-                    <span>📎 Clippit</span>
+                  <div className="flex items-center space-x-1.5 text-[10px] font-bold text-amber-800 dark:text-amber-400 mb-1.5 pb-1 border-b border-amber-200/40 dark:border-amber-800/40">
+                    <span>📎</span>
+                    <span>Clippit</span>
                   </div>
                 )}
                 <div>{renderRetroMarkdown(msg.content)}</div>
                 {msg.timestamp && (
-                  <div className="text-[9px] text-slate-500 text-right mt-1">
+                  <div
+                    className={`text-[9px] mt-1 text-right ${
+                      isAssistant ? 'text-amber-800/50 dark:text-amber-200/40' : 'text-white/60'
+                    }`}
+                  >
                     {msg.timestamp}
                   </div>
                 )}
@@ -299,17 +353,19 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
           );
         })}
         {isLoading && (
-          <div className="flex items-center space-x-2 win98-chat-bubble-assistant p-2 max-w-[70%]">
-            <span className="animate-spin text-xs">⏳</span>
-            <span className="text-[11px] text-slate-700 italic">Consultando seus dados acadêmicos...</span>
+          <div className="flex items-center space-x-2 clippy-bubble-assistant p-3 max-w-[78%]">
+            <span className="size-2 rounded-full bg-amber-500 animate-ping" />
+            <span className="text-[11px] text-amber-900 dark:text-amber-200 italic">
+              Clippit está consultando seus dados acadêmicos...
+            </span>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Caixa de Entrada e Envio */}
-      <div className="p-1.5 pt-0 flex flex-col space-y-1">
-        <div className="flex space-x-1">
+      <div className="p-3 bg-slate-50/80 dark:bg-slate-900/60 border-t border-slate-200/80 dark:border-slate-800/80 shrink-0">
+        <div className="flex items-end space-x-2 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-1.5 shadow-2xs focus-within:ring-2 focus-within:ring-[#005063]/30 focus-within:border-[#005063] dark:focus-within:ring-[#2dd4bf]/30 dark:focus-within:border-[#2dd4bf] transition-all">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
@@ -317,15 +373,21 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
             placeholder="Pergunte sobre matérias, faltas, provas ou tarefas..."
             rows={2}
             disabled={isLoading}
-            className="win98-inset flex-1 p-1 text-[11px] resize-none focus:outline-none"
+            className="flex-1 bg-transparent p-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed"
           />
           <button
             onClick={() => handleSendMessage()}
             disabled={isLoading || !inputText.trim()}
-            className="win98-btn px-3 font-bold text-xs disabled:opacity-50"
+            className="size-9 rounded-xl bg-gradient-to-r from-[#005063] to-[#006768] hover:from-[#0d3950] hover:to-[#005063] text-white flex items-center justify-center shadow-xs disabled:opacity-40 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer"
+            title="Enviar mensagem"
+            aria-label="Enviar mensagem"
           >
-            Enviar
+            <Send className="size-4" />
           </button>
+        </div>
+        <div className="flex items-center justify-between mt-1.5 px-1 text-[10px] text-slate-400 dark:text-slate-500">
+          <span>💡 Enter para enviar • Shift+Enter para nova linha</span>
+          <span className="font-mono">Gemini 3.8 Flash</span>
         </div>
       </div>
     </div>

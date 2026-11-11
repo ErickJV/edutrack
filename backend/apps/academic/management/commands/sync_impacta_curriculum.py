@@ -36,7 +36,7 @@ def slugify_simple(text: str) -> str:
 def fetch_course_curriculum(slug: str) -> list[tuple[int, list[dict]]]:
     url = f"https://www.impacta.edu.br/graduacoes/{slug}"
     req = urllib.request.Request(
-        url, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) EduTrack/1.0"}
+        url, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Impatrack/1.0"}
     )
     with urllib.request.urlopen(req, timeout=12) as resp:
         html = resp.read().decode("utf-8")

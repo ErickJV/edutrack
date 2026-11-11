@@ -172,7 +172,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
     const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
     const modeLabel = mode === 'focus' ? 'Foco' : mode === 'short_break' ? 'Pausa' : 'Pausa Longa'
     const originalTitle = document.title
-    document.title = `(${timeStr}) ${modeLabel} · EduTrack`
+    document.title = `(${timeStr}) ${modeLabel} · Impatrack`
     return () => {
       document.title = originalTitle
     }

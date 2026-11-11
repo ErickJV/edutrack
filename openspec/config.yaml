@@ -1,7 +1,7 @@
 schema: spec-driven
 
 context: |
-  Projeto: EduTrack — Plataforma de organização acadêmica para estudantes universitários (Faculdade Impacta).
+  Projeto: Impatrack — Plataforma de organização acadêmica para estudantes universitários (Faculdade Impacta).
   Idioma: pt-BR. Todos os artefatos (proposal, specs, design, tasks) devem ser gerados em português do Brasil.
 
   Filosofia de Desenvolvimento:

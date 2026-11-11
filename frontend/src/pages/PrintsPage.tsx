@@ -696,7 +696,7 @@ export function PrintsPage() {
 
       {/* Footer */}
       <footer className="mt-16 border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500 dark:border-white/10 dark:bg-[#041019]">
-        <p>EduTrack &copy; {new Date().getFullYear()} &mdash; Faculdade Impacta de Tecnologia. Comprovação de APIs e CRUDs desenvolvidos.</p>
+        <p>Impatrack &copy; {new Date().getFullYear()} &mdash; Faculdade Impacta de Tecnologia. Comprovação de APIs e CRUDs desenvolvidos.</p>
       </footer>
     </div>
   )

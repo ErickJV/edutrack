@@ -8,7 +8,7 @@ const documents = {
     title: 'Termos de Uso',
     icon: FileWarning,
     paragraphs: [
-      'O EduTrack é uma plataforma acadêmica autorizada destinada a alunos da Faculdade Impacta. Nesta versão, o serviço oferece somente autenticação e identificação da graduação.',
+      'O Impatrack é uma plataforma acadêmica autorizada destinada a alunos da Faculdade Impacta. Nesta versão, o serviço oferece somente autenticação e identificação da graduação.',
       'Você é responsável por manter suas credenciais seguras e por informar dados verdadeiros. O serviço não substitui os sistemas oficiais da instituição e pode ser alterado ou interrompido durante o desenvolvimento do projeto.',
     ],
   },
@@ -16,7 +16,7 @@ const documents = {
     title: 'Política de Privacidade',
     icon: ShieldCheck,
     paragraphs: [
-      'O EduTrack trata nome, e-mail institucional, graduação, modalidade e registros técnicos de autenticação para disponibilizar o acesso. Senhas são armazenadas exclusivamente como hash seguro.',
+      'O Impatrack trata nome, e-mail institucional, graduação, modalidade e registros técnicos de autenticação para disponibilizar o acesso. Senhas são armazenadas exclusivamente como hash seguro.',
       'O MVP não registra IP ou user-agent nos aceites legais e não compartilha dados com terceiros, exceto os serviços estritamente necessários de autenticação e infraestrutura.',
     ],
   },
