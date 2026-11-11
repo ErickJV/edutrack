@@ -146,7 +146,7 @@ function getCategoryMeta(item: CalendarItem) {
   const isDone = item.task_status === 'completed'
   if (item.kind === 'exam') {
     return {
-      label: isDone ? 'Prova concluída' : 'Prova / Avaliação',
+      label: isDone ? 'Prova concluída' : 'Prova | Avaliação',
       shortLabel: isDone ? 'Prova ✓' : 'Prova',
       originLabel: 'Tarefas',
       originLink: '/tarefas',
@@ -159,7 +159,7 @@ function getCategoryMeta(item: CalendarItem) {
   }
   if (item.kind === 'assignment') {
     return {
-      label: isDone ? 'Trabalho concluído' : 'Trabalho / Projeto',
+      label: isDone ? 'Trabalho concluído' : 'Trabalho | Projeto',
       shortLabel: isDone ? 'Trabalho ✓' : 'Trabalho',
       originLabel: 'Tarefas',
       originLink: '/tarefas',
@@ -172,7 +172,7 @@ function getCategoryMeta(item: CalendarItem) {
   }
   if (item.source_type === 'task' || item.kind === 'task') {
     return {
-      label: isDone ? 'Tarefa concluída' : 'Tarefa / Entrega',
+      label: isDone ? 'Tarefa concluída' : 'Tarefa | Entrega',
       shortLabel: isDone ? 'Concluída' : 'Tarefa',
       originLabel: 'Tarefas',
       originLink: '/tarefas',
@@ -184,7 +184,7 @@ function getCategoryMeta(item: CalendarItem) {
     }
   }
   return {
-    label: isDone ? 'Atividade concluída' : 'Estudo / Atividade',
+    label: isDone ? 'Atividade concluída' : 'Estudo | Atividade',
     shortLabel: isDone ? 'Atividade ✓' : 'Atividade',
     originLabel: 'Tarefas',
     originLink: '/tarefas',
@@ -608,7 +608,7 @@ export function CalendarPage() {
       setError(
         reason instanceof ApiError
           ? reason.message
-          : 'Não foi possível salvar a tarefa/evento no calendário.',
+          : 'Não foi possível salvar a tarefa | evento no calendário.',
       )
     } finally {
       setSavingEvent(false)
@@ -701,7 +701,7 @@ export function CalendarPage() {
           const isNowPai = patch.assessment_type.includes('PAI')
           if (isNowPai) {
             updated.student_subject_id = null
-            updated.subject_name = 'Interdisciplinar (Geral)'
+            updated.subject_name = ''
             if (!updated.title || updated.title.includes('—')) {
               updated.title = `Prova ${patch.assessment_type}`
             }
@@ -728,7 +728,7 @@ export function CalendarPage() {
     const isPai = Boolean(preset?.assessment_type?.includes('PAI'))
     const subjObj = subjects.find((s) => s.id === pdfSubjectId)
     const subjName = isPai
-      ? 'Interdisciplinar (Geral)'
+      ? ''
       : (subjObj?.subject.name || pdfResult?.subject_name || 'Disciplina')
     const aType = preset?.assessment_type || 'PAI 1'
     setEditableExtractedItems((prev) => [
@@ -902,7 +902,7 @@ export function CalendarPage() {
               </p>
             </div>
 
-            {/* Grupo de Ações: Nova Tarefa / Evento + (Importar Calendário e Atualizar posicionados lado a lado) */}
+            {/* Grupo de Ações: Nova Tarefa | Evento + (Importar Calendário e Atualizar posicionados lado a lado) */}
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
@@ -910,7 +910,7 @@ export function CalendarPage() {
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0d3950] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#0d3950]/20 transition hover:bg-[#005063] focus:outline-none focus:ring-2 focus:ring-[#0d3950]/40 dark:bg-[#005063] dark:hover:bg-[#006b85]"
               >
                 <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>Nova Tarefa / Evento</span>
+                <span>Nova Tarefa | Evento</span>
               </button>
 
               {/* Botões Importar Calendário e Atualizar posicionados estritamente lado a lado de forma discreta */}
@@ -1032,16 +1032,16 @@ export function CalendarPage() {
               </Select>
 
               <Select
-                label="Filtrar por origem / tipo"
+                label="Filtrar por origem | tipo"
                 value={selectedKind}
                 onChange={(e) => setSelectedKind(e.target.value)}
               >
                 <option value="">Todos os itens</option>
                 <option value="class">Aulas (Disciplinas)</option>
-                <option value="task">Tarefas & Entregas</option>
+                <option value="task">Tarefas | Entregas</option>
                 <option value="reading">Leituras & Metas (Anotações)</option>
-                <option value="exam">Provas / Avaliações</option>
-                <option value="assignment">Trabalhos / Projetos</option>
+                <option value="exam">Provas | Avaliações</option>
+                <option value="assignment">Trabalhos | Projetos</option>
                 <option value="other">Outras Atividades</option>
               </Select>
             </div>
@@ -1181,17 +1181,11 @@ export function CalendarPage() {
                             </h4>
 
                             {/* Linha 3: Disciplina */}
-                            {item.subject_name && (
+                            {item.student_subject_id && item.subject_name && !item.subject_name.includes('Interdisciplinar') ? (
                               <p className="mt-0.5 line-clamp-2 break-words text-[11px] leading-tight font-semibold text-slate-600 dark:text-slate-300">
-                                {item.subject_name.includes('Interdisciplinar') || !item.student_subject_id ? (
-                                  <span className="inline-flex items-center gap-1 rounded bg-[#005063]/15 px-1.5 py-0.5 text-[10px] font-black text-[#005063] dark:bg-cyan-400/20 dark:text-cyan-300">
-                                    Universal Interdisciplinar
-                                  </span>
-                                ) : (
-                                  item.subject_name
-                                )}
+                                {item.subject_name}
                               </p>
-                            )}
+                            ) : null}
 
                             {/* Linha 4: Horário e Sala */}
                             <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
@@ -1245,7 +1239,7 @@ export function CalendarPage() {
                                       type="button"
                                       disabled={isBusy}
                                       onClick={() => void handleDeleteItem(item)}
-                                      title="Descartar / Excluir tarefa"
+                                      title="Descartar | Excluir tarefa"
                                       className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
                                     >
                                       <Trash2 className="h-4 w-4" />
@@ -1268,7 +1262,7 @@ export function CalendarPage() {
                                       type="button"
                                       disabled={isBusy}
                                       onClick={() => void handleDeleteItem(item)}
-                                      title="Descartar / Excluir evento"
+                                      title="Descartar | Excluir evento"
                                       className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
                                     >
                                       <Trash2 className="h-4 w-4" />
@@ -1448,13 +1442,11 @@ export function CalendarPage() {
                               <p className="mt-0.5 line-clamp-2 break-words text-xs leading-snug font-extrabold">
                                 {it.title}
                               </p>
-                              {it.subject_name && (
+                              {it.student_subject_id && it.subject_name && !it.subject_name.includes('Interdisciplinar') ? (
                                 <p className="mt-0.5 truncate text-[10px] font-semibold opacity-80">
-                                  {it.subject_name.includes('Interdisciplinar') || !it.student_subject_id
-                                    ? 'Universal'
-                                    : it.subject_name}
+                                  {it.subject_name}
                                 </p>
-                              )}
+                              ) : null}
                             </div>
                           )
                         })
@@ -1547,7 +1539,7 @@ export function CalendarPage() {
                         className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-[#0d3950] dark:bg-slate-800 dark:text-cyan-300"
                       >
                         <Plus className="h-3.5 w-3.5" />
-                        Tarefa / Evento
+                        Tarefa | Evento
                       </button>
                     </div>
 
@@ -1569,13 +1561,11 @@ export function CalendarPage() {
                                 <span>{formatTimeRange(it)}</span>
                               </div>
                               <p className="mt-1 text-sm font-black">{it.title}</p>
-                              {it.subject_name && (
+                              {it.student_subject_id && it.subject_name && !it.subject_name.includes('Interdisciplinar') ? (
                                 <p className="mt-0.5 text-xs font-semibold opacity-85">
-                                  {it.subject_name.includes('Interdisciplinar') || !it.student_subject_id
-                                    ? 'Universal (Interdisciplinar)'
-                                    : `Disciplina: ${it.subject_name}`}
+                                  Disciplina: {it.subject_name}
                                 </p>
-                              )}
+                              ) : null}
                             </div>
                           )
                         })}
@@ -1589,7 +1579,7 @@ export function CalendarPage() {
         </section>
       </div>
 
-      {/* Modal de Criação / Edição de Tarefa ou Evento Sincronizado */}
+      {/* Modal de Criação | Edição de Tarefa ou Evento Sincronizado */}
       {showNewEventModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
@@ -1608,7 +1598,7 @@ export function CalendarPage() {
                   className="text-lg font-black text-[#0d3950] dark:text-white"
                 >
                   {editingItem
-                    ? 'Editar Data / Avaliação no Calendário'
+                    ? 'Editar Data | Avaliação no Calendário'
                     : 'Nova Tarefa ou Evento no Calendário'}
                 </h2>
               </div>
@@ -1640,10 +1630,10 @@ export function CalendarPage() {
                   value={eventKind}
                   onChange={(e) => setEventKind(e.target.value as AcademicTaskCategory)}
                 >
-                  <option value="task">Tarefa / Entrega</option>
-                  <option value="assignment">Trabalho / Projeto</option>
-                  <option value="exam">Prova / Avaliação</option>
-                  <option value="other">Estudo / Outra Atividade</option>
+                  <option value="task">Tarefa | Entrega</option>
+                  <option value="assignment">Trabalho | Projeto</option>
+                  <option value="exam">Prova | Avaliação</option>
+                  <option value="other">Estudo | Outra Atividade</option>
                 </Select>
 
                 <Select
@@ -1651,7 +1641,7 @@ export function CalendarPage() {
                   value={eventSubjectId}
                   onChange={(e) => setEventSubjectId(e.target.value)}
                 >
-                  <option value="">Geral / Outras Atividades</option>
+                  <option value="">Geral | Outras Atividades</option>
                   {subjects.length > 0 && (
                     <optgroup label="Disciplinas ativas">
                       {subjects.map((sub) => (
@@ -1712,8 +1702,8 @@ export function CalendarPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Input
-                  label="Sala / Local (opcional)"
-                  placeholder="Ex: Sala 304 / Online"
+                  label="Sala | Local (opcional)"
+                  placeholder="Ex: Sala 304 | Online"
                   value={eventRoom}
                   onChange={(e) => setEventRoom(e.target.value)}
                 />
@@ -1943,14 +1933,10 @@ export function CalendarPage() {
                           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
                             <span>
                               Disciplina vinculada:{' '}
-                              {row.assessment_type.includes('PAI') ||
-                              !row.student_subject_id ||
-                              row.subject_name.includes('Interdisciplinar') ? (
-                                <span className="inline-flex items-center gap-1 rounded bg-[#005063]/15 px-2 py-0.5 font-black text-[#005063] dark:bg-cyan-400/20 dark:text-cyan-300">
-                                  Universal Interdisciplinar (Geral)
-                                </span>
-                              ) : (
+                              {row.student_subject_id && row.subject_name && !row.subject_name.includes('Interdisciplinar') ? (
                                 <strong>{row.subject_name}</strong>
+                              ) : (
+                                <span className="text-slate-500 dark:text-slate-400">Geral</span>
                               )}
                             </span>
                             {row.already_exists ? (
