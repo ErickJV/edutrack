@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useCallback, useEffect, useId, useMemo, useState } from 'react'
-import { ArrowLeft, BookOpen, FileText, LogOut, Plus } from 'lucide-react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { BookOpen, FileText, LogOut, Plus } from 'lucide-react'
+import { useParams, useSearchParams } from 'react-router-dom'
 import {
   createAcademicReading,
   deleteAcademicReading,
@@ -44,6 +44,7 @@ export function StudySessionPage() {
   const tabFromQuery = (searchParams.get('tab') as 'workspace' | 'readings') || 'workspace'
 
   const [activeTab, setActiveTab] = useState<'workspace' | 'readings'>(tabFromQuery)
+  const [showFocusTools, setShowFocusTools] = useState(false)
   const [tasks, setTasks] = useState<AcademicTask[]>([])
   const [subjects, setSubjects] = useState<StudentSubject[]>([])
   const [readings, setReadings] = useState<AcademicReading[]>([])
@@ -53,7 +54,7 @@ export function StudySessionPage() {
     'feynman',
   )
   const [pendingTemplate, setPendingTemplate] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [leaving, setLeaving] = useState(false)
 
@@ -62,8 +63,6 @@ export function StudySessionPage() {
   const [editingReading, setEditingReading] = useState<AcademicReading | null>(null)
   const [logModalOpen, setLogModalOpen] = useState(false)
   const [loggingReading, setLoggingReading] = useState<AcademicReading | null>(null)
-
-  const taskSelectId = useId()
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -94,13 +93,11 @@ export function StudySessionPage() {
     void loadData()
   }, [loadData])
 
-  // Current active task
   const activeTask = useMemo(
     () => tasks.find((t) => t.id === selectedTaskId) || null,
     [tasks, selectedTaskId],
   )
 
-  // Current active subject (derived from task or first active)
   const activeSubject = useMemo(() => {
     if (activeTask) {
       return subjects.find((s) => s.id === activeTask.student_subject) || null
@@ -108,13 +105,11 @@ export function StudySessionPage() {
     return subjects[0] || null
   }, [activeTask, subjects])
 
-  // Calculated reading summary stats
   const readingSummary = useMemo(
     () => calculateReadingSummary(readingLogs, 20),
     [readingLogs],
   )
 
-  // Sync focus minutes with backend
   const handleSyncMinutes = async (minutes: number) => {
     if (!activeTask) return
     const newActual = activeTask.actual_minutes + minutes
@@ -122,7 +117,6 @@ export function StudySessionPage() {
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
   }
 
-  // Handle template injection from methodology
   const handleInsertTemplate = (templateText: string) => {
     setPendingTemplate(templateText)
     setActiveTab('workspace')
@@ -146,7 +140,6 @@ export function StudySessionPage() {
     }
   }
 
-  // Reading CRUD actions
   const handleSaveReading = async (payload: AcademicReadingPayload, readingId?: string) => {
     if (readingId) {
       const updated = await updateAcademicReading(readingId, payload)
@@ -211,8 +204,8 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
 - **Conceito 2**: ...
 
 ## ❓ Questões Potenciais de Prova
-1. O que este autor defende sobre ...?
-2. Como este tema pode ser cobrado na avaliação?
+- O que este autor defende sobre ...?
+- Como este tema pode ser cobrado na avaliação?
 `
     setPendingTemplate(template)
     setActiveTab('workspace')
@@ -228,11 +221,11 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
   }
 
   return (
-    <div className="min-h-screen bg-[#dce6ef] text-[#0d3950] transition-colors dark:bg-[#040f17] dark:text-slate-50">
-      <div className="flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
-        {/* Navigation & Header */}
-        <header className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 dark:border-[#005063]/30">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+    <main className="flex min-h-dvh flex-col bg-[#dce6ef] text-[#0d3950] transition-colors dark:bg-[#040f17] dark:text-slate-50">
+      {/* Cabeçalho Padrão Limpo (igual às demais telas) */}
+      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-8">
+          <div className="flex items-center justify-between gap-4">
             <Brand />
             <div className="flex items-center gap-3">
               <ThemeToggle />
@@ -240,151 +233,42 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 type="button"
                 onClick={() => void leave()}
                 disabled={leaving}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-white/80 px-4 text-sm font-semibold text-[#0d3950] transition hover:bg-white hover:text-[#0d3950] focus-visible:outline-2 focus-visible:outline-[#005063] dark:border-[#005063]/30 dark:bg-[#081a26]/80 dark:text-slate-300 dark:hover:bg-[#041019] dark:hover:text-white"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-white px-4 py-2 text-sm font-bold text-[#0d3950] transition hover:bg-slate-50 disabled:opacity-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-100 dark:hover:bg-[#0d3950]/40"
               >
                 <LogOut className="size-4" aria-hidden="true" />
-                {leaving ? 'Saindo...' : 'Sair'}
+                <span className="hidden sm:inline">{leaving ? 'Saindo...' : 'Sair'}</span>
               </button>
             </div>
           </div>
-          <AppNavigation />
-        </header>
-
-        {/* Page Topbar with Title, Tab Switcher and Task Focus */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/tarefas"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white p-2 text-[#0d3950] shadow-xs transition hover:bg-slate-50 dark:border-[#005063]/30 dark:bg-[#081a26] dark:text-slate-300 dark:hover:bg-[#041019]"
-              aria-label="Voltar para Tarefas"
-            >
-              <ArrowLeft className="size-5" aria-hidden="true" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-[#0d3950] dark:text-white sm:text-3xl">
-                Sessão de Estudo
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Caderno de anotações, ciclos de foco e acompanhamento de leitura acadêmica
-              </p>
-            </div>
-          </div>
-
-          {/* Tab Selector & Task Context */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Tab switch buttons */}
-            <div
-              role="tablist"
-              aria-label="Seção de Estudo"
-              className="flex rounded-xl border border-slate-200/80 bg-white p-1 shadow-xs dark:border-[#005063]/30 dark:bg-[#081a26]"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === 'workspace'}
-                onClick={() => switchTab('workspace')}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-[#005063] ${
-                  activeTab === 'workspace'
-                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
-                    : 'text-[#0d3950]/80 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                <FileText className="size-3.5" aria-hidden="true" />
-                Caderno & Foco
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === 'readings'}
-                onClick={() => switchTab('readings')}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-[#005063] ${
-                  activeTab === 'readings'
-                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
-                    : 'text-[#0d3950]/80 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                <BookOpen className="size-3.5" aria-hidden="true" />
-                Leitura Acadêmica ({readings.length})
-              </button>
-            </div>
-
-            {/* Task Focus Select */}
-            <div className="flex items-center gap-1.5">
-              <label
-                htmlFor={taskSelectId}
-                className="hidden text-xs font-bold text-slate-500 dark:text-slate-400 sm:inline-block"
-              >
-                Foco:
-              </label>
-              <select
-                id={taskSelectId}
-                value={selectedTaskId}
-                onChange={(e) => handleTaskChange(e.target.value)}
-                className="min-h-9 max-w-[200px] truncate rounded-xl border border-slate-200/80 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-xs focus:border-[#005063] focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#081a26] dark:text-slate-100"
-              >
-                <option value="">(Estudo Livre sem Tarefa)</option>
-                {tasks.map((task) => (
-                  <option key={task.id} value={task.id}>
-                    {task.title} ({task.subject_name})
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="mt-4">
+            <AppNavigation />
           </div>
         </div>
+      </header>
 
+      {/* Container Full-Width e Full-Height para Anotações ocuparem o máximo possível da tela */}
+      <div className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-4 px-2 py-3 sm:px-4 sm:py-4">
         {error ? <Alert tone="error">{error}</Alert> : null}
 
-        {/* Selected Task Details Banner */}
-        {activeTask ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#005063]/20 bg-[#005063]/5 p-3.5 dark:border-[#005063]/30 dark:bg-[#081a26]">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#005063] dark:text-[#a8d5e5]">
-                Tarefa Vinculada
-              </span>
-              <h2 className="text-sm font-black text-[#0d3950] dark:text-white">
-                {activeTask.title} · {activeTask.subject_name}
-              </h2>
-            </div>
-            <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              <span>
-                Estimado:{' '}
-                <strong className="text-[#0d3950] dark:text-white">
-                  {activeTask.estimated_minutes} min
-                </strong>
-              </span>
-              <span>
-                Realizado:{' '}
-                <strong className="text-[#006768] dark:text-[#a8d5e5]">
-                  {activeTask.actual_minutes} min
-                </strong>
-              </span>
-            </div>
-          </div>
-        ) : null}
-
-        {/* TAB 1: WORKSPACE (Top row: Pomodoro & Methodology side-by-side | Bottom row: Full Width Textbook) */}
         {activeTab === 'workspace' && (
-          <div className="flex flex-col gap-6">
-            {/* Top Row: Focus Utilities side-by-side */}
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-              {/* Pomodoro Timer (~5 cols on desktop) */}
-              <div className="lg:col-span-5">
-                <PomodoroTimer activeTask={activeTask} onSyncMinutes={handleSyncMinutes} />
+          <div className="flex flex-1 flex-col gap-4">
+            {showFocusTools && (
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                <div className="lg:col-span-5">
+                  <PomodoroTimer activeTask={activeTask} onSyncMinutes={handleSyncMinutes} />
+                </div>
+                <div className="lg:col-span-7">
+                  <MethodologySelector
+                    selectedMethodology={selectedMethodology}
+                    onSelectMethodology={setSelectedMethodology}
+                    onInsertTemplate={handleInsertTemplate}
+                  />
+                </div>
               </div>
+            )}
 
-              {/* Methodology Guide (~7 cols on desktop) */}
-              <div className="lg:col-span-7">
-                <MethodologySelector
-                  selectedMethodology={selectedMethodology}
-                  onSelectMethodology={setSelectedMethodology}
-                  onInsertTemplate={handleInsertTemplate}
-                />
-              </div>
-            </div>
-
-            {/* Bottom Row: Full-width Textbook Workspace */}
-            <div className="w-full">
+            {/* Bloco de Anotações Ocupando o Máximo Possível da Tela com os Controles na Barra do Bloco */}
+            <div className="flex flex-1 flex-col">
               <StudyNotesWorkspace
                 activeSubject={activeSubject}
                 activeTask={activeTask}
@@ -393,19 +277,22 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 readings={readings}
                 externalTemplate={pendingTemplate}
                 onClearExternalTemplate={() => setPendingTemplate(null)}
+                activeTab={activeTab}
+                onSwitchTab={switchTab}
+                showFocusTools={showFocusTools}
+                onToggleFocusTools={() => setShowFocusTools((prev) => !prev)}
+                selectedTaskId={selectedTaskId}
+                onTaskChange={handleTaskChange}
               />
             </div>
           </div>
         )}
 
-        {/* TAB 2: ACADEMIC READING DASHBOARD */}
+        {/* ABA 2: PAINEL DE LEITURA ACADÊMICA */}
         {activeTab === 'readings' && (
-          <div className="space-y-6">
-            {/* Streak & 14-Day SVG Chart */}
-            <ReadingStreakTracker summary={readingSummary} />
-
-            {/* Reading List Actions Header */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-6 rounded-3xl border border-slate-200/90 bg-white p-5 shadow-lg dark:border-[#005063]/30 dark:bg-[#081a26]">
+            {/* Barra de Topo com o Alternador Anotações | Leituras */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-[#005063]/30">
               <div>
                 <h3 className="text-lg font-black text-[#0d3950] dark:text-white">
                   Leituras e Livros Vinculados a Provas
@@ -415,22 +302,52 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingReading(null)
-                  setReadingModalOpen(true)
-                }}
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
-              >
-                <Plus className="size-4" aria-hidden="true" />
-                Nova Leitura
-              </button>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div
+                  role="tablist"
+                  aria-label="Seção de Anotações"
+                  className="flex rounded-xl border border-slate-200 bg-slate-100/80 p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={false}
+                    onClick={() => switchTab('workspace')}
+                    className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-extrabold text-slate-600 transition hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white"
+                  >
+                    <FileText className="size-3.5" aria-hidden="true" />
+                    Anotações
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={true}
+                    onClick={() => switchTab('readings')}
+                    className="inline-flex min-h-8 items-center gap-1.5 rounded-lg bg-[#0d3950] px-3 text-xs font-extrabold text-white shadow-xs dark:bg-[#005063]"
+                  >
+                    <BookOpen className="size-3.5" aria-hidden="true" />
+                    Leituras ({readings.length})
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingReading(null)
+                    setReadingModalOpen(true)
+                  }}
+                  className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
+                >
+                  <Plus className="size-4" aria-hidden="true" />
+                  Nova Leitura
+                </button>
+              </div>
             </div>
 
-            {/* Grid of Reading Cards */}
+            <ReadingStreakTracker summary={readingSummary} />
+
             {readings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white py-16 text-center dark:border-[#005063]/30 dark:bg-[#081a26]">
+              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50/50 py-16 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
                 <span className="text-4xl">📚</span>
                 <h4 className="mt-3 text-base font-black text-[#0d3950] dark:text-white">
                   Nenhuma leitura cadastrada
@@ -476,7 +393,6 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
         )}
       </div>
 
-      {/* Reading Modal */}
       <ReadingModal
         isOpen={readingModalOpen}
         reading={editingReading}
@@ -488,7 +404,6 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
         onSave={handleSaveReading}
       />
 
-      {/* Log Pages Modal */}
       <LogPagesModal
         isOpen={logModalOpen}
         reading={loggingReading}
@@ -498,6 +413,6 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
         }}
         onLog={handleLogCustomPages}
       />
-    </div>
+    </main>
   )
 }

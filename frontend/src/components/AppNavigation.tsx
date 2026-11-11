@@ -2,9 +2,11 @@ import { NavLink } from 'react-router-dom'
 
 const NAV_ITEMS = [
   { to: '/home', label: 'Início' },
+  { to: '/calendario', label: 'Calendário' },
   { to: '/disciplinas', label: 'Disciplinas' },
   { to: '/tarefas', label: 'Tarefas' },
-  { to: '/estudo', label: 'Estudo' },
+  { to: '/estudo', label: 'Anotações' },
+  { to: '/flashcards', label: 'Flashcards' },
   { to: '/perfil', label: 'Perfil', alignRight: true },
 ] as const
 

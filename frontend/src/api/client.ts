@@ -1,4 +1,6 @@
 import type {
+  AcademicEvent,
+  AcademicEventPayload,
   AcademicReading,
   AcademicReadingPayload,
   AcademicSubject,
@@ -9,11 +11,18 @@ import type {
   AcademicTermPayload,
   AuthResponse,
   AuthUser,
+  CalendarItem,
+  CalendarItemKind,
   ClassOccurrence,
   ClassSchedule,
   ClassSchedulePayload,
   CourseOffering,
   DashboardSummary,
+  Flashcard,
+  FlashcardAIGeneratePayload,
+  FlashcardAIGenerateResponse,
+  FlashcardPayload,
+  FlashcardRating,
   Professor,
   ProfilePayload,
   ProfileUpdatePayload,
@@ -443,6 +452,86 @@ export async function recordAttendance(
   return request<ClassOccurrence>(
     `/api/v1/class-occurrences/${occurrenceId}/attendance`,
     { method: 'PUT', body: JSON.stringify({ status }) },
+  )
+}
+
+// Calendar & Academic Events
+export async function listCalendarItems(params: {
+  from: string
+  to: string
+  student_subject_id?: string
+  kind?: CalendarItemKind
+}): Promise<CalendarItem[]> {
+  const search = new URLSearchParams()
+  search.set('from', params.from)
+  search.set('to', params.to)
+  if (params.student_subject_id) search.set('student_subject_id', params.student_subject_id)
+  if (params.kind) search.set('kind', params.kind)
+  const res = await request<{ items: CalendarItem[] }>(`/api/v1/calendar?${search.toString()}`)
+  return res.items
+}
+
+export async function createAcademicEvent(payload: AcademicEventPayload): Promise<AcademicEvent> {
+  return request<AcademicEvent>('/api/v1/academic-events', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, [201])
+}
+
+export async function deleteAcademicEvent(id: string): Promise<void> {
+  await request(`/api/v1/academic-events/${id}`, { method: 'DELETE' }, [204])
+}
+
+// Flashcards (Anki SM-2)
+export async function listFlashcards(params: {
+  student_subject?: string
+  deck_name?: string
+} = {}): Promise<Flashcard[]> {
+  const search = new URLSearchParams()
+  if (params.student_subject) search.set('student_subject', params.student_subject)
+  if (params.deck_name) search.set('deck_name', params.deck_name)
+  const suffix = search.toString() ? `?${search.toString()}` : ''
+  return request<Flashcard[]>(`/api/v1/flashcards${suffix}`)
+}
+
+export async function createFlashcard(payload: FlashcardPayload): Promise<Flashcard> {
+  return request<Flashcard>('/api/v1/flashcards', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, [201])
+}
+
+export async function updateFlashcard(
+  id: string,
+  payload: Partial<FlashcardPayload>,
+): Promise<Flashcard> {
+  return request<Flashcard>(`/api/v1/flashcards/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteFlashcard(id: string): Promise<void> {
+  await request(`/api/v1/flashcards/${id}`, { method: 'DELETE' }, [204])
+}
+
+export async function reviewFlashcard(id: string, rating: FlashcardRating): Promise<Flashcard> {
+  return request<Flashcard>(`/api/v1/flashcards/${id}/review`, {
+    method: 'POST',
+    body: JSON.stringify({ rating }),
+  })
+}
+
+export async function generateFlashcardsWithAI(
+  payload: FlashcardAIGeneratePayload,
+): Promise<FlashcardAIGenerateResponse> {
+  return request<FlashcardAIGenerateResponse>(
+    '/api/v1/flashcards/generate-ai',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    [201],
   )
 }
 

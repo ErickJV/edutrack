@@ -292,6 +292,12 @@ class AcademicTask(models.Model):
         IN_PROGRESS = "in_progress", "Em andamento"
         COMPLETED = "completed", "Concluída"
 
+    class Category(models.TextChoices):
+        TASK = "task", "Tarefa / Entrega"
+        ASSIGNMENT = "assignment", "Trabalho / Projeto"
+        EXAM = "exam", "Prova / Avaliação"
+        OTHER = "other", "Atividade Geral"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -300,12 +306,29 @@ class AcademicTask(models.Model):
     )
     student_subject = models.ForeignKey(
         StudentSubject,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name="tasks",
+    )
+    linked_event = models.OneToOneField(
+        AcademicEvent,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="synced_task",
+    )
+    category = models.CharField(
+        max_length=20,
+        choices=Category.choices,
+        default=Category.TASK,
     )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     due_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+    all_day = models.BooleanField(default=False)
+    room = models.CharField(max_length=80, blank=True, default="")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     estimated_minutes = models.PositiveIntegerField(default=60)
     actual_minutes = models.PositiveIntegerField(default=0)
@@ -459,7 +482,7 @@ class StudyNote(models.Model):
         on_delete=models.SET_NULL,
         related_name="study_notes",
     )
-    title = models.CharField(max_length=200, default="Sem título")
+    title = models.CharField(max_length=200, default="Nova anotação")
     content = models.TextField(blank=True, default="")
     methodology = models.CharField(max_length=50, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -470,6 +493,64 @@ class StudyNote(models.Model):
         verbose_name = "anotação de estudo"
         verbose_name_plural = "anotações de estudo"
 
+    def save(self, *args, **kwargs):
+        raw_title = (self.title or "").strip()
+        if not raw_title or raw_title.lower() in ("nova anotaço", "nova anotaco"):
+            self.title = "Nova anotação"
+        else:
+            self.title = raw_title
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return self.title
+
+
+class Flashcard(models.Model):
+    class State(models.TextChoices):
+        NEW = "new", "Novo"
+        LEARNING = "learning", "Aprendendo"
+        REVIEW = "review", "Revisão"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="flashcards",
+    )
+    student_subject = models.ForeignKey(
+        StudentSubject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="flashcards",
+    )
+    deck_name = models.CharField(max_length=120, default="Geral")
+    front = models.TextField()
+    back = models.TextField()
+    hint = models.CharField(max_length=255, blank=True, default="")
+    tags = models.CharField(max_length=200, blank=True, default="")
+
+    # Anki SM-2 spaced repetition state
+    state = models.CharField(
+        max_length=20,
+        choices=State.choices,
+        default=State.NEW,
+    )
+    ease_factor = models.FloatField(default=2.5)
+    interval_days = models.PositiveIntegerField(default=0)
+    repetitions = models.PositiveIntegerField(default=0)
+    lapses = models.PositiveIntegerField(default=0)
+    due_at = models.DateTimeField(default=timezone.now)
+    last_reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("due_at", "-created_at")
+        verbose_name = "flashcard"
+        verbose_name_plural = "flashcards"
+
+    def __str__(self) -> str:
+        return f"[{self.deck_name}] {self.front[:50]}"
+
 
