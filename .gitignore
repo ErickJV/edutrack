@@ -71,3 +71,6 @@ frontend/test-results/
 .idea/
 .vscode/
 .editorconfig
+
+backend/study_documents/
+study_documents/

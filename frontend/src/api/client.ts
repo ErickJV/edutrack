@@ -13,6 +13,9 @@ import type {
   AuthUser,
   CalendarItem,
   CalendarItemKind,
+  CalendarPdfConfirmPayload,
+  CalendarPdfConfirmResponse,
+  CalendarPdfExtractResponse,
   ClassOccurrence,
   ClassSchedule,
   ClassSchedulePayload,
@@ -33,6 +36,10 @@ import type {
   StudyFolderPayload,
   StudyNote,
   StudyNotePayload,
+  StudyDocument,
+  StudyDocumentAnalysis,
+  StudyQuiz,
+  QuizSubmissionResult,
   AssistantChatRequest,
   AssistantChatResponse,
   AssistantStatus,
@@ -200,6 +207,23 @@ export async function listCurriculum(): Promise<AcademicSubject[]> {
   return request<AcademicSubject[]>('/api/v1/curriculum')
 }
 
+export async function createCurriculumSubject(payload: {
+  name: string
+  semester: number
+  workload_hours?: number
+  code?: string
+  description?: string
+}): Promise<AcademicSubject> {
+  return request<AcademicSubject>(
+    '/api/v1/curriculum',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    [200, 201],
+  )
+}
+
 export async function listStudentSubjects(): Promise<StudentSubject[]> {
   return request<StudentSubject[]>('/api/v1/student-subjects')
 }
@@ -218,6 +242,8 @@ export async function updateStudentSubject(
     custom_workload_hours?: number | null
     professor_id?: string | null
     term_id?: string | null
+    subject_name?: string
+    subject_semester?: number
   },
 ): Promise<StudentSubject> {
   return request<StudentSubject>(`/api/v1/student-subjects/${id}`, {
@@ -478,8 +504,44 @@ export async function createAcademicEvent(payload: AcademicEventPayload): Promis
   }, [201])
 }
 
+export async function updateAcademicEvent(
+  id: string,
+  payload: Partial<AcademicEventPayload>,
+): Promise<AcademicEvent> {
+  return request<AcademicEvent>(`/api/v1/academic-events/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
 export async function deleteAcademicEvent(id: string): Promise<void> {
   await request(`/api/v1/academic-events/${id}`, { method: 'DELETE' }, [204])
+}
+
+export async function extractCalendarPdf(
+  file: File,
+  studentSubjectId: string,
+): Promise<CalendarPdfExtractResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('student_subject_id', studentSubjectId)
+  return request<CalendarPdfExtractResponse>('/api/v1/calendar/extract-pdf', {
+    method: 'POST',
+    body: formData,
+  })
+}
+
+export async function confirmExtractedCalendarEvents(
+  payload: CalendarPdfConfirmPayload,
+): Promise<CalendarPdfConfirmResponse> {
+  return request<CalendarPdfConfirmResponse>(
+    '/api/v1/calendar/confirm-extracted',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    [201],
+  )
 }
 
 // Flashcards (Anki SM-2)
@@ -588,3 +650,77 @@ export async function getAssistantStatus(customToken?: string): Promise<Assistan
     headers,
   })
 }
+
+// ==========================================
+// Módulo de Estudo Multimodal & Simulados IA
+// ==========================================
+
+export async function listStudyDocuments(params?: {
+  subject?: string
+  folder?: string
+  search?: string
+}): Promise<StudyDocument[]> {
+  const query = new URLSearchParams()
+  if (params?.subject) query.set('subject', params.subject)
+  if (params?.folder) query.set('folder', params.folder)
+  if (params?.search) query.set('search', params.search)
+  const qs = query.toString()
+  return request<StudyDocument[]>(`/api/v1/study-documents${qs ? `?${qs}` : ''}`)
+}
+
+export async function getStudyDocument(id: string): Promise<StudyDocument> {
+  return request<StudyDocument>(`/api/v1/study-documents/${id}`)
+}
+
+export async function uploadStudyDocument(
+  file: File,
+  metadata?: {
+    title?: string
+    student_subject?: string
+    folder?: string
+    topic?: string
+  },
+): Promise<StudyDocument> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('title', metadata?.title?.trim() || file.name)
+  if (metadata?.student_subject) formData.append('student_subject', metadata.student_subject)
+  if (metadata?.folder) formData.append('folder', metadata.folder)
+  if (metadata?.topic) formData.append('topic', metadata.topic)
+
+  return request<StudyDocument>('/api/v1/study-documents', {
+    method: 'POST',
+    body: formData,
+  })
+}
+
+export async function deleteStudyDocument(id: string): Promise<void> {
+  return request<void>(`/api/v1/study-documents/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function analyzeStudyDocumentWithAI(id: string): Promise<StudyDocumentAnalysis> {
+  return request<StudyDocumentAnalysis>(`/api/v1/study-documents/${id}/ai-analyze`, {
+    method: 'POST',
+  })
+}
+
+export async function generateStudyQuiz(documentId: string): Promise<StudyQuiz> {
+  return request<StudyQuiz>(`/api/v1/study-documents/${documentId}/quiz`, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'generate' }),
+  })
+}
+
+export async function submitStudyQuiz(
+  documentId: string,
+  quizId: string,
+  answers: Record<string, number>,
+): Promise<QuizSubmissionResult> {
+  return request<QuizSubmissionResult>(`/api/v1/study-documents/${documentId}/quiz`, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'submit', quiz_id: quizId, answers }),
+  })
+}
+

@@ -485,3 +485,149 @@ export type AssistantStudentContext = {
     progress_percent: number
   }>
 }
+
+export type StudyDocumentPage = {
+  id: string
+  page_number: number
+  content: string
+  token_count: number
+  created_at?: string
+}
+
+export type ComplexTopic = {
+  topic: string
+  explanation: string
+  citation: string
+  example: string
+}
+
+export type KeyConcept = {
+  term: string
+  definition: string
+  citation: string
+}
+
+export type StudyRoadmapStep = {
+  step: number
+  goal: string
+  recommended_pages: string
+  action: string
+}
+
+export type ComplementaryMaterial = {
+  title: string
+  type: string
+  description: string
+}
+
+export type StudyDocumentAnalysis = {
+  summary: string
+  complex_topics: ComplexTopic[]
+  key_concepts: KeyConcept[]
+  mental_map_mermaid: string
+  study_roadmap: StudyRoadmapStep[]
+  reinforcement_topics: string[]
+  complementary_materials: ComplementaryMaterial[]
+}
+
+export type StudyDocument = {
+  id: string
+  title: string
+  file?: string
+  file_url?: string | null
+  file_type: string
+  file_size: number
+  page_count: number
+  pages_count: number
+  student_subject?: string | null
+  student_subject_name?: string | null
+  folder?: string | null
+  folder_name?: string | null
+  topic?: string
+  extracted_text?: string
+  analysis_cache?: StudyDocumentAnalysis | null
+  pages?: StudyDocumentPage[]
+  created_at: string
+  updated_at: string
+}
+
+export type QuizQuestion = {
+  id: number
+  question: string
+  options: string[]
+  correct_option_index: number
+  citation: string
+  explanation: string
+}
+
+export type StudyQuiz = {
+  id: string
+  title: string
+  document?: string | null
+  document_title?: string | null
+  student_subject?: string | null
+  student_subject_name?: string | null
+  questions: QuizQuestion[]
+  score?: number | null
+  total_questions: number
+  completed_at?: string | null
+  user_answers?: Record<string, number>
+  created_at: string
+}
+
+export type QuizSubmissionResult = {
+  quiz_id: string
+  score: number
+  total_questions: number
+  percentage: number
+  feedback: Array<{
+    question_id: string
+    is_correct: boolean
+    user_selected: number
+    correct_option_index: number
+    explanation: string
+    citation: string
+  }>
+}
+
+export type ExtractedCalendarAssessment = {
+  assessment_type: string
+  title: string
+  date: string
+  student_subject_id: string | null
+  subject_name: string
+  matched_label?: string
+  source_snippet?: string
+  already_exists?: boolean
+}
+
+export type CalendarPdfExtractResponse = {
+  student_subject_id: string
+  subject_name: string
+  detected_pdf_subject: string | null
+  filename: string
+  items: ExtractedCalendarAssessment[]
+  other_detected_items: ExtractedCalendarAssessment[]
+  missing_types: string[]
+  warnings: string[]
+}
+
+export type CalendarPdfConfirmItem = {
+  title: string
+  date: string
+  assessment_type: string
+  source_snippet?: string
+}
+
+export type CalendarPdfConfirmPayload = {
+  student_subject_id: string
+  items: CalendarPdfConfirmItem[]
+}
+
+export type CalendarPdfConfirmResponse = {
+  created_count: number
+  updated_count: number
+  items: AcademicEvent[]
+}
+
+

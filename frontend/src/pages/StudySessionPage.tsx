@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BookOpen, FileText, LogOut, Plus } from 'lucide-react'
+import { BookOpen, FileText, LogOut, Plus, Sparkles } from 'lucide-react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import {
   createAcademicReading,
@@ -41,9 +41,9 @@ export function StudySessionPage() {
   const params = useParams<{ taskId?: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const taskIdFromQuery = params.taskId || searchParams.get('taskId') || ''
-  const tabFromQuery = (searchParams.get('tab') as 'workspace' | 'readings') || 'workspace'
+  const tabFromQuery = (searchParams.get('tab') as 'workspace' | 'readings' | 'documents') || 'workspace'
 
-  const [activeTab, setActiveTab] = useState<'workspace' | 'readings'>(tabFromQuery)
+  const [activeTab, setActiveTab] = useState<'workspace' | 'readings' | 'documents'>(tabFromQuery)
   const [showFocusTools, setShowFocusTools] = useState(false)
   const [tasks, setTasks] = useState<AcademicTask[]>([])
   const [subjects, setSubjects] = useState<StudentSubject[]>([])
@@ -74,12 +74,26 @@ export function StudySessionPage() {
         listAcademicReadings(),
         listReadingLogs(),
       ])
-      setTasks(loadedTasks)
-      setSubjects(loadedSubjects)
+      const activeList = loadedSubjects.filter((s) => s.status === 'active')
+      const currentSemester =
+        activeList.length > 0
+          ? Math.max(...activeList.map((s) => s.subject.semester))
+          : null
+      const validSemesterSubjects =
+        currentSemester !== null
+          ? activeList.filter((s) => s.subject.semester === currentSemester)
+          : activeList
+      const validSubjectIds = new Set(validSemesterSubjects.map((s) => s.id))
+      const validTasks = loadedTasks.filter(
+        (t) => !t.student_subject || validSubjectIds.has(t.student_subject),
+      )
+
+      setTasks(validTasks)
+      setSubjects(validSemesterSubjects)
       setReadings(loadedReadings)
       setReadingLogs(loadedLogs)
 
-      if (taskIdFromQuery && loadedTasks.some((t) => t.id === taskIdFromQuery)) {
+      if (taskIdFromQuery && validTasks.some((t) => t.id === taskIdFromQuery)) {
         setSelectedTaskId(taskIdFromQuery)
       }
     } catch {
@@ -102,7 +116,7 @@ export function StudySessionPage() {
     if (activeTask) {
       return subjects.find((s) => s.id === activeTask.student_subject) || null
     }
-    return subjects[0] || null
+    return null
   }, [activeTask, subjects])
 
   const readingSummary = useMemo(
@@ -131,7 +145,7 @@ export function StudySessionPage() {
     }
   }
 
-  const switchTab = (tab: 'workspace' | 'readings') => {
+  const switchTab = (tab: 'workspace' | 'readings' | 'documents') => {
     setActiveTab(tab)
     if (selectedTaskId) {
       setSearchParams({ taskId: selectedTaskId, tab })
@@ -250,7 +264,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
       <div className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-4 px-2 py-3 sm:px-4 sm:py-4">
         {error ? <Alert tone="error">{error}</Alert> : null}
 
-        {activeTab === 'workspace' && (
+        {(activeTab === 'workspace' || activeTab === 'documents') && (
           <div className="flex flex-1 flex-col gap-4">
             {showFocusTools && (
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -267,7 +281,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
               </div>
             )}
 
-            {/* Bloco de Anotações Ocupando o Máximo Possível da Tela com os Controles na Barra do Bloco */}
+            {/* Bloco de Anotações Ocupando o Máximo Possível da Tela com Documentos & IA Integrados */}
             <div className="flex flex-1 flex-col">
               <StudyNotesWorkspace
                 activeSubject={activeSubject}
@@ -291,7 +305,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
         {/* ABA 2: PAINEL DE LEITURA ACADÊMICA */}
         {activeTab === 'readings' && (
           <div className="space-y-6 rounded-3xl border border-slate-200/90 bg-white p-5 shadow-lg dark:border-[#005063]/30 dark:bg-[#081a26]">
-            {/* Barra de Topo com o Alternador Anotações | Leituras */}
+            {/* Barra de Topo com o Alternador Anotações | Leituras | Documentos & IA */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-[#005063]/30">
               <div>
                 <h3 className="text-lg font-black text-[#0d3950] dark:text-white">
@@ -306,7 +320,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 <div
                   role="tablist"
                   aria-label="Seção de Anotações"
-                  className="flex rounded-xl border border-slate-200 bg-slate-100/80 p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
+                  className="flex flex-wrap rounded-xl border border-slate-200 bg-slate-100/80 p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
                 >
                   <button
                     type="button"
@@ -327,6 +341,16 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                   >
                     <BookOpen className="size-3.5" aria-hidden="true" />
                     Leituras ({readings.length})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={false}
+                    onClick={() => switchTab('documents')}
+                    className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-extrabold text-slate-600 transition hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white"
+                  >
+                    <Sparkles className="size-3.5 text-amber-500" aria-hidden="true" />
+                    Upload de arquivos
                   </button>
                 </div>
 

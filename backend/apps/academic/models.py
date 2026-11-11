@@ -554,3 +554,104 @@ class Flashcard(models.Model):
         return f"[{self.deck_name}] {self.front[:50]}"
 
 
+class StudyDocument(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="study_documents",
+    )
+    student_subject = models.ForeignKey(
+        StudentSubject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="study_documents",
+    )
+    folder = models.ForeignKey(
+        StudyFolder,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="documents",
+    )
+    title = models.CharField(max_length=255)
+    file = models.FileField(upload_to="study_documents/%Y/%m/")
+    file_type = models.CharField(max_length=20, default="pdf")
+    page_count = models.PositiveIntegerField(default=0)
+    file_size = models.PositiveIntegerField(default=0)
+    topic = models.CharField(max_length=150, blank=True, default="")
+    extracted_text = models.TextField(blank=True, default="")
+    analysis_cache = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        verbose_name = "documento de estudo"
+        verbose_name_plural = "documentos de estudo"
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.page_count} págs)"
+
+
+class StudyDocumentPage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    document = models.ForeignKey(
+        StudyDocument,
+        on_delete=models.CASCADE,
+        related_name="pages",
+    )
+    page_number = models.PositiveIntegerField()
+    content = models.TextField()
+    token_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ("page_number",)
+        unique_together = ("document", "page_number")
+        verbose_name = "página de documento"
+        verbose_name_plural = "páginas de documento"
+
+    def __str__(self) -> str:
+        return f"{self.document.title} - Pág. {self.page_number}"
+
+
+class StudyQuiz(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="study_quizzes",
+    )
+    document = models.ForeignKey(
+        StudyDocument,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="quizzes",
+    )
+    student_subject = models.ForeignKey(
+        StudentSubject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="study_quizzes",
+    )
+    title = models.CharField(max_length=255)
+    score = models.IntegerField(null=True, blank=True)
+    total_questions = models.PositiveIntegerField(default=10)
+    questions = models.JSONField(default=list)
+    user_answers = models.JSONField(default=dict, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        verbose_name = "simulado de estudo"
+        verbose_name_plural = "simulados de estudo"
+
+    def __str__(self) -> str:
+        return f"Simulado: {self.title}"
+
+
+

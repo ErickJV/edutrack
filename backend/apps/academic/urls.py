@@ -11,6 +11,8 @@ from .views import (
     AcademicTaskToggleCompleteView,
     AcademicTermDetailView,
     AcademicTermListCreateView,
+    CalendarPdfConfirmView,
+    CalendarPdfExtractView,
     CalendarView,
     ClassOccurrenceAttendanceView,
     ClassOccurrenceDetailView,
@@ -32,6 +34,11 @@ from .views import (
     StudyFolderListCreateView,
     StudyNoteDetailView,
     StudyNoteListCreateView,
+    StudyDocumentListCreateView,
+    StudyDocumentDetailView,
+    StudyDocumentFileServeView,
+    StudyDocumentAIAnalyzeView,
+    StudyDocumentQuizView,
 )
 
 urlpatterns = [
@@ -142,6 +149,8 @@ urlpatterns = [
         name="class-occurrence-attendance",
     ),
     path("calendar", CalendarView.as_view(), name="calendar"),
+    path("calendar/extract-pdf", CalendarPdfExtractView.as_view(), name="calendar-extract-pdf"),
+    path("calendar/confirm-extracted", CalendarPdfConfirmView.as_view(), name="calendar-confirm-extracted"),
     path("flashcards", FlashcardListCreateView.as_view(), name="flashcard-list-create"),
     path(
         "flashcards/generate-ai",
@@ -150,5 +159,10 @@ urlpatterns = [
     ),
     path("flashcards/<uuid:pk>", FlashcardDetailView.as_view(), name="flashcard-detail"),
     path("flashcards/<uuid:pk>/review", FlashcardReviewView.as_view(), name="flashcard-review"),
+    path("study-documents", StudyDocumentListCreateView.as_view(), name="study-document-list-create"),
+    path("study-documents/<uuid:pk>", StudyDocumentDetailView.as_view(), name="study-document-detail"),
+    path("study-documents/<uuid:pk>/file", StudyDocumentFileServeView.as_view(), name="study-document-file"),
+    path("study-documents/<uuid:pk>/ai-analyze", StudyDocumentAIAnalyzeView.as_view(), name="study-document-ai-analyze"),
+    path("study-documents/<uuid:pk>/quiz", StudyDocumentQuizView.as_view(), name="study-document-quiz"),
 ]
 

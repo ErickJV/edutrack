@@ -8,6 +8,7 @@ import {
   Check,
   CheckSquare,
   ChevronDown,
+  Eraser,
   FileText,
   FolderPlus,
   Heading1,
@@ -51,6 +52,7 @@ import {
   updateStudyFolder,
   updateStudyNote,
 } from '../api/client'
+import { StudyDocumentsHub } from './StudyDocumentsHub'
 
 const FOLDER_COLORS = [
   { label: 'Azul Profundo', value: 'navy', bg: 'bg-[#0d3950]' },
@@ -165,8 +167,8 @@ export type StudyNotesWorkspaceProps = {
   readings?: AcademicReading[]
   externalTemplate?: string | null
   onClearExternalTemplate?: () => void
-  activeTab?: 'workspace' | 'readings'
-  onSwitchTab?: (tab: 'workspace' | 'readings') => void
+  activeTab?: 'workspace' | 'readings' | 'documents'
+  onSwitchTab?: (tab: 'workspace' | 'readings' | 'documents') => void
   showFocusTools?: boolean
   onToggleFocusTools?: () => void
   selectedTaskId?: string
@@ -367,8 +369,6 @@ export function StudyNotesWorkspace({
   const [editorReadingId, setEditorReadingId] = useState<string>('')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
-  const [mobileView, setMobileView] = useState<'sidebar' | 'editor'>('sidebar')
-
   // Modal de pasta
   const [folderModalOpen, setFolderModalOpen] = useState(false)
   const [folderName, setFolderName] = useState('')
@@ -442,7 +442,6 @@ export function StudyNotesWorkspace({
       setEditorReadingId(note.reading || '')
       setSaveStatus('idle')
       setAiBanner('')
-      setMobileView('editor')
       window.setTimeout(() => syncEditorDom(visualHtml), 0)
     },
     [syncEditorDom],
@@ -553,7 +552,6 @@ export function StudyNotesWorkspace({
         void handleCreateNote(convertedTemplate, 'Anotação Guiada')
       }
       onClearExternalTemplate?.()
-      setMobileView('editor')
     }, 0)
     return () => window.clearTimeout(timer)
   }, [
@@ -578,7 +576,6 @@ export function StudyNotesWorkspace({
         setActiveNoteId(null)
         setEditorTitle('')
         setEditorContent('')
-        setMobileView('sidebar')
       }
       const updatedFolders = await listStudyFolders()
       setFolders(updatedFolders)
@@ -682,6 +679,36 @@ export function StudyNotesWorkspace({
     triggerAutoSave({ content: html })
   }
 
+  const handleClearFormatting = () => {
+    const el = editorRef.current
+    if (!el) return
+    el.focus()
+    const selection = window.getSelection()
+    if (selection && !selection.isCollapsed && el.contains(selection.anchorNode)) {
+      document.execCommand('removeFormat', false)
+      document.execCommand('hiliteColor', false, 'transparent')
+      document.execCommand('formatBlock', false, 'P')
+      const plainSelected = selection.toString()
+      if (plainSelected.trim()) {
+        const cleanHtml = plainSelected
+          .split(/\r?\n/)
+          .map((line) => (line.trim() ? `<p>${escapeHtml(line)}</p>` : '<p><br/></p>'))
+          .join('')
+        document.execCommand('insertHTML', false, cleanHtml)
+      }
+    } else {
+      const plainAll = el.innerText || stripHtmlForPreview(el.innerHTML)
+      const cleanHtml = plainAll
+        .split(/\r?\n/)
+        .map((line) => (line.trim() ? `<p>${escapeHtml(line)}</p>` : '<p><br/></p>'))
+        .join('')
+      el.innerHTML = cleanHtml
+    }
+    const html = el.innerHTML
+    setEditorContent(html)
+    triggerAutoSave({ content: html })
+  }
+
   const insertVisualHtmlBlock = (blockHtml: string) => {
     const el = editorRef.current
     if (!el) return
@@ -741,6 +768,35 @@ export function StudyNotesWorkspace({
     const readingTimeMinutes = Math.max(1, Math.ceil(words / 200))
     return { words, chars, readingTimeMinutes }
   }, [editorContent])
+
+  const currentSemesterSubjects = useMemo(() => {
+    const active = subjects.filter((s) => s.status === 'active')
+    const base = active.length > 0 ? active : subjects
+    if (base.length === 0) return []
+    const maxSem = Math.max(...base.map((s) => s.subject.semester))
+    return base.filter((s) => s.subject.semester === maxSem)
+  }, [subjects])
+
+  const currentSemesterSubjectIds = useMemo(
+    () => new Set(currentSemesterSubjects.map((s) => s.id)),
+    [currentSemesterSubjects],
+  )
+
+  const currentSemesterTasks = useMemo(
+    () =>
+      tasks.filter(
+        (t) => !t.student_subject || currentSemesterSubjectIds.has(t.student_subject),
+      ),
+    [tasks, currentSemesterSubjectIds],
+  )
+
+  const currentSemesterReadings = useMemo(
+    () =>
+      readings.filter(
+        (r) => !r.student_subject || currentSemesterSubjectIds.has(r.student_subject),
+      ),
+    [readings, currentSemesterSubjectIds],
+  )
 
   const filteredNotes = useMemo(() => {
     return notes.filter((note) => {
@@ -835,6 +891,20 @@ export function StudyNotesWorkspace({
                 <BookOpen className="size-3.5" aria-hidden="true" />
                 Leituras ({readings.length})
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'documents'}
+                onClick={() => onSwitchTab('documents')}
+                className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold transition ${
+                  activeTab === 'documents'
+                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                    : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                <Sparkles className="size-3.5 text-amber-500" aria-hidden="true" />
+                Upload de arquivos
+              </button>
             </div>
           )}
 
@@ -854,9 +924,9 @@ export function StudyNotesWorkspace({
             </button>
           )}
 
-          {/* Seletor de Foco dentro do Bloco de Anotações */}
+          {/* Seletor de Foco dentro do Bloco de Anotações (Sem truncamento) */}
           {onTaskChange && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1 dark:border-[#005063]/30 dark:bg-[#081a26]">
+            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1 dark:border-[#005063]/30 dark:bg-[#081a26]">
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
                 Foco:
               </span>
@@ -864,10 +934,10 @@ export function StudyNotesWorkspace({
                 aria-label="Foco da sessão"
                 value={selectedTaskId}
                 onChange={(e) => onTaskChange(e.target.value)}
-                className="max-w-[155px] truncate bg-transparent text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
+                className="w-auto min-w-fit max-w-full bg-transparent pr-2 text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
               >
                 <option value="">(Anotação Livre)</option>
-                {tasks.map((task) => (
+                {currentSemesterTasks.map((task) => (
                   <option key={task.id} value={task.id}>
                     {task.title} ({task.subject_name})
                   </option>
@@ -876,7 +946,7 @@ export function StudyNotesWorkspace({
             </div>
           )}
 
-          {activeNoteId && (
+          {activeNoteId && activeTab !== 'documents' && (
             <button
               type="button"
               disabled={generatingAi}
@@ -891,22 +961,17 @@ export function StudyNotesWorkspace({
 
           <button
             type="button"
-            onClick={() => void handleCreateNote()}
+            onClick={() => {
+              if (activeTab === 'documents' && onSwitchTab) {
+                onSwitchTab('workspace')
+              }
+              void handleCreateNote()
+            }}
             className="inline-flex min-h-8 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3 text-xs font-bold text-white shadow-xs transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
           >
             <Plus className="size-3.5" aria-hidden="true" />
             <span>Nova Página</span>
           </button>
-
-          <div className="flex items-center gap-2 sm:hidden">
-            <button
-              type="button"
-              onClick={() => setMobileView(mobileView === 'sidebar' ? 'editor' : 'sidebar')}
-              className="inline-flex min-h-8 items-center rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
-            >
-              {mobileView === 'sidebar' ? 'Abrir Folha →' : '← Notas'}
-            </button>
-          </div>
         </div>
       </div>
 
@@ -928,555 +993,590 @@ export function StudyNotesWorkspace({
         </div>
       ) : null}
 
-      {/* Corpo Principal Ocupando o Máximo da Tela */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Coluna Lateral Compacta: Pastas e Lista de Anotações */}
-        {sidebarOpen ? (
-          <aside
-            className={`w-full shrink-0 flex-col border-r border-slate-200 bg-slate-50/60 p-3 transition-all duration-300 lg:w-60 xl:w-64 dark:border-[#005063]/30 dark:bg-[#040f17]/40 ${
-              mobileView === 'editor' ? 'hidden sm:flex' : 'flex'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <h4 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                Cadernos ({folders.length})
-              </h4>
-              <button
-                type="button"
-                onClick={() => {
-                  setFolderName('')
-                  setFolderColor('navy')
-                  setEditingFolderId(null)
-                  setFolderModalOpen(true)
-                }}
-                className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-[#006768] transition hover:bg-[#005063]/10 dark:text-cyan-400 dark:hover:bg-[#081a26]"
-              >
-                <FolderPlus className="size-3.5" aria-hidden="true" />
-                <span>Nova pasta</span>
-              </button>
-            </div>
+      {/* MÓDULO INTEGRADO: DOCUMENTOS & IA DENTRO DO MESMO BLOCO DE ANOTAÇÕES */}
+      {activeTab === 'documents' ? (
+        <div className="flex flex-1 overflow-hidden">
+          <StudyDocumentsHub
+            embedded
+            subjects={currentSemesterSubjects}
+            folders={folders}
+            onOpenNoteWithContent={(title, content) => {
+              void handleCreateNote(`# ${title}\n\n${content}`, title)
+              onSwitchTab?.('workspace')
+            }}
+          />
+        </div>
+      ) : (
+        /* Corpo Principal Ocupando o Máximo da Tela (Folha de Anotações sempre visível de cara em qualquer tamanho de tela) */
+        <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+          {/* Coluna Lateral Compacta: Pastas e Lista de Anotações */}
+          {sidebarOpen ? (
+            <aside className="flex max-h-56 w-full shrink-0 flex-col border-b border-slate-200 bg-slate-50/60 p-3 transition-all duration-300 md:max-h-none md:w-52 md:border-r md:border-b-0 lg:w-60 xl:w-64 dark:border-[#005063]/30 dark:bg-[#040f17]/40">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                  Cadernos ({folders.length})
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFolderName('')
+                    setFolderColor('navy')
+                    setEditingFolderId(null)
+                    setFolderModalOpen(true)
+                  }}
+                  className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-[#006768] transition hover:bg-[#005063]/10 dark:text-cyan-400 dark:hover:bg-[#081a26]"
+                >
+                  <FolderPlus className="size-3.5" aria-hidden="true" />
+                  <span>Nova pasta</span>
+                </button>
+              </div>
 
-            <div className="mt-2 flex flex-wrap gap-1">
-              <button
-                type="button"
-                onClick={() => setSelectedFolderId('all')}
-                className={`inline-flex min-h-6 items-center gap-1 rounded-lg px-2 text-[11px] font-bold transition ${
-                  selectedFolderId === 'all'
-                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
-                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300'
-                }`}
-              >
-                <span>Todas</span>
-                <span className="rounded-full bg-slate-200/60 px-1.5 text-[10px] text-slate-800 dark:bg-slate-700 dark:text-slate-200">
-                  {notes.length}
-                </span>
-              </button>
-              {folders.map((f) => {
-                const isSelected = selectedFolderId === f.id
-                return (
-                  <div key={f.id} className="group relative inline-flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFolderId(f.id)}
-                      className={`inline-flex min-h-6 items-center gap-1 rounded-lg px-2 text-[11px] font-bold transition ${
-                        isSelected
-                          ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
-                          : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300'
-                      }`}
-                    >
-                      <span>{f.name}</span>
-                      <span className="rounded-full bg-slate-200/60 px-1.5 text-[10px] text-slate-800 dark:bg-slate-700 dark:text-slate-200">
-                        {f.notes_count}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        void handleDeleteFolder(f.id)
-                      }}
-                      className="ml-0.5 hidden text-slate-400 group-hover:inline-block hover:text-rose-500"
-                      title="Excluir pasta"
-                    >
-                      ×
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className="relative mt-2.5">
-              <Search className="absolute top-2 left-2.5 size-3.5 text-slate-400" />
-              <input
-                id={searchInputId}
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Pesquisar notas..."
-                className="w-full rounded-xl border border-slate-200 bg-white py-1 pr-2.5 pl-7 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-[#005063] focus:outline-hidden dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
-              />
-            </div>
-
-            <div className="mt-2.5 flex-1 space-y-1.5 overflow-y-auto pr-0.5">
-              {loading ? (
-                <div className="py-8 text-center text-xs text-slate-400">Carregando...</div>
-              ) : filteredNotes.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
-                  Nenhuma página encontrada.
-                </div>
-              ) : (
-                filteredNotes.map((note) => {
-                  const isSelected = note.id === activeNoteId
-                  const cleanPreview = stripHtmlForPreview(note.content)
+              <div className="mt-2 flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedFolderId('all')}
+                  className={`inline-flex min-h-6 items-center gap-1 rounded-lg px-2 text-[11px] font-bold transition ${
+                    selectedFolderId === 'all'
+                      ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300'
+                  }`}
+                >
+                  <span>Todas</span>
+                  <span className="rounded-full bg-slate-200/60 px-1.5 text-[10px] text-slate-800 dark:bg-slate-700 dark:text-slate-200">
+                    {notes.length}
+                  </span>
+                </button>
+                {folders.map((f) => {
+                  const isSelected = selectedFolderId === f.id
                   return (
-                    <button
-                      key={note.id}
-                      type="button"
-                      onClick={() => selectNote(note)}
-                      className={`flex w-full flex-col rounded-xl border p-2.5 text-left transition ${
-                        isSelected
-                          ? 'border-[#006768] bg-[#dce6ef]/60 shadow-xs dark:border-cyan-500/60 dark:bg-[#081a26]'
-                          : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-[#040f17] dark:hover:bg-[#081a26]/60'
-                      }`}
-                    >
-                      <div className="flex w-full items-center justify-between gap-1.5">
-                        <h5 className="truncate text-xs font-extrabold text-slate-900 dark:text-slate-100">
-                          {normalizeNoteTitle(note.title)}
-                        </h5>
-                        <span className="shrink-0 text-[10px] text-slate-400">
-                          {new Date(note.updated_at).toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: 'short',
-                          })}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500 dark:text-slate-400">
-                        {cleanPreview ? cleanPreview.slice(0, 90) : 'Folha em branco...'}
-                      </p>
-                    </button>
-                  )
-                })
-              )}
-            </div>
-          </aside>
-        ) : null}
-
-        {/* Área Principal da Folha de Anotações (Máximo Espaço da Tela) */}
-        <div
-          className={`flex min-w-0 flex-1 flex-col p-3 sm:p-4 ${
-            mobileView === 'sidebar' && sidebarOpen ? 'hidden sm:flex' : 'flex'
-          }`}
-        >
-          {activeNoteId ? (
-            <div className="flex h-full flex-1 flex-col">
-              {/* BARRA DE PERSONALIZAÇÃO COM FONTE EM MENU SUSPENSO + ESTILO DA FOLHA + FERRAMENTAS */}
-              <div
-                role="toolbar"
-                aria-label="Barra de personalização do bloco de anotações"
-                className="flex flex-wrap items-center justify-between gap-1.5 rounded-2xl border border-slate-200 bg-slate-50/90 px-2.5 py-2 shadow-2xs dark:border-[#005063]/30 dark:bg-[#040f17]"
-              >
-                <div className="flex flex-wrap items-center gap-1">
-                  {/* MENU SUSPENSO DE FONTE NA BARRA DE PERSONALIZAÇÃO */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setFontMenuOpen((prev) => !prev)}
-                      style={{ fontFamily: activeFontOption.fontFamilyCss }}
-                      className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] shadow-2xs transition hover:bg-slate-100 dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
-                      title="Selecionar fonte do bloco de anotações"
-                    >
-                      <Type className="size-3.5 text-[#005063] dark:text-cyan-400" />
-                      <span>Fonte: {activeFontOption.shortLabel}</span>
-                      <ChevronDown className="size-3.5 text-slate-400" />
-                    </button>
-
-                    {fontMenuOpen ? (
-                      <div className="absolute top-9.5 left-0 z-50 w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
-                        <span className="block px-2.5 py-1 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-                          Fonte do Caderno
-                        </span>
-                        <div className="space-y-0.5">
-                          {FONT_OPTIONS.map((f) => {
-                            const isSelected = f.id === selectedFont
-                            return (
-                              <button
-                                key={f.id}
-                                type="button"
-                                onClick={() => handleSelectFont(f.id)}
-                                style={{ fontFamily: f.fontFamilyCss }}
-                                className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs transition ${
-                                  isSelected
-                                    ? 'bg-[#005063]/15 font-bold text-[#0d3950] dark:bg-[#005063]/35 dark:text-white'
-                                    : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]'
-                                }`}
-                              >
-                                <div>
-                                  <div>{f.label}</div>
-                                  <span className="font-sans text-[10px] text-slate-400">
-                                    {f.category}
-                                  </span>
-                                </div>
-                                {isSelected ? (
-                                  <Check className="size-3.5 text-[#006768] dark:text-cyan-400" />
-                                ) : null}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* Seletor de Estilo da Folha */}
-                  <div
-                    role="group"
-                    aria-label="Estilo da folha do caderno"
-                    className="flex items-center gap-0.5 rounded-xl border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-[#081a26]"
-                  >
-                    {(
-                      [
-                        { id: 'lined', label: 'Pautada' },
-                        { id: 'dotted', label: 'Pontilhada' },
-                        { id: 'clean', label: 'Limpa' },
-                      ] as const
-                    ).map((opt) => (
+                    <div key={f.id} className="group relative inline-flex items-center">
                       <button
-                        key={opt.id}
                         type="button"
-                        onClick={() => handleSelectPaperStyle(opt.id)}
-                        className={`inline-flex min-h-7 items-center rounded-lg px-2 text-xs font-bold transition ${
-                          paperStyle === opt.id
+                        onClick={() => setSelectedFolderId(f.id)}
+                        className={`inline-flex min-h-6 items-center gap-1 rounded-lg px-2 text-[11px] font-bold transition ${
+                          isSelected
                             ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
-                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                            : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-300'
                         }`}
                       >
-                        {opt.label}
+                        <span>{f.name}</span>
+                        <span className="rounded-full bg-slate-200/60 px-1.5 text-[10px] text-slate-800 dark:bg-slate-700 dark:text-slate-200">
+                          {f.notes_count}
+                        </span>
                       </button>
-                    ))}
-                  </div>
-
-                  <div className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-800" />
-
-                  {/* Títulos */}
-                  <button
-                    type="button"
-                    onClick={() => applyVisualCommand('formatBlock', 'H2')}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-extrabold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Título de Seção"
-                  >
-                    <Heading1 className="size-3.5" />
-                    <span className="hidden xl:inline">Título</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyVisualCommand('formatBlock', 'H3')}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Subtítulo"
-                  >
-                    <Heading2 className="size-3.5" />
-                    <span className="hidden xl:inline">Subtítulo</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyVisualCommand('formatBlock', 'P')}
-                    className="inline-flex min-h-8 items-center rounded-lg px-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                    title="Texto normal"
-                  >
-                    Texto
-                  </button>
-
-                  <div className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-800" />
-
-                  {/* Formatação de Texto Visual */}
-                  <button
-                    type="button"
-                    onClick={() => applyVisualCommand('bold')}
-                    className="inline-flex min-h-8 w-7 items-center justify-center rounded-lg text-xs font-black text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Negrito"
-                  >
-                    <Bold className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyVisualCommand('italic')}
-                    className="inline-flex min-h-8 w-7 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Itálico"
-                  >
-                    <Italic className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyVisualCommand('underline')}
-                    className="inline-flex min-h-8 w-7 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Sublinhado"
-                  >
-                    <Underline className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyVisualCommand('strikeThrough')}
-                    className="inline-flex min-h-8 w-7 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Riscado"
-                  >
-                    <Strikethrough className="size-3.5" />
-                  </button>
-
-                  {/* Marca-texto e Cores Visuais */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setColorMenuOpen((prev) => !prev)}
-                      className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                      title="Marca-texto e Cor da Caneta"
-                    >
-                      <Highlighter className="size-3.5 text-amber-500" />
-                      <span>Cor</span>
-                    </button>
-
-                    {colorMenuOpen && (
-                      <div className="absolute top-9.5 left-0 z-50 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
-                        <p className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-                          Marca-Texto
-                        </p>
-                        <div className="mt-1.5 flex flex-wrap gap-1.5">
-                          {HIGHLIGHT_COLORS.map((h) => (
-                            <button
-                              key={h.hex}
-                              type="button"
-                              onClick={() => {
-                                applyVisualCommand('hiliteColor', h.hex)
-                                setColorMenuOpen(false)
-                              }}
-                              className="h-7 w-7 rounded-lg border border-black/10 transition hover:scale-105"
-                              style={{ backgroundColor: h.hex }}
-                              title={h.name}
-                            />
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              applyVisualCommand('hiliteColor', 'transparent')
-                              setColorMenuOpen(false)
-                            }}
-                            className="rounded-lg border border-slate-200 px-2 text-[10px] font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300"
-                          >
-                            Limpar
-                          </button>
-                        </div>
-
-                        <p className="mt-3 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-                          Cor da Caneta
-                        </p>
-                        <div className="mt-1.5 flex flex-wrap gap-1.5">
-                          {TEXT_COLORS.map((c) => (
-                            <button
-                              key={c.hex}
-                              type="button"
-                              onClick={() => {
-                                applyVisualCommand('foreColor', c.hex)
-                                setColorMenuOpen(false)
-                              }}
-                              className="h-6 w-6 rounded-full border border-white/20 shadow-xs transition hover:scale-110"
-                              style={{ backgroundColor: c.hex }}
-                              title={c.name}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Listas e Checklists */}
-                  <button
-                    type="button"
-                    onClick={() => applyVisualCommand('insertUnorderedList')}
-                    className="inline-flex min-h-8 items-center rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Lista com marcadores"
-                  >
-                    <List className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyVisualCommand('insertOrderedList')}
-                    className="inline-flex min-h-8 items-center rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Lista numerada"
-                  >
-                    <ListOrdered className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleInsertChecklist}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Inserir item de checklist clicável"
-                  >
-                    <CheckSquare className="size-3.5 text-[#006768] dark:text-cyan-400" />
-                    <span className="hidden xl:inline">Checklist</span>
-                  </button>
-
-                  {/* Blocos Visuais de Estudo */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setCalloutMenuOpen((prev) => !prev)}
-                      className="inline-flex min-h-8 items-center gap-1 rounded-lg bg-[#0d3950]/10 px-2.5 text-xs font-extrabold text-[#0d3950] hover:bg-[#0d3950]/20 dark:bg-cyan-400/15 dark:text-cyan-300"
-                      title="Inserir caixa de destaque na folha"
-                    >
-                      <Sparkles className="size-3.5" />
-                      <span>Destaque</span>
-                    </button>
-
-                    {calloutMenuOpen && (
-                      <div className="absolute top-9.5 left-0 z-50 w-56 space-y-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
-                        <button
-                          type="button"
-                          onClick={() => handleInsertCallout('note')}
-                          className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-[#0d3950] hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                        >
-                          <Info className="size-4 text-[#005063]" />
-                          <span>📌 Anotação de Aula</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleInsertCallout('tip')}
-                          className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-                        >
-                          <Lightbulb className="size-4" />
-                          <span>💡 Dica / Exemplo Prático</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleInsertCallout('warning')}
-                          className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/40"
-                        >
-                          <AlertTriangle className="size-4" />
-                          <span>⚠️ Ponto de Atenção</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleInsertCallout('exam')}
-                          className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40"
-                        >
-                          <Palette className="size-4" />
-                          <span>🎯 Cai na Prova!</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleInsertTable}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Inserir tabela resumo"
-                  >
-                    <TableIcon className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      insertVisualHtmlBlock(
-                        `<blockquote style="border-left:4px solid #006768;padding:0 0.85rem;background:rgba(0,103,104,0.08);border-radius:0 0.5rem 0.5rem 0;">Citação ou definição do livro...</blockquote><p><br/></p>`,
-                      )
-                    }
-                    className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                    title="Inserir citação"
-                  >
-                    <Quote className="size-3.5" />
-                  </button>
-                </div>
-
-                {/* Vínculos Compactos na Direita da Barra */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <select
-                    id={editorFolderSelectId}
-                    aria-label="Pasta da anotação"
-                    value={editorFolderId}
-                    onChange={(e) => {
-                      const next = e.target.value
-                      setEditorFolderId(next)
-                      triggerAutoSave({ folder: next || null })
-                    }}
-                    className="min-h-7 max-w-[125px] truncate rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-[#0d3950] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
-                  >
-                    <option value="">📁 Sem pasta</option>
-                    {folders.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        📁 {f.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    id={editorSubjectSelectId}
-                    aria-label="Disciplina da anotação"
-                    value={editorSubjectId}
-                    onChange={(e) => {
-                      const next = e.target.value
-                      setEditorSubjectId(next)
-                      triggerAutoSave({ student_subject: next || null })
-                    }}
-                    className="min-h-7 max-w-[155px] truncate rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-[#0d3950] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
-                  >
-                    <option value="">🎓 Disciplina (Geral)</option>
-                    {subjects.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        🎓 {s.subject.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  {tasks.length > 0 && (
-                    <select
-                      id={editorTaskSelectId}
-                      aria-label="Tarefa vinculada"
-                      value={editorTaskId}
-                      onChange={(e) => {
-                        const next = e.target.value
-                        setEditorTaskId(next)
-                        triggerAutoSave({ task: next || null })
-                      }}
-                      className="hidden min-h-7 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-[#0d3950] focus:outline-hidden 2xl:inline-block dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
-                    >
-                      <option value="">✓ Sem tarefa</option>
-                      {tasks.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          ✓ {t.title}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-
-                  {readings.length > 0 && (
-                    <select
-                      id={editorReadingSelectId}
-                      aria-label="Leitura vinculada"
-                      value={editorReadingId}
-                      onChange={(e) => {
-                        const next = e.target.value
-                        setEditorReadingId(next)
-                        triggerAutoSave({ reading: next || null })
-                      }}
-                      className="hidden min-h-7 max-w-[130px] truncate rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-[#0d3950] focus:outline-hidden 2xl:inline-block dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
-                    >
-                      <option value="">📖 Sem leitura</option>
-                      {readings.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          📖 {r.title}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => void handleDeleteCurrentNote()}
-                    className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-[11px] font-bold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
-                    title="Excluir página de anotação"
-                  >
-                    <Trash2 className="size-3.5" aria-hidden="true" />
-                  </button>
-                </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void handleDeleteFolder(f.id)
+                        }}
+                        className="ml-0.5 hidden text-slate-400 group-hover:inline-block hover:text-rose-500"
+                        title="Excluir pasta"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
+
+              <div className="relative mt-2.5">
+                <Search className="absolute top-2 left-2.5 size-3.5 text-slate-400" />
+                <input
+                  id={searchInputId}
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Pesquisar notas..."
+                  className="w-full rounded-xl border border-slate-200 bg-white py-1 pr-2.5 pl-7 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-[#005063] focus:outline-hidden dark:border-slate-800 dark:bg-[#040f17] dark:text-slate-200"
+                />
+              </div>
+
+              <div className="mt-2.5 flex-1 space-y-1.5 overflow-y-auto pr-0.5">
+                {loading ? (
+                  <div className="py-8 text-center text-xs text-slate-400">Carregando...</div>
+                ) : filteredNotes.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                    Nenhuma página encontrada.
+                  </div>
+                ) : (
+                  filteredNotes.map((note) => {
+                    const isSelected = note.id === activeNoteId
+                    const cleanPreview = stripHtmlForPreview(note.content)
+                    return (
+                      <button
+                        key={note.id}
+                        type="button"
+                        onClick={() => selectNote(note)}
+                        className={`flex w-full flex-col rounded-xl border p-2.5 text-left transition ${
+                          isSelected
+                            ? 'border-[#006768] bg-[#dce6ef]/60 shadow-xs dark:border-cyan-500/60 dark:bg-[#081a26]'
+                            : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-[#040f17] dark:hover:bg-[#081a26]/60'
+                        }`}
+                      >
+                        <div className="flex w-full items-center justify-between gap-1.5">
+                          <h5 className="truncate text-xs font-extrabold text-slate-900 dark:text-slate-100">
+                            {normalizeNoteTitle(note.title)}
+                          </h5>
+                          <span className="shrink-0 text-[10px] text-slate-400">
+                            {new Date(note.updated_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'short',
+                            })}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500 dark:text-slate-400">
+                          {cleanPreview ? cleanPreview.slice(0, 90) : 'Folha em branco...'}
+                        </p>
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+            </aside>
+          ) : null}
+
+          {/* Área Principal da Folha de Anotações (Sempre Visível em Qualquer Tamanho de Tela) */}
+          <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
+            {activeNoteId ? (
+              <div className="flex h-full flex-1 flex-col">
+                {/* PAINEL DE EDIÇÃO E VÍNCULOS EM 2 FAIXAS ORGANIZADAS E RESPONSIVAS */}
+                <div className="space-y-2 rounded-2xl border border-slate-200/90 bg-slate-50/90 p-2.5 shadow-2xs dark:border-[#005063]/30 dark:bg-[#040f17]">
+                  {/* FAIXA 1: VÍNCULOS DA ANOTAÇÃO COM MENUS SUSPENSOS AMPLOS (SEM CORTE DE TEXTO) */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2 dark:border-slate-800/80">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        id={editorFolderSelectId}
+                        aria-label="Pasta da anotação"
+                        value={editorFolderId}
+                        onChange={(e) => {
+                          const next = e.target.value
+                          setEditorFolderId(next)
+                          triggerAutoSave({ folder: next || null })
+                        }}
+                        className="min-h-8 w-auto min-w-fit max-w-full rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-[#0d3950] shadow-2xs focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                      >
+                        <option value="">📁 Sem pasta</option>
+                        {folders.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            📁 {f.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        id={editorSubjectSelectId}
+                        aria-label="Disciplina da anotação"
+                        value={
+                          currentSemesterSubjectIds.has(editorSubjectId)
+                            ? editorSubjectId
+                            : ''
+                        }
+                        onChange={(e) => {
+                          const next = e.target.value
+                          setEditorSubjectId(next)
+                          triggerAutoSave({ student_subject: next || null })
+                        }}
+                        className="min-h-8 w-auto min-w-fit max-w-full rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-[#0d3950] shadow-2xs focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                      >
+                        <option value="">🎓 Disciplina (Geral)</option>
+                        {currentSemesterSubjects.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            🎓 {s.subject.name} · {s.subject.semester}º sem
+                          </option>
+                        ))}
+                      </select>
+
+                      {currentSemesterTasks.length > 0 && (
+                        <select
+                          id={editorTaskSelectId}
+                          aria-label="Tarefa vinculada"
+                          value={editorTaskId}
+                          onChange={(e) => {
+                            const next = e.target.value
+                            setEditorTaskId(next)
+                            triggerAutoSave({ task: next || null })
+                          }}
+                          className="min-h-8 w-auto min-w-fit max-w-full rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-[#0d3950] shadow-2xs focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                        >
+                          <option value="">✓ Sem tarefa vinculada</option>
+                          {currentSemesterTasks.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              ✓ {t.title}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      {currentSemesterReadings.length > 0 && (
+                        <select
+                          id={editorReadingSelectId}
+                          aria-label="Leitura vinculada"
+                          value={editorReadingId}
+                          onChange={(e) => {
+                            const next = e.target.value
+                            setEditorReadingId(next)
+                            triggerAutoSave({ reading: next || null })
+                          }}
+                          className="min-h-8 w-auto min-w-fit max-w-full rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-[#0d3950] shadow-2xs focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
+                        >
+                          <option value="">📖 Sem leitura vinculada</option>
+                          {currentSemesterReadings.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              📖 {r.title}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteCurrentNote()}
+                      className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-rose-200/80 bg-white px-2.5 text-xs font-bold text-rose-600 transition hover:bg-rose-50 dark:border-rose-900/40 dark:bg-[#081a26] dark:text-rose-400 dark:hover:bg-rose-950/40"
+                      title="Excluir página de anotação"
+                    >
+                      <Trash2 className="size-3.5" aria-hidden="true" />
+                      <span className="hidden sm:inline">Excluir página</span>
+                    </button>
+                  </div>
+
+                  {/* FAIXA 2: BARRA DE PERSONALIZAÇÃO E FORMATAÇÃO AGRUPADA EM CÁPSULAS VISUAIS */}
+                  <div
+                    role="toolbar"
+                    aria-label="Barra de personalização do bloco de anotações"
+                    className="flex flex-wrap items-center gap-2"
+                  >
+                    {/* GRUPO 1: FONTE E ESTILO DA FOLHA */}
+                    <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white p-1 shadow-2xs dark:border-slate-700/80 dark:bg-[#081a26]">
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setFontMenuOpen((prev) => !prev)}
+                          style={{ fontFamily: activeFontOption.fontFamilyCss }}
+                          className="inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-[#0d3950] transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-[#040f17]"
+                          title="Selecionar fonte do bloco de anotações"
+                        >
+                          <Type className="size-3.5 text-[#005063] dark:text-cyan-400" />
+                          <span>Fonte: {activeFontOption.shortLabel}</span>
+                          <ChevronDown className="size-3.5 text-slate-400" />
+                        </button>
+
+                        {fontMenuOpen ? (
+                          <div className="absolute top-9 left-0 z-50 w-60 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+                            <span className="block px-2.5 py-1 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                              Fonte do Caderno
+                            </span>
+                            <div className="space-y-0.5">
+                              {FONT_OPTIONS.map((f) => {
+                                const isSelected = f.id === selectedFont
+                                return (
+                                  <button
+                                    key={f.id}
+                                    type="button"
+                                    onClick={() => handleSelectFont(f.id)}
+                                    style={{ fontFamily: f.fontFamilyCss }}
+                                    className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs transition ${
+                                      isSelected
+                                        ? 'bg-[#005063]/15 font-bold text-[#0d3950] dark:bg-[#005063]/35 dark:text-white'
+                                        : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]'
+                                    }`}
+                                  >
+                                    <div>
+                                      <div>{f.label}</div>
+                                      <span className="font-sans text-[10px] text-slate-400">
+                                        {f.category}
+                                      </span>
+                                    </div>
+                                    {isSelected ? (
+                                      <Check className="size-3.5 text-[#006768] dark:text-cyan-400" />
+                                    ) : null}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
+
+                      <div
+                        role="group"
+                        aria-label="Estilo da folha do caderno"
+                        className="flex items-center gap-0.5"
+                      >
+                        {(
+                          [
+                            { id: 'lined', label: 'Pautada' },
+                            { id: 'dotted', label: 'Pontilhada' },
+                            { id: 'clean', label: 'Limpa' },
+                          ] as const
+                        ).map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => handleSelectPaperStyle(opt.id)}
+                            className={`inline-flex min-h-7 items-center rounded-lg px-2.5 text-xs font-bold transition ${
+                              paperStyle === opt.id
+                                ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[#040f17]'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* GRUPO 2: HIERARQUIA DE TÍTULOS E TEXTO */}
+                    <div className="flex items-center gap-0.5 rounded-xl border border-slate-200/90 bg-white p-1 shadow-2xs dark:border-slate-700/80 dark:bg-[#081a26]">
+                      <button
+                        type="button"
+                        onClick={() => applyVisualCommand('formatBlock', 'H2')}
+                        className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-extrabold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Título de Seção"
+                      >
+                        <Heading1 className="size-3.5" />
+                        <span>Título</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyVisualCommand('formatBlock', 'H3')}
+                        className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Subtítulo"
+                      >
+                        <Heading2 className="size-3.5" />
+                        <span>Subtítulo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyVisualCommand('formatBlock', 'P')}
+                        className="inline-flex min-h-7 items-center rounded-lg px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#040f17]"
+                        title="Texto normal"
+                      >
+                        Texto
+                      </button>
+                    </div>
+
+                    {/* GRUPO 3: ESTILO DE TEXTO E COR */}
+                    <div className="flex items-center gap-0.5 rounded-xl border border-slate-200/90 bg-white p-1 shadow-2xs dark:border-slate-700/80 dark:bg-[#081a26]">
+                      <button
+                        type="button"
+                        onClick={() => applyVisualCommand('bold')}
+                        className="inline-flex min-h-7 w-7 items-center justify-center rounded-lg text-xs font-black text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Negrito"
+                      >
+                        <Bold className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyVisualCommand('italic')}
+                        className="inline-flex min-h-7 w-7 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Itálico"
+                      >
+                        <Italic className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyVisualCommand('underline')}
+                        className="inline-flex min-h-7 w-7 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Sublinhado"
+                      >
+                        <Underline className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyVisualCommand('strikeThrough')}
+                        className="inline-flex min-h-7 w-7 items-center justify-center rounded-lg text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Riscado"
+                      >
+                        <Strikethrough className="size-3.5" />
+                      </button>
+
+                      <div className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-700" />
+
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setColorMenuOpen((prev) => !prev)}
+                          className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                          title="Marca-texto e Cor da Caneta"
+                        >
+                          <Highlighter className="size-3.5 text-amber-500" />
+                          <span>Cor</span>
+                        </button>
+
+                        {colorMenuOpen && (
+                          <div className="absolute top-9 left-0 z-50 w-64 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+                            <p className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                              Marca-Texto
+                            </p>
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                              {HIGHLIGHT_COLORS.map((h) => (
+                                <button
+                                  key={h.hex}
+                                  type="button"
+                                  onClick={() => {
+                                    applyVisualCommand('hiliteColor', h.hex)
+                                    setColorMenuOpen(false)
+                                  }}
+                                  className="h-7 w-7 rounded-lg border border-black/10 transition hover:scale-105"
+                                  style={{ backgroundColor: h.hex }}
+                                  title={h.name}
+                                />
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  applyVisualCommand('hiliteColor', 'transparent')
+                                  setColorMenuOpen(false)
+                                }}
+                                className="rounded-lg border border-slate-200 px-2 text-[10px] font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300"
+                              >
+                                Limpar
+                              </button>
+                            </div>
+
+                            <p className="mt-3 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                              Cor da Caneta
+                            </p>
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                              {TEXT_COLORS.map((c) => (
+                                <button
+                                  key={c.hex}
+                                  type="button"
+                                  onClick={() => {
+                                    applyVisualCommand('foreColor', c.hex)
+                                    setColorMenuOpen(false)
+                                  }}
+                                  className="h-6 w-6 rounded-full border border-white/20 shadow-xs transition hover:scale-110"
+                                  style={{ backgroundColor: c.hex }}
+                                  title={c.name}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-700" />
+
+                      <button
+                        type="button"
+                        onClick={handleClearFormatting}
+                        className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-rose-600 dark:text-slate-200 dark:hover:bg-[#040f17] dark:hover:text-rose-400"
+                        title="Limpar formatação do texto selecionado (ou da folha atual)"
+                      >
+                        <Eraser className="size-3.5 text-rose-500" />
+                        <span>Limpar formatação</span>
+                      </button>
+                    </div>
+
+                    {/* GRUPO 4: LISTAS, CHECKLIST E ELEMENTOS DE ESTUDO */}
+                    <div className="flex flex-wrap items-center gap-0.5 rounded-xl border border-slate-200/90 bg-white p-1 shadow-2xs dark:border-slate-700/80 dark:bg-[#081a26]">
+                      <button
+                        type="button"
+                        onClick={() => applyVisualCommand('insertUnorderedList')}
+                        className="inline-flex min-h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Lista com marcadores"
+                      >
+                        <List className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyVisualCommand('insertOrderedList')}
+                        className="inline-flex min-h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Lista numerada"
+                      >
+                        <ListOrdered className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleInsertChecklist}
+                        className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Inserir item de checklist clicável"
+                      >
+                        <CheckSquare className="size-3.5 text-[#006768] dark:text-cyan-400" />
+                        <span>Checklist</span>
+                      </button>
+
+                      <div className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-700" />
+
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setCalloutMenuOpen((prev) => !prev)}
+                          className="inline-flex min-h-7 items-center gap-1 rounded-lg bg-[#0d3950]/10 px-2.5 text-xs font-extrabold text-[#0d3950] hover:bg-[#0d3950]/20 dark:bg-cyan-400/15 dark:text-cyan-300"
+                          title="Inserir caixa de destaque na folha"
+                        >
+                          <Sparkles className="size-3.5" />
+                          <span>Destaque</span>
+                        </button>
+
+                        {calloutMenuOpen && (
+                          <div className="absolute top-9 left-0 z-50 w-56 space-y-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+                            <button
+                              type="button"
+                              onClick={() => handleInsertCallout('note')}
+                              className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-[#0d3950] hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                            >
+                              <Info className="size-4 text-[#005063]" />
+                              <span>📌 Anotação de Aula</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleInsertCallout('tip')}
+                              className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                            >
+                              <Lightbulb className="size-4" />
+                              <span>💡 Dica / Exemplo Prático</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleInsertCallout('warning')}
+                              className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/40"
+                            >
+                              <AlertTriangle className="size-4" />
+                              <span>⚠️ Ponto de Atenção</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleInsertCallout('exam')}
+                              className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40"
+                            >
+                              <Palette className="size-4" />
+                              <span>🎯 Cai na Prova!</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleInsertTable}
+                        className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Inserir tabela resumo"
+                      >
+                        <TableIcon className="size-3.5" />
+                        <span>Tabela</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          insertVisualHtmlBlock(
+                            `<blockquote style="border-left:4px solid #006768;padding:0 0.85rem;background:rgba(0,103,104,0.08);border-radius:0 0.5rem 0.5rem 0;">Citação ou definição do livro...</blockquote><p><br/></p>`,
+                          )
+                        }
+                        className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#040f17]"
+                        title="Inserir citação"
+                      >
+                        <Quote className="size-3.5" />
+                        <span>Citação</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
               {/* FOLHA DE CADERNO REAL ALINHADA (Ocupando o máximo da altura e largura da tela) */}
               <div className="mt-2.5 flex flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-[#fcfbf7] shadow-inner dark:border-[#005063]/40 dark:bg-[#05131d]">
@@ -1605,6 +1705,7 @@ export function StudyNotesWorkspace({
           )}
         </div>
       </div>
+      )}
 
       {/* Modal de Nova Pasta */}
       {folderModalOpen ? (
