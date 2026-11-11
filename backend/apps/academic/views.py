@@ -2012,7 +2012,7 @@ class StudyDocumentAIAnalyzeView(generics.GenericAPIView):
             try:
                 import json
                 import urllib.request
-                prompt = f"""Você é o tutor cognitivo de elite da plataforma EduTrack.
+                prompt = f"""Você é o tutor cognitivo de elite da plataforma Impatrack.
 Analise detalhadamente o documento "{doc_title}" (composto pelas seguintes páginas e conteúdos):
 
 {full_text[:12000]}

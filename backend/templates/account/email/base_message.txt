@@ -2,6 +2,6 @@
 
 {% block content %}{% endblock %}
 
-Equipe EduTrack
+Equipe Impatrack
 Projeto acadêmico autorizado para alunos da Faculdade Impacta.
 {% endautoescape %}

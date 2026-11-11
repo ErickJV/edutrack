@@ -12,7 +12,7 @@ DOCUMENTS = {
     "terms": (
         "Termos de Uso",
         "DOCUMENTO ACADÊMICO PROVISÓRIO — PENDENTE DE REVISÃO JURÍDICA.\n\n"
-        "O EduTrack é uma plataforma acadêmica autorizada destinada a alunos da Faculdade Impacta. "
+        "O Impatrack é uma plataforma acadêmica autorizada destinada a alunos da Faculdade Impacta. "
         "Nesta versão, o serviço oferece somente autenticação e identificação da graduação. O usuário "
         "é responsável por manter suas credenciais seguras e por informar dados verdadeiros. O serviço "
         "não substitui os sistemas oficiais da instituição e pode ser alterado ou interrompido durante "
@@ -21,7 +21,7 @@ DOCUMENTS = {
     "privacy": (
         "Política de Privacidade",
         "DOCUMENTO ACADÊMICO PROVISÓRIO — PENDENTE DE REVISÃO JURÍDICA.\n\n"
-        "O EduTrack trata nome, e-mail institucional, graduação, modalidade e registros técnicos de "
+        "O Impatrack trata nome, e-mail institucional, graduação, modalidade e registros técnicos de "
         "autenticação para disponibilizar o acesso. Senhas são armazenadas exclusivamente como hash "
         "seguro. O MVP não registra IP ou user-agent nos aceites legais e não compartilha dados com "
         "terceiros, exceto os serviços estritamente necessários de autenticação e infraestrutura.\n",

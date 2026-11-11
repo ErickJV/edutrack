@@ -1,7 +1,7 @@
 [project]
 name = "edutrack-backend"
 version = "0.1.0"
-description = "API de autenticação do EduTrack"
+description = "API de autenticação do Impatrack"
 requires-python = ">=3.14,<3.16"
 dependencies = [
   "argon2-cffi==25.1.0",

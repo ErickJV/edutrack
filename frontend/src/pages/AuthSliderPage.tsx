@@ -553,7 +553,7 @@ export function AuthSliderPage({ initialMode }: { initialMode?: 'login' | 'signu
                   Olá, Estudante!
                 </h2>
                 <p className="mt-4 max-w-xs font-arial text-sm leading-relaxed text-white/80">
-                  Cadastre-se com seu e-mail institucional para acessar o EduTrack.
+                  Cadastre-se com seu e-mail institucional para acessar o Impatrack.
                 </p>
                 <button
                   type="button"
@@ -571,7 +571,7 @@ export function AuthSliderPage({ initialMode }: { initialMode?: 'login' | 'signu
         {/* Minimal Footer */}
         <footer className="mt-6 text-center">
           <p className="font-arial text-xs text-slate-500 dark:text-white/40">
-            EduTrack • Gestão Acadêmica
+            Impatrack • Gestão Acadêmica
           </p>
         </footer>
       </div>

@@ -3,7 +3,7 @@ from django.db import migrations
 
 def configure_site(apps, schema_editor):
     Site = apps.get_model("sites", "Site")
-    Site.objects.update_or_create(id=1, defaults={"domain": "localhost:8000", "name": "EduTrack"})
+    Site.objects.update_or_create(id=1, defaults={"domain": "localhost:8000", "name": "Impatrack"})
 
 
 class Migration(migrations.Migration):

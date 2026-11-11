@@ -109,7 +109,7 @@ export function ProfileCompletionPage() {
               placeholder="Mínimo 12 caracteres"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              hint="Permite entrar no EduTrack sem depender de login social."
+              hint="Permite entrar no Impatrack sem depender de login social."
               required
             />
             <PasswordInput

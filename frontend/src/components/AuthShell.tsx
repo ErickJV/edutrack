@@ -51,7 +51,7 @@ export function AuthShell({
         {/* Minimal Footer */}
         <footer className="mt-6 text-center">
           <p className="font-arial text-xs text-slate-500 dark:text-white/40">
-            EduTrack • Gestão Acadêmica
+            Impatrack • Gestão Acadêmica
           </p>
         </footer>
       </div>
