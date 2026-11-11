@@ -1201,16 +1201,11 @@ export function CalendarPage() {
                               )}
                             </div>
 
-                            {/* Linha 5: Rodapé de Ações Rápidas por ícones compactos */}
-                            <div className="mt-2 flex items-center justify-between gap-1 border-t border-slate-200/60 pt-1.5 dark:border-slate-700/50">
-                              <Link
-                                to={meta.originLink}
-                                className="truncate text-[10px] font-bold text-[#005063] hover:underline dark:text-cyan-400"
-                              >
-                                {meta.originLabel} →
-                              </Link>
-
-                              <div className="flex shrink-0 items-center gap-1">
+                            {/* Linha 5: Rodapé de Ações Rápidas apenas por ícones compactos */}
+                            {(item.source_type === 'task' ||
+                              item.source_type === 'event' ||
+                              (item.source_type === 'class' && !item.cancelled && isPastClass)) && (
+                              <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-slate-200/60 pt-1.5 dark:border-slate-700/50">
                                 {item.source_type === 'task' && (
                                   <>
                                     <button
@@ -1301,7 +1296,7 @@ export function CalendarPage() {
                                   </>
                                 )}
                               </div>
-                            </div>
+                            )}
                           </div>
                         )
                       })}
@@ -1437,7 +1432,20 @@ export function CalendarPage() {
                             >
                               <div className="flex items-center justify-between gap-1 text-[10px] font-extrabold opacity-85">
                                 <span className="truncate">{meta.shortLabel}</span>
-                                {timeLabel && <span className="shrink-0">{timeLabel}</span>}
+                                <div className="flex shrink-0 items-center gap-1">
+                                  {timeLabel && <span>{timeLabel}</span>}
+                                  {meta.originLink === '/tarefas' && (
+                                    <Link
+                                      to="/tarefas"
+                                      onClick={(e) => e.stopPropagation()}
+                                      title="Alterar no módulo de Tarefas"
+                                      aria-label={`Alterar ${it.title} no módulo de Tarefas`}
+                                      className="inline-flex h-5 w-5 items-center justify-center rounded-md text-current opacity-80 transition hover:bg-black/10 hover:opacity-100 dark:hover:bg-white/10"
+                                    >
+                                      <Edit3 className="h-3 w-3" aria-hidden="true" />
+                                    </Link>
+                                  )}
+                                </div>
                               </div>
                               <p className="mt-0.5 line-clamp-2 break-words text-xs leading-snug font-extrabold">
                                 {it.title}
@@ -1556,9 +1564,22 @@ export function CalendarPage() {
                               key={it.id}
                               className={`rounded-xl border p-2.5 text-xs ${meta.cardClass}`}
                             >
-                              <div className="flex items-center justify-between font-extrabold">
+                              <div className="flex items-center justify-between gap-2 font-extrabold">
                                 <span>{meta.label}</span>
-                                <span>{formatTimeRange(it)}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span>{formatTimeRange(it)}</span>
+                                  {meta.originLink === '/tarefas' && (
+                                    <Link
+                                      to="/tarefas"
+                                      onClick={(e) => e.stopPropagation()}
+                                      title="Alterar no módulo de Tarefas"
+                                      aria-label={`Alterar ${it.title} no módulo de Tarefas`}
+                                      className="inline-flex h-6 w-6 items-center justify-center rounded-lg border border-current/25 transition hover:bg-black/10 dark:hover:bg-white/10"
+                                    >
+                                      <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+                                    </Link>
+                                  )}
+                                </div>
                               </div>
                               <p className="mt-1 text-sm font-black">{it.title}</p>
                               {it.student_subject_id && it.subject_name && !it.subject_name.includes('Interdisciplinar') ? (
