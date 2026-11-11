@@ -11,6 +11,8 @@ from .views import (
     AcademicTaskToggleCompleteView,
     AcademicTermDetailView,
     AcademicTermListCreateView,
+    CalendarPdfConfirmView,
+    CalendarPdfExtractView,
     CalendarView,
     ClassOccurrenceAttendanceView,
     ClassOccurrenceDetailView,
@@ -147,6 +149,8 @@ urlpatterns = [
         name="class-occurrence-attendance",
     ),
     path("calendar", CalendarView.as_view(), name="calendar"),
+    path("calendar/extract-pdf", CalendarPdfExtractView.as_view(), name="calendar-extract-pdf"),
+    path("calendar/confirm-extracted", CalendarPdfConfirmView.as_view(), name="calendar-confirm-extracted"),
     path("flashcards", FlashcardListCreateView.as_view(), name="flashcard-list-create"),
     path(
         "flashcards/generate-ai",

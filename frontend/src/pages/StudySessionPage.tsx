@@ -74,12 +74,26 @@ export function StudySessionPage() {
         listAcademicReadings(),
         listReadingLogs(),
       ])
-      setTasks(loadedTasks)
-      setSubjects(loadedSubjects)
+      const activeList = loadedSubjects.filter((s) => s.status === 'active')
+      const currentSemester =
+        activeList.length > 0
+          ? Math.max(...activeList.map((s) => s.subject.semester))
+          : null
+      const validSemesterSubjects =
+        currentSemester !== null
+          ? activeList.filter((s) => s.subject.semester === currentSemester)
+          : activeList
+      const validSubjectIds = new Set(validSemesterSubjects.map((s) => s.id))
+      const validTasks = loadedTasks.filter(
+        (t) => !t.student_subject || validSubjectIds.has(t.student_subject),
+      )
+
+      setTasks(validTasks)
+      setSubjects(validSemesterSubjects)
       setReadings(loadedReadings)
       setReadingLogs(loadedLogs)
 
-      if (taskIdFromQuery && loadedTasks.some((t) => t.id === taskIdFromQuery)) {
+      if (taskIdFromQuery && validTasks.some((t) => t.id === taskIdFromQuery)) {
         setSelectedTaskId(taskIdFromQuery)
       }
     } catch {

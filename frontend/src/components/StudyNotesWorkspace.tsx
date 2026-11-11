@@ -769,6 +769,35 @@ export function StudyNotesWorkspace({
     return { words, chars, readingTimeMinutes }
   }, [editorContent])
 
+  const currentSemesterSubjects = useMemo(() => {
+    const active = subjects.filter((s) => s.status === 'active')
+    const base = active.length > 0 ? active : subjects
+    if (base.length === 0) return []
+    const maxSem = Math.max(...base.map((s) => s.subject.semester))
+    return base.filter((s) => s.subject.semester === maxSem)
+  }, [subjects])
+
+  const currentSemesterSubjectIds = useMemo(
+    () => new Set(currentSemesterSubjects.map((s) => s.id)),
+    [currentSemesterSubjects],
+  )
+
+  const currentSemesterTasks = useMemo(
+    () =>
+      tasks.filter(
+        (t) => !t.student_subject || currentSemesterSubjectIds.has(t.student_subject),
+      ),
+    [tasks, currentSemesterSubjectIds],
+  )
+
+  const currentSemesterReadings = useMemo(
+    () =>
+      readings.filter(
+        (r) => !r.student_subject || currentSemesterSubjectIds.has(r.student_subject),
+      ),
+    [readings, currentSemesterSubjectIds],
+  )
+
   const filteredNotes = useMemo(() => {
     return notes.filter((note) => {
       const matchesFolder = selectedFolderId === 'all' || note.folder === selectedFolderId
@@ -908,7 +937,7 @@ export function StudyNotesWorkspace({
                 className="w-auto min-w-fit max-w-full bg-transparent pr-2 text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
               >
                 <option value="">(Anotação Livre)</option>
-                {tasks.map((task) => (
+                {currentSemesterTasks.map((task) => (
                   <option key={task.id} value={task.id}>
                     {task.title} ({task.subject_name})
                   </option>
@@ -969,7 +998,7 @@ export function StudyNotesWorkspace({
         <div className="flex flex-1 overflow-hidden">
           <StudyDocumentsHub
             embedded
-            subjects={subjects}
+            subjects={currentSemesterSubjects}
             folders={folders}
             onOpenNoteWithContent={(title, content) => {
               void handleCreateNote(`# ${title}\n\n${content}`, title)
@@ -1138,7 +1167,11 @@ export function StudyNotesWorkspace({
                       <select
                         id={editorSubjectSelectId}
                         aria-label="Disciplina da anotação"
-                        value={editorSubjectId}
+                        value={
+                          currentSemesterSubjectIds.has(editorSubjectId)
+                            ? editorSubjectId
+                            : ''
+                        }
                         onChange={(e) => {
                           const next = e.target.value
                           setEditorSubjectId(next)
@@ -1147,14 +1180,14 @@ export function StudyNotesWorkspace({
                         className="min-h-8 w-auto min-w-fit max-w-full rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-[#0d3950] shadow-2xs focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
                       >
                         <option value="">🎓 Disciplina (Geral)</option>
-                        {subjects.map((s) => (
+                        {currentSemesterSubjects.map((s) => (
                           <option key={s.id} value={s.id}>
                             🎓 {s.subject.name} · {s.subject.semester}º sem
                           </option>
                         ))}
                       </select>
 
-                      {tasks.length > 0 && (
+                      {currentSemesterTasks.length > 0 && (
                         <select
                           id={editorTaskSelectId}
                           aria-label="Tarefa vinculada"
@@ -1167,7 +1200,7 @@ export function StudyNotesWorkspace({
                           className="min-h-8 w-auto min-w-fit max-w-full rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-[#0d3950] shadow-2xs focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
                         >
                           <option value="">✓ Sem tarefa vinculada</option>
-                          {tasks.map((t) => (
+                          {currentSemesterTasks.map((t) => (
                             <option key={t.id} value={t.id}>
                               ✓ {t.title}
                             </option>
@@ -1175,7 +1208,7 @@ export function StudyNotesWorkspace({
                         </select>
                       )}
 
-                      {readings.length > 0 && (
+                      {currentSemesterReadings.length > 0 && (
                         <select
                           id={editorReadingSelectId}
                           aria-label="Leitura vinculada"
@@ -1188,7 +1221,7 @@ export function StudyNotesWorkspace({
                           className="min-h-8 w-auto min-w-fit max-w-full rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-[#0d3950] shadow-2xs focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#081a26] dark:text-slate-100"
                         >
                           <option value="">📖 Sem leitura vinculada</option>
-                          {readings.map((r) => (
+                          {currentSemesterReadings.map((r) => (
                             <option key={r.id} value={r.id}>
                               📖 {r.title}
                             </option>

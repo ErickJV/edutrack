@@ -590,3 +590,44 @@ export type QuizSubmissionResult = {
   }>
 }
 
+export type ExtractedCalendarAssessment = {
+  assessment_type: string
+  title: string
+  date: string
+  student_subject_id: string | null
+  subject_name: string
+  matched_label?: string
+  source_snippet?: string
+  already_exists?: boolean
+}
+
+export type CalendarPdfExtractResponse = {
+  student_subject_id: string
+  subject_name: string
+  detected_pdf_subject: string | null
+  filename: string
+  items: ExtractedCalendarAssessment[]
+  other_detected_items: ExtractedCalendarAssessment[]
+  missing_types: string[]
+  warnings: string[]
+}
+
+export type CalendarPdfConfirmItem = {
+  title: string
+  date: string
+  assessment_type: string
+  source_snippet?: string
+}
+
+export type CalendarPdfConfirmPayload = {
+  student_subject_id: string
+  items: CalendarPdfConfirmItem[]
+}
+
+export type CalendarPdfConfirmResponse = {
+  created_count: number
+  updated_count: number
+  items: AcademicEvent[]
+}
+
+

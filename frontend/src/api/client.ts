@@ -13,6 +13,9 @@ import type {
   AuthUser,
   CalendarItem,
   CalendarItemKind,
+  CalendarPdfConfirmPayload,
+  CalendarPdfConfirmResponse,
+  CalendarPdfExtractResponse,
   ClassOccurrence,
   ClassSchedule,
   ClassSchedulePayload,
@@ -501,8 +504,44 @@ export async function createAcademicEvent(payload: AcademicEventPayload): Promis
   }, [201])
 }
 
+export async function updateAcademicEvent(
+  id: string,
+  payload: Partial<AcademicEventPayload>,
+): Promise<AcademicEvent> {
+  return request<AcademicEvent>(`/api/v1/academic-events/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
 export async function deleteAcademicEvent(id: string): Promise<void> {
   await request(`/api/v1/academic-events/${id}`, { method: 'DELETE' }, [204])
+}
+
+export async function extractCalendarPdf(
+  file: File,
+  studentSubjectId: string,
+): Promise<CalendarPdfExtractResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('student_subject_id', studentSubjectId)
+  return request<CalendarPdfExtractResponse>('/api/v1/calendar/extract-pdf', {
+    method: 'POST',
+    body: formData,
+  })
+}
+
+export async function confirmExtractedCalendarEvents(
+  payload: CalendarPdfConfirmPayload,
+): Promise<CalendarPdfConfirmResponse> {
+  return request<CalendarPdfConfirmResponse>(
+    '/api/v1/calendar/confirm-extracted',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    [201],
+  )
 }
 
 // Flashcards (Anki SM-2)

@@ -1,7 +1,7 @@
 import os
 import re
 
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -706,27 +706,38 @@ class AcademicTaskWriteSerializer(serializers.ModelSerializer):
             return None
         request = self.context["request"]
         user = request.user
+        current_sem = (
+            StudentSubject.objects.filter(user=user, status=StudentSubject.Status.ACTIVE)
+            .aggregate(max_sem=models.Max("subject__semester"))
+            .get("max_sem")
+        )
         enrollment = (
             StudentSubject.objects.select_related("subject")
             .filter(id=value, user=user)
             .first()
         )
         if enrollment is not None:
-            if enrollment.status != StudentSubject.Status.ACTIVE:
-                enrollment.status = StudentSubject.Status.ACTIVE
-                enrollment.save(update_fields=("status", "updated_at"))
+            if (
+                current_sem
+                and enrollment.subject.semester < current_sem
+                and enrollment.status != StudentSubject.Status.ACTIVE
+            ):
+                raise serializers.ValidationError(
+                    "Esta disciplina não faz parte do semestre vigente."
+                )
             return enrollment
 
         subj = Subject.objects.filter(id=value).first()
         if subj is not None:
+            if current_sem and subj.semester < current_sem:
+                raise serializers.ValidationError(
+                    "Esta disciplina não faz parte do semestre vigente."
+                )
             enrollment, _ = StudentSubject.objects.get_or_create(
                 user=user,
                 subject=subj,
                 defaults={"status": StudentSubject.Status.ACTIVE},
             )
-            if enrollment.status != StudentSubject.Status.ACTIVE:
-                enrollment.status = StudentSubject.Status.ACTIVE
-                enrollment.save(update_fields=("status", "updated_at"))
             return enrollment
 
         raise serializers.ValidationError(
@@ -769,7 +780,12 @@ class AcademicTaskWriteSerializer(serializers.ModelSerializer):
 class AcademicEventSerializer(serializers.ModelSerializer):
     title = serializers.CharField(min_length=1, max_length=200, trim_whitespace=True)
     student_subject_id = serializers.UUIDField(required=False, allow_null=True)
-    subject_name = serializers.CharField(source="student_subject.subject.name", read_only=True)
+    subject_name = serializers.SerializerMethodField()
+
+    def get_subject_name(self, obj) -> str:
+        if obj.student_subject and obj.student_subject.subject:
+            return obj.student_subject.subject.name
+        return "Interdisciplinar (Geral)"
 
     class Meta:
         model = AcademicEvent
@@ -789,23 +805,45 @@ class AcademicEventSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "subject_name", "created_at", "updated_at")
 
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            mutable = dict(data)
+            if mutable.get("student_subject_id") == "":
+                mutable["student_subject_id"] = None
+            data = mutable
+        return super().to_internal_value(data)
+
     def validate_student_subject_id(self, value):
         if value is None:
             return None
         user = self.context["request"].user
+        current_sem = (
+            StudentSubject.objects.filter(user=user, status=StudentSubject.Status.ACTIVE)
+            .aggregate(max_sem=models.Max("subject__semester"))
+            .get("max_sem")
+        )
         enrollment = (
             StudentSubject.objects.select_related("subject")
             .filter(id=value, user=user)
             .first()
         )
         if enrollment is not None:
-            if enrollment.status != StudentSubject.Status.ACTIVE:
-                enrollment.status = StudentSubject.Status.ACTIVE
-                enrollment.save(update_fields=("status", "updated_at"))
+            if (
+                current_sem
+                and enrollment.subject.semester < current_sem
+                and enrollment.status != StudentSubject.Status.ACTIVE
+            ):
+                raise serializers.ValidationError(
+                    "Esta disciplina não faz parte do semestre vigente."
+                )
             return enrollment
 
         subj = Subject.objects.filter(id=value).first()
         if subj is not None:
+            if current_sem and subj.semester < current_sem:
+                raise serializers.ValidationError(
+                    "Esta disciplina não faz parte do semestre vigente."
+                )
             enrollment, _ = StudentSubject.objects.get_or_create(
                 user=user,
                 subject=subj,
@@ -976,13 +1014,34 @@ class StudyNoteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("A pasta informada não pertence ao usuário.")
         return value
 
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            mutable = dict(data)
+            if mutable.get("student_subject") == "":
+                mutable["student_subject"] = None
+            data = mutable
+        return super().to_internal_value(data)
+
     def validate_student_subject(self, value):
         if value is None:
             return None
         user = self.context["request"].user
+        current_sem = (
+            StudentSubject.objects.filter(user=user, status=StudentSubject.Status.ACTIVE)
+            .aggregate(max_sem=models.Max("subject__semester"))
+            .get("max_sem")
+        )
         if isinstance(value, StudentSubject):
             if value.user_id != user.id:
                 raise serializers.ValidationError("A disciplina informada não pertence ao usuário.")
+            if (
+                current_sem
+                and value.subject.semester < current_sem
+                and value.status != StudentSubject.Status.ACTIVE
+            ):
+                raise serializers.ValidationError(
+                    "A disciplina informada não faz parte do semestre vigente."
+                )
             return value
         enrollment = (
             StudentSubject.objects.select_related("subject")
@@ -990,20 +1049,30 @@ class StudyNoteSerializer(serializers.ModelSerializer):
             .first()
         )
         if enrollment is not None:
+            if (
+                current_sem
+                and enrollment.subject.semester < current_sem
+                and enrollment.status != StudentSubject.Status.ACTIVE
+            ):
+                raise serializers.ValidationError(
+                    "A disciplina informada não faz parte do semestre vigente."
+                )
             if enrollment.status != StudentSubject.Status.ACTIVE:
-                enrollment.status = StudentSubject.Status.ACTIVE
-                enrollment.save(update_fields=("status", "updated_at"))
+                raise serializers.ValidationError(
+                    "A disciplina informada não está ativa no semestre vigente."
+                )
             return enrollment
         subj = Subject.objects.filter(id=value, active=True).first()
         if subj is not None:
+            if current_sem and subj.semester < current_sem:
+                raise serializers.ValidationError(
+                    "A disciplina informada não faz parte do semestre vigente."
+                )
             enrollment, _ = StudentSubject.objects.get_or_create(
                 user=user,
                 subject=subj,
                 defaults={"status": StudentSubject.Status.ACTIVE},
             )
-            if enrollment.status != StudentSubject.Status.ACTIVE:
-                enrollment.status = StudentSubject.Status.ACTIVE
-                enrollment.save(update_fields=("status", "updated_at"))
             return enrollment
         raise serializers.ValidationError("A disciplina informada não pertence ao usuário.")
 
@@ -1228,6 +1297,14 @@ class FlashcardSerializer(serializers.ModelSerializer):
     def get_is_due(self, obj) -> bool:
         return obj.due_at <= timezone.now()
 
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            mutable = dict(data)
+            if mutable.get("student_subject") == "":
+                mutable["student_subject"] = None
+            data = mutable
+        return super().to_internal_value(data)
+
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep["student_subject"] = str(instance.student_subject_id) if instance.student_subject_id else None
@@ -1261,6 +1338,18 @@ class FlashcardSerializer(serializers.ModelSerializer):
         ):
             validated_data["deck_name"] = validated_data["student_subject"].subject.name
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if "student_subject" in validated_data:
+            new_ss = validated_data["student_subject"]
+            raw_deck = validated_data.get("deck_name")
+            if new_ss is not None and (
+                not raw_deck
+                or raw_deck == "Geral"
+                or (instance.student_subject and raw_deck == instance.student_subject.subject.name)
+            ):
+                validated_data["deck_name"] = new_ss.subject.name
+        return super().update(instance, validated_data)
 
 
 class StudyDocumentPageSerializer(serializers.ModelSerializer):
@@ -1368,26 +1457,41 @@ class StudyDocumentSerializer(serializers.ModelSerializer):
         if value is None:
             return None
         user = self.context["request"].user
+        current_sem = (
+            StudentSubject.objects.filter(user=user, status=StudentSubject.Status.ACTIVE)
+            .aggregate(max_sem=models.Max("subject__semester"))
+            .get("max_sem")
+        )
         if isinstance(value, StudentSubject):
             if value.user_id != user.id:
                 raise serializers.ValidationError("Disciplina não encontrada ou não pertence ao usuário.")
             return value
-        enrollment = StudentSubject.objects.filter(id=value, user=user).first()
+        enrollment = (
+            StudentSubject.objects.select_related("subject")
+            .filter(id=value, user=user)
+            .first()
+        )
         if enrollment is not None:
-            if enrollment.status != StudentSubject.Status.ACTIVE:
-                enrollment.status = StudentSubject.Status.ACTIVE
-                enrollment.save(update_fields=("status", "updated_at"))
+            if (
+                current_sem
+                and enrollment.subject.semester < current_sem
+                and enrollment.status != StudentSubject.Status.ACTIVE
+            ):
+                raise serializers.ValidationError(
+                    "Esta disciplina não faz parte do semestre vigente."
+                )
             return enrollment
         subj = Subject.objects.filter(id=value, active=True).first()
         if subj is not None:
+            if current_sem and subj.semester < current_sem:
+                raise serializers.ValidationError(
+                    "Esta disciplina não faz parte do semestre vigente."
+                )
             enrollment, _ = StudentSubject.objects.get_or_create(
                 user=user,
                 subject=subj,
                 defaults={"status": StudentSubject.Status.ACTIVE},
             )
-            if enrollment.status != StudentSubject.Status.ACTIVE:
-                enrollment.status = StudentSubject.Status.ACTIVE
-                enrollment.save(update_fields=("status", "updated_at"))
             return enrollment
         raise serializers.ValidationError("Disciplina não encontrada.")
 

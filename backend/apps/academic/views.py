@@ -133,6 +133,53 @@ class ProfessorDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.save(update_fields=("active", "updated_at"))
 
 
+def _get_user_current_semester(user: User) -> int | None:
+    """
+    Determina o semestre vigente do estudante e garante que a disciplina de 1º semestre
+    'Application Data Persistence' não permaneça associada indevidamente ao semestre vigente
+    quando o aluno já cursa disciplinas de semestres posteriores (ex.: 2º semestre).
+    Preserva as anotações existentes, removendo apenas o vínculo incorreto.
+    """
+    if user.course_offering_id and user.course_offering is not None:
+        current_course = user.course_offering.course
+        Subject.objects.filter(
+            course=current_course,
+            name__iexact="Application Data Persistence",
+        ).exclude(semester=1).update(semester=1)
+
+    active_qs = StudentSubject.objects.select_related("subject").filter(
+        user=user,
+        status=StudentSubject.Status.ACTIVE,
+        subject__active=True,
+    )
+    max_sem = active_qs.aggregate(max_sem=models.Max("subject__semester")).get("max_sem")
+    if max_sem and max_sem >= 2:
+        stale_past_ids = list(
+            StudentSubject.objects.filter(
+                user=user,
+                subject__semester__lt=max_sem,
+            ).values_list("id", flat=True)
+        )
+        if stale_past_ids:
+            StudentSubject.objects.filter(id__in=stale_past_ids).exclude(
+                status=StudentSubject.Status.DROPPED
+            ).update(status=StudentSubject.Status.DROPPED)
+            # Preserva anotações existentes removendo apenas a associação incorreta de semestres anteriores
+            StudyNote.objects.filter(
+                user=user,
+                student_subject_id__in=stale_past_ids,
+            ).update(student_subject=None)
+            AcademicTask.objects.filter(
+                user=user,
+                student_subject_id__in=stale_past_ids,
+            ).update(student_subject=None)
+            AcademicEvent.objects.filter(
+                user=user,
+                student_subject_id__in=stale_past_ids,
+            ).update(student_subject=None)
+    return max_sem
+
+
 class StudentSubjectListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticatedOr401,)
     pagination_class = None
@@ -144,10 +191,7 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
                 "Complete seu perfil acadêmico antes de selecionar matérias ativas."
             )
         current_course = user.course_offering.course
-        Subject.objects.filter(
-            course=current_course,
-            name__iexact="Application Data Persistence",
-        ).exclude(semester=1).update(semester=1)
+        current_sem = _get_user_current_semester(user)
 
         queryset = (
             StudentSubject.objects.select_related("subject", "subject__course")
@@ -158,8 +202,14 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
         if status_param == "all":
             return queryset
         if status_param in StudentSubject.Status.values:
-            return queryset.filter(status=status_param)
-        return queryset.filter(status=StudentSubject.Status.ACTIVE)
+            filtered = queryset.filter(status=status_param)
+            if status_param == StudentSubject.Status.ACTIVE and current_sem:
+                filtered = filtered.filter(subject__semester=current_sem)
+            return filtered
+        active_filtered = queryset.filter(status=StudentSubject.Status.ACTIVE)
+        if current_sem:
+            active_filtered = active_filtered.filter(subject__semester=current_sem)
+        return active_filtered
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -206,9 +256,14 @@ class StudentSubjectDetailView(generics.RetrieveUpdateAPIView):
 class AcademicTaskMixin:
     def get_base_queryset(self: Any):
         user = cast(User, self.request.user)
-        queryset = AcademicTask.objects.select_related(
-            "student_subject", "student_subject__subject", "linked_event", "user"
-        ).filter(user=user)
+        _get_user_current_semester(user)
+        queryset = (
+            AcademicTask.objects.select_related(
+                "student_subject", "student_subject__subject", "linked_event", "user"
+            )
+            .filter(user=user)
+            .exclude(student_subject__status=StudentSubject.Status.DROPPED)
+        )
         student_subject_id = self.request.query_params.get("student_subject")
         if student_subject_id:
             queryset = queryset.filter(student_subject_id=UUID(student_subject_id))
@@ -482,6 +537,7 @@ class StudyNoteListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = cast(User, self.request.user)
+        _get_user_current_semester(user)
         queryset = StudyNote.objects.select_related(
             "folder", "student_subject", "student_subject__subject", "task", "reading"
         ).filter(user=user)
@@ -969,7 +1025,9 @@ class CalendarView(generics.GenericAPIView):
                 | Q(ends_at__isnull=False, ends_at__gte=from_dt)
             )
             if ss_id:
-                event_qs = event_qs.filter(student_subject_id=ss_id)
+                event_qs = event_qs.filter(
+                    Q(student_subject_id=ss_id) | Q(student_subject__isnull=True)
+                )
             if kind_filter and kind_filter != "class":
                 event_qs = event_qs.filter(kind=kind_filter)
             for ev in event_qs:
@@ -983,7 +1041,11 @@ class CalendarView(generics.GenericAPIView):
                     "ends_at": ev.ends_at.isoformat() if ev.ends_at else None,
                     "room": ev.room,
                     "student_subject_id": str(ev.student_subject_id) if ev.student_subject_id else None,
-                    "subject_name": ev.student_subject.subject.name if ev.student_subject else None,
+                    "subject_name": (
+                        ev.student_subject.subject.name
+                        if ev.student_subject and ev.student_subject.subject
+                        else "Interdisciplinar (Geral)"
+                    ),
                     "cancelled": False,
                     "attendance_status": None,
                     "all_day": ev.all_day,
@@ -1001,7 +1063,9 @@ class CalendarView(generics.GenericAPIView):
                 due_date__lt=to_dt,
             )
             if ss_id:
-                task_qs = task_qs.filter(student_subject_id=ss_id)
+                task_qs = task_qs.filter(
+                    Q(student_subject_id=ss_id) | Q(student_subject__isnull=True)
+                )
             if kind_filter in ("exam", "assignment", "other"):
                 task_qs = task_qs.filter(category=kind_filter)
             for task in task_qs:
@@ -1018,7 +1082,7 @@ class CalendarView(generics.GenericAPIView):
                     "subject_name": (
                         task.student_subject.subject.name
                         if task.student_subject and task.student_subject.subject
-                        else "Geral / Outras Atividades"
+                        else "Interdisciplinar (Geral)"
                     ),
                     "cancelled": False,
                     "attendance_status": None,
@@ -2270,6 +2334,870 @@ class StudyDocumentQuizView(generics.GenericAPIView):
             })
 
         return questions
+
+
+# ---------------------------------------------------------------------------
+# Calendar PDF Automatic Assessment Extraction & Confirmation (Section 3)
+# ---------------------------------------------------------------------------
+
+class CalendarPdfExtractView(generics.GenericAPIView):
+    """
+    POST /api/v1/calendar/extract-pdf
+    Recebe um arquivo PDF de calendário acadêmico e o ID da disciplina (student_subject_id),
+    extrai automaticamente as avaliações (AP1, AP2, PAI 1, PAI 2, PAI 3) e suas datas,
+    identifica inconsistências/avisos e retorna os dados estruturados para conferência do usuário
+    antes da confirmação do cadastro.
+    """
+    permission_classes = (IsAuthenticatedOr401,)
+    parser_classes = (MultiPartParser, FormParser)
+
+    ACCENT_TRANSLATION = str.maketrans(
+        "áàâãäéèêëíìîïóòôõöúùûüçñÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ",
+        "aaaaaeeeeiiiiooooouuuucnaaaaaeeeeiiiiooooouuuucn",
+    )
+
+    CANONICAL_ASSESSMENT_NAMES = {
+        "AP1": "Avaliação Parcial 1 (AP1)",
+        "AP2": "Avaliação Parcial 2 (AP2)",
+        "PAI 1": "Prova PAI 1",
+        "PAI 2": "Prova PAI 2",
+        "PAI 3": "Prova PAI 3",
+        "Avaliação Oficial": "Avaliação Oficial",
+        "Prova Substitutiva": "Prova Substitutiva",
+    }
+
+    EXPECTED_TYPES = ("AP1", "AP2", "PAI 1", "PAI 2", "PAI 3")
+
+    ASSESSMENT_REGEXES = [
+        (
+            "AP1",
+            re.compile(
+                r"\b(?:avaliacao\s+parcial\s*(?:[-–—:]?\s*)?(?:1|i)\b(?:\s*\(\s*ap\s*[-–—]?\s*1\s*\))?|ap\s*[-–—]?\s*1\b)"
+            ),
+        ),
+        (
+            "AP2",
+            re.compile(
+                r"\b(?:avaliacao\s+parcial\s*(?:[-–—:]?\s*)?(?:2|ii)\b(?!i)(?:\s*\(\s*ap\s*[-–—]?\s*2\s*\))?|ap\s*[-–—]?\s*2\b)"
+            ),
+        ),
+        (
+            "PAI 3",
+            re.compile(
+                r"\b(?:(?:prova\s+)?pai\s*[-–—]?\s*(?:3|iii)\b|programa\s+de\s+aprendizagem\s+interdisciplinar\s*(?:[-–—:,(]*\s*(?:prova\s+|avaliacao\s+|etapa\s+)?(?:pai\s*)?)?(?:3|iii)\b|(?:3|iii)\s*[oªº°]?\s*programa\s+de\s+aprendizagem\s+interdisciplinar\b)"
+            ),
+        ),
+        (
+            "PAI 2",
+            re.compile(
+                r"\b(?:(?:prova\s+)?pai\s*[-–—]?\s*(?:2|ii)\b(?!i)|programa\s+de\s+aprendizagem\s+interdisciplinar\s*(?:[-–—:,(]*\s*(?:prova\s+|avaliacao\s+|etapa\s+)?(?:pai\s*)?)?(?:2|ii)\b(?!i)|(?:2|ii)\s*[oªº°]?\s*programa\s+de\s+aprendizagem\s+interdisciplinar\b)"
+            ),
+        ),
+        (
+            "PAI 1",
+            re.compile(
+                r"\b(?:(?:prova\s+)?pai\s*[-–—]?\s*(?:1|i)\b(?!i)|programa\s+de\s+aprendizagem\s+interdisciplinar\s*(?:[-–—:,(]*\s*(?:prova\s+|avaliacao\s+|etapa\s+)?(?:pai\s*)?)?(?:1|i)\b(?!i)|(?:1|i)\s*[oªº°]?\s*programa\s+de\s+aprendizagem\s+interdisciplinar\b)"
+            ),
+        ),
+        (
+            "Avaliação Oficial",
+            re.compile(
+                r"\b(?:avaliac(?:ao|oes)\s+oficia(?:l|is)|av\s*\.?\s*oficia(?:l|is))\b"
+            ),
+        ),
+        (
+            "Prova Substitutiva",
+            re.compile(
+                r"\b(?:prova\s+substitutiva|avaliac(?:ao|oes)\s+substitutiva[s]?|substitutiva\b(?!s)|prova\s+sub\b)"
+            ),
+        ),
+    ]
+
+    DATE_RE = re.compile(
+        r"\b(0?[1-9]|[12]\d|3[01])\s*/\s*(0?[1-9]|1[0-2])(?:\s*/\s*(20\d{2}|\d{2}))?\b"
+    )
+
+    POST_EXAM_PREFIX_RE = re.compile(
+        r"\b(?:resolucao|correcao|gabarito|revisao|vista|devolucao|comentarios)\s+(?:da\s+|das\s+|do\s+|dos\s+|de\s+|sobre\s+(?:a\s+|o\s+)?)?$"
+    )
+
+    @classmethod
+    def _validate_and_identify_file(cls, uploaded_file) -> tuple[str, str]:
+        """
+        Valida rigorosamente o arquivo enviado, rejeitando qualquer formato diferente de PDF e Word (.docx).
+        Verifica extensão, tamanho máximo (15 MB), MIME type e assinatura real dos bytes (magic bytes / estrutura do arquivo),
+        impedindo ataques como extensões forjadas (.txt ou .exe renomeados), zip bombs ou corrupções.
+        """
+        from rest_framework.exceptions import ValidationError as DRFValidationError
+        import zipfile
+
+        filename = os.path.basename(uploaded_file.name or "").strip()
+        if not filename:
+            raise DRFValidationError({"file": "Nome de arquivo inválido."})
+
+        # Limite de tamanho máximo de 15 MB
+        max_size = 15 * 1024 * 1024
+        if uploaded_file.size and uploaded_file.size > max_size:
+            raise DRFValidationError({"file": "O arquivo excede o limite máximo permitido de 15 MB."})
+
+        lower_name = filename.lower()
+        is_pdf_ext = lower_name.endswith(".pdf")
+        is_docx_ext = lower_name.endswith(".docx")
+
+        if not (is_pdf_ext or is_docx_ext):
+            raise DRFValidationError(
+                {"file": "Formato não suportado. Envie exclusivamente arquivos PDF (.pdf) ou Word (.docx)."}
+            )
+
+        uploaded_file.seek(0)
+        magic_bytes = uploaded_file.read(2048)
+        uploaded_file.seek(0)
+
+        if is_pdf_ext:
+            # Assinatura real de PDF: deve conter %PDF- nos primeiros 1024 bytes
+            if b"%PDF-" not in magic_bytes[:1024]:
+                raise DRFValidationError(
+                    {"file": "Arquivo corrompido ou formato inválido. O conteúdo não corresponde a um documento PDF genuíno."}
+                )
+            return "pdf", filename
+
+        if is_docx_ext:
+            # Assinatura real de container OpenXML (ZIP standard: PK\x03\x04 ou PK\x05\x06 ou PK\x07\x08)
+            if not magic_bytes.startswith((b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")):
+                raise DRFValidationError(
+                    {"file": "Arquivo corrompido ou formato inválido. O conteúdo não corresponde a um documento Word (.docx) genuíno."}
+                )
+
+            # Valida integridade e estrutura interna do OpenXML
+            try:
+                uploaded_file.seek(0)
+                with zipfile.ZipFile(uploaded_file, "r") as zf:
+                    names = set(zf.namelist())
+                    if "word/document.xml" not in names and "[Content_Types].xml" not in names:
+                        raise DRFValidationError(
+                            {"file": "Estrutura de arquivo inválida. O arquivo enviado não é um documento Word (.docx) válido."}
+                        )
+
+                    # Proteção contra Decompression Bomb / Zip Bomb
+                    total_uncompressed = sum(info.file_size for info in zf.infolist())
+                    if total_uncompressed > 50 * 1024 * 1024 or len(zf.infolist()) > 500:
+                        raise DRFValidationError(
+                            {"file": "O arquivo compactado excede os limites de segurança para descompactação."}
+                        )
+            except zipfile.BadZipFile:
+                raise DRFValidationError(
+                    {"file": "Arquivo Word (.docx) corrompido ou ilegível."}
+                )
+            finally:
+                uploaded_file.seek(0)
+
+            return "docx", filename
+
+    @classmethod
+    def _extract_raw_text_from_docx(cls, uploaded_file) -> str:
+        """
+        Extrai todo o conteúdo textual legível de um documento Word (.docx), incluindo
+        parágrafos de corpo e linhas de tabelas de cronograma (w:p e w:tr).
+        """
+        import zipfile
+        import xml.etree.ElementTree as ET
+
+        paragraphs: list[str] = []
+        try:
+            uploaded_file.seek(0)
+            with zipfile.ZipFile(uploaded_file, "r") as zf:
+                xml_targets = [
+                    n
+                    for n in zf.namelist()
+                    if n.startswith("word/header") or n == "word/document.xml"
+                ]
+                if "word/document.xml" not in xml_targets and "word/document.xml" in zf.namelist():
+                    xml_targets.append("word/document.xml")
+
+                for xml_name in xml_targets:
+                    if xml_name not in zf.namelist():
+                        continue
+                    xml_bytes = zf.read(xml_name)
+                    root = ET.fromstring(xml_bytes)
+                    for elem in root.iter():
+                        tag = elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
+                        if tag in ("p", "tr"):
+                            text_pieces = [
+                                child.text or ""
+                                for child in elem.iter()
+                                if (child.tag.split("}")[-1] if "}" in child.tag else child.tag) == "t"
+                            ]
+                            p_txt = " ".join("".join(text_pieces).split()).strip()
+                            if p_txt:
+                                paragraphs.append(p_txt)
+        except Exception:
+            pass
+
+        return "\n".join(paragraphs)
+
+    @classmethod
+    def _extract_raw_text_from_pdf(cls, uploaded_file) -> str:
+        pages_text: list[str] = []
+        try:
+            uploaded_file.seek(0)
+            import pypdf
+
+            reader = pypdf.PdfReader(uploaded_file)
+            for page in reader.pages:
+                t = (page.extract_text() or "").strip()
+                if t:
+                    pages_text.append(t)
+        except Exception:
+            pass
+
+        if pages_text:
+            return "\n\n".join(pages_text)
+
+        # Fallback caso o PDF seja um stream minimalista com operadores de texto simples
+        try:
+            uploaded_file.seek(0)
+            raw_bytes = uploaded_file.read()
+            decoded = raw_bytes.decode("utf-8", errors="ignore")
+            tj_matches = re.findall(r"\(([^()]{3,})\)\s*Tj", decoded)
+            if tj_matches:
+                return "\n".join(tj_matches)
+        except Exception:
+            pass
+        return ""
+
+    @classmethod
+    def _resolve_date_iso(cls, day_str: str, month_str: str, year_str: str | None, ref_year: int) -> str | None:
+        from datetime import date as dt_date
+
+        try:
+            d = int(day_str)
+            m = int(month_str)
+            if year_str:
+                y = int(year_str)
+                if y < 100:
+                    y += 2000
+            else:
+                y = ref_year
+            return dt_date(y, m, d).isoformat()
+        except ValueError:
+            return None
+
+    @classmethod
+    def parse_calendar_text(
+        cls,
+        raw_text: str,
+        student_subject: StudentSubject,
+        user: User,
+        filename: str = "",
+    ) -> dict[str, Any]:
+        import unicodedata
+
+        norm_text = re.sub(r"\s+", " ", unicodedata.normalize("NFC", raw_text or "")).strip()
+        ascii_text = norm_text.translate(cls.ACCENT_TRANSLATION).lower()
+
+        # Determina o ano de referência priorizando o semestre vigente da matrícula ou termo ativo
+        ref_year = timezone.now().year
+        year_resolved = False
+        if student_subject.semester_period:
+            m_year = re.search(r"\b(20\d{2})\b", student_subject.semester_period)
+            if m_year:
+                ref_year = int(m_year.group(1))
+                year_resolved = True
+        if not year_resolved and student_subject.term and student_subject.term.start_date:
+            ref_year = student_subject.term.start_date.year
+            year_resolved = True
+
+        warnings: list[str] = []
+        subject_name = student_subject.subject.name
+
+        # Verifica se o cabeçalho do PDF menciona outra disciplina
+        m_header_subj = re.search(
+            r"disciplina\s*:\s*([A-Za-zÀ-ÿ0-9 &/\-–]{3,65}?)(?=\s+(?:carga\s+hor[aá]ria|semestre|curso|professor|ementa|objetivo|crit[eé]rios|aula|\d{2}/\d{2})\b|$)",
+            norm_text,
+            flags=re.IGNORECASE,
+        )
+        detected_pdf_subject = m_header_subj.group(1).strip(" -–:.") if m_header_subj else None
+        if detected_pdf_subject and detected_pdf_subject.lower() != subject_name.lower():
+            warnings.append(
+                f"O documento menciona a disciplina '{detected_pdf_subject}', porém o cadastro será vinculado à disciplina selecionada ('{subject_name}')."
+            )
+
+        # Localiza todas as datas válidas no texto normalizado
+        date_tokens: list[dict[str, Any]] = []
+        for dm in cls.DATE_RE.finditer(ascii_text):
+            iso_val = cls._resolve_date_iso(dm.group(1), dm.group(2), dm.group(3), ref_year)
+            if iso_val:
+                date_tokens.append(
+                    {
+                        "start": dm.start(),
+                        "end": dm.end(),
+                        "iso": iso_val,
+                        "raw": norm_text[dm.start() : dm.end()],
+                    }
+                )
+
+        # Localiza todas as ocorrências das avaliações previstas evitando sobreposições de span
+        occupied_spans: list[tuple[int, int]] = []
+        raw_mentions: list[dict[str, Any]] = []
+
+        for a_type, pattern in cls.ASSESSMENT_REGEXES:
+            for m in pattern.finditer(ascii_text):
+                s, e = m.start(), m.end()
+                if any(not (e <= os_s or s >= os_e) for os_s, os_e in occupied_spans):
+                    continue
+                occupied_spans.append((s, e))
+                raw_mentions.append(
+                    {
+                        "assessment_type": a_type,
+                        "start": s,
+                        "end": e,
+                        "matched_text": norm_text[s:e],
+                    }
+                )
+
+        raw_mentions.sort(key=lambda item: item["start"])
+
+        # Associa cada menção de avaliação à sua respectiva data
+        extracted_by_type_and_date: dict[tuple[str, str], dict[str, Any]] = {}
+        mentions_without_date: set[str] = set()
+
+        for idx, mention in enumerate(raw_mentions):
+            a_type = mention["assessment_type"]
+            s, e = mention["start"], mention["end"]
+
+            # 1. Ignora menções de resolução/correção/gabarito pós-prova (ex.: "Resolução da AP1")
+            before_ctx = ascii_text[max(0, s - 45) : s]
+            if cls.POST_EXAM_PREFIX_RE.search(before_ctx):
+                continue
+
+            # 2. Ignora menções de fórmula de nota ("PAI I (Livro 1)") na seção de Critérios de Avaliação
+            after_ctx = ascii_text[e : min(len(ascii_text), e + 30)]
+            if re.match(r"^\s*\(\s*livro\s+\d", after_ctx):
+                continue
+
+            # 3. Tenta encontrar data imediatamente após o nome da avaliação com conector explícito (ex.: "AP 1: 21/09/2026", "AP2 - 22/10/2026" ou "... III em 20/11/2026")
+            next_mention_start = (
+                raw_mentions[idx + 1]["start"] if idx + 1 < len(raw_mentions) else len(ascii_text)
+            )
+            after_limit = min(len(ascii_text), e + 45, next_mention_start)
+            matched_date: dict[str, Any] | None = None
+
+            for dt in date_tokens:
+                if e <= dt["start"] <= after_limit:
+                    between = ascii_text[e : dt["start"]].strip()
+                    # Não aceita se for vazio (apenas espaços entre linhas diferentes) nem se tiver ponto final
+                    if not between or "." in between:
+                        continue
+                    # Deve ser exclusivamente conector (: ou - ou palavras como em/dia/data)
+                    if re.match(
+                        r"^[:\-–—,(]*(?:(?:em|dia|data|no\s+dia|prevista\s+para|realizada\s+em)\b[\s:\-–—,(]*)*$",
+                        between,
+                    ) and any(c in between for c in (":", "-", "–", "—", "em", "dia", "data")):
+                        matched_date = dt
+                        break
+
+            # 4. Caso não haja data logo após com conector explícito, procura a data no cronograma antes da menção
+            if matched_date is None:
+                prev_candidates = [
+                    dt for dt in date_tokens if dt["end"] <= s and (s - dt["end"]) <= 185
+                ]
+                if prev_candidates:
+                    candidate = prev_candidates[-1]
+                    between = ascii_text[candidate["end"] : s]
+                    # Garante que não atravessou outra data ou seção não relacionada
+                    if not re.search(r"\b(?:criterios\s+de\s+avaliacao|bibliografia)\b", between):
+                        matched_date = candidate
+
+            if matched_date is not None:
+                key = (a_type, matched_date["iso"])
+                if key not in extracted_by_type_and_date:
+                    snip_start = max(0, min(s, matched_date["start"]) - 10)
+                    snip_end = min(len(norm_text), max(e, matched_date["end"]) + 55)
+                    snippet = norm_text[snip_start:snip_end].strip()
+                    canonical_label = cls.CANONICAL_ASSESSMENT_NAMES.get(a_type, a_type)
+                    is_pai = a_type in ("PAI 1", "PAI 2", "PAI 3")
+                    if is_pai:
+                        item_title = f"Prova {a_type}"
+                        item_subj_id = None
+                        item_subj_name = "Interdisciplinar (Geral)"
+                    else:
+                        item_title = f"{canonical_label} — {subject_name}"
+                        item_subj_id = str(student_subject.id)
+                        item_subj_name = subject_name
+
+                    extracted_by_type_and_date[key] = {
+                        "assessment_type": a_type,
+                        "title": item_title,
+                        "date": matched_date["iso"],
+                        "student_subject_id": item_subj_id,
+                        "subject_name": item_subj_name,
+                        "matched_label": mention["matched_text"],
+                        "source_snippet": snippet,
+                    }
+            else:
+                # Verifica se não é apenas menção genérica na seção inicial de critérios
+                wider_before = ascii_text[max(0, s - 160) : s]
+                if "criterios de avaliacao" not in wider_before and "composta por" not in wider_before:
+                    mentions_without_date.add(a_type)
+
+        extracted_items = list(extracted_by_type_and_date.values())
+        extracted_items.sort(key=lambda x: (x["date"], x["assessment_type"]))
+
+        # Verifica avaliações existentes no banco (para esta disciplina ou universais PAI) para evitar duplicação
+        existing_events = list(
+            AcademicEvent.objects.filter(
+                user=user,
+            )
+        )
+        existing_tasks = list(
+            AcademicTask.objects.filter(
+                user=user,
+            )
+        )
+
+        duplicate_existing_count = 0
+        for item in extracted_items:
+            item_date = item["date"]
+            a_type = item["assessment_type"]
+            a_type_low = a_type.lower()
+            is_pai = a_type in ("PAI 1", "PAI 2", "PAI 3")
+            already_in_db = False
+
+            if is_pai:
+                # Universal: deduplica entre todas as disciplinas do usuário
+                for ev in existing_events:
+                    ev_date = ev.starts_at.date().isoformat() if ev.starts_at else ""
+                    if ev_date == item_date and (
+                        a_type_low in ev.title.lower()
+                        or (ev.description and f"Tipo: {a_type}".lower() in ev.description.lower())
+                        or (ev.student_subject is None and "pai" in ev.title.lower())
+                    ):
+                        already_in_db = True
+                        break
+                if not already_in_db:
+                    for tk in existing_tasks:
+                        tk_date = tk.due_date.date().isoformat() if tk.due_date else ""
+                        if tk_date == item_date and (
+                            a_type_low in tk.title.lower()
+                            or (tk.description and f"Tipo: {a_type}".lower() in tk.description.lower())
+                            or (tk.student_subject is None and "pai" in tk.title.lower())
+                        ):
+                            already_in_db = True
+                            break
+            else:
+                for ev in existing_events:
+                    if ev.student_subject_id != student_subject.id:
+                        continue
+                    ev_date = ev.starts_at.date().isoformat() if ev.starts_at else ""
+                    if ev_date == item_date and (
+                        a_type_low in ev.title.lower()
+                        or item["title"].lower() == ev.title.lower()
+                        or (ev.description and f"Tipo: {a_type}".lower() in ev.description.lower())
+                    ):
+                        already_in_db = True
+                        break
+                if not already_in_db:
+                    for tk in existing_tasks:
+                        if tk.student_subject_id != student_subject.id:
+                            continue
+                        tk_date = tk.due_date.date().isoformat() if tk.due_date else ""
+                        if tk_date == item_date and (
+                            a_type_low in tk.title.lower()
+                            or item["title"].lower() == tk.title.lower()
+                            or (tk.description and f"Tipo: {a_type}".lower() in tk.description.lower())
+                        ):
+                            already_in_db = True
+                            break
+
+            item["already_exists"] = already_in_db
+            if already_in_db:
+                duplicate_existing_count += 1
+
+        if duplicate_existing_count > 0:
+            warnings.append(
+                f"{duplicate_existing_count} avaliação(ões) identificada(s) neste PDF já consta(m) cadastrada(s) no calendário. A confirmação atualizará os registros sem duplicar eventos."
+            )
+
+        # Verifica se uma mesma avaliação apareceu em mais de uma data diferente
+        dates_by_type: dict[str, list[str]] = {}
+        for item in extracted_items:
+            dates_by_type.setdefault(item["assessment_type"], []).append(item["date"])
+
+        for a_type, d_list in dates_by_type.items():
+            if len(d_list) > 1:
+                formatted_dates = ", ".join(
+                    f"{d.split('-')[2]}/{d.split('-')[1]}/{d.split('-')[0]}" for d in d_list
+                )
+                warnings.append(
+                    f"A avaliação {a_type} foi identificada em mais de uma data no documento ({formatted_dates}). Verifique e mantenha apenas a data correta antes de confirmar."
+                )
+
+        # Verifica menções cuja data estava ilegível ou ausente
+        for a_type in sorted(mentions_without_date):
+            if a_type not in dates_by_type:
+                warnings.append(
+                    f"A avaliação {a_type} foi mencionada no texto, mas não foi possível identificar uma data legível com segurança."
+                )
+
+        # Verifica quais das 5 avaliações previstas não constam no documento
+        found_types = set(dates_by_type.keys())
+        missing_types = [t for t in cls.EXPECTED_TYPES if t not in found_types]
+        if missing_types:
+            warnings.append(
+                f"Não foram encontradas datas no documento para: {', '.join(missing_types)}. Nenhuma data foi inventada; você pode adicioná-las manualmente se desejar."
+            )
+
+        # Detecta outras nomenclaturas de avaliações presentes no cronograma (ex.: Exame Final, Banca)
+        other_assessments: list[dict[str, Any]] = []
+        seen_other_keys: set[tuple[str, str]] = set()
+        other_exam_re = re.compile(
+            r"\b(exame\s+final|avaliacao\s+final|banca\s+final|apresentacao\s+final)\b"
+        )
+        for om in other_exam_re.finditer(ascii_text):
+            os_idx, oe_idx = om.start(), om.end()
+            if cls.POST_EXAM_PREFIX_RE.search(ascii_text[max(0, os_idx - 40) : os_idx]):
+                continue
+            prev_dts = [dt for dt in date_tokens if dt["end"] <= os_idx and (os_idx - dt["end"]) <= 60]
+            if prev_dts:
+                dt = prev_dts[-1]
+                raw_label = norm_text[os_idx:oe_idx].strip()
+                key = (raw_label.lower(), dt["iso"])
+                if key not in seen_other_keys:
+                    seen_other_keys.add(key)
+                    # Prevenção de duplicidade: se já foi cadastrado, não sugere novamente
+                    already_registered = False
+                    for ev in existing_events:
+                        ev_date = ev.starts_at.date().isoformat() if ev.starts_at else ""
+                        if ev_date == dt["iso"] and (
+                            raw_label.lower() in ev.title.lower()
+                            or ev.student_subject_id == student_subject.id
+                        ):
+                            already_registered = True
+                            break
+                    if not already_registered:
+                        for tk in existing_tasks:
+                            tk_date = tk.due_date.date().isoformat() if tk.due_date else ""
+                            if tk_date == dt["iso"] and (
+                                raw_label.lower() in tk.title.lower()
+                                or tk.student_subject_id == student_subject.id
+                            ):
+                                already_registered = True
+                                break
+
+                    if not already_registered:
+                        other_assessments.append(
+                            {
+                                "title": f"{raw_label} — {subject_name}",
+                                "date": dt["iso"],
+                                "assessment_type": "OUTRA",
+                                "student_subject_id": str(student_subject.id),
+                                "subject_name": subject_name,
+                                "source_snippet": norm_text[
+                                    dt["start"] : min(len(norm_text), oe_idx + 40)
+                                ].strip(),
+                            }
+                        )
+
+        if other_assessments:
+            other_summary = ", ".join(
+                f"{o['title'].split(' — ')[0]} ({o['date'].split('-')[2]}/{o['date'].split('-')[1]})"
+                for o in other_assessments
+            )
+            warnings.append(
+                f"O documento também contém datas com outras nomenclaturas de prova: {other_summary}."
+            )
+
+        return {
+            "student_subject_id": str(student_subject.id),
+            "subject_name": subject_name,
+            "detected_pdf_subject": detected_pdf_subject,
+            "filename": filename,
+            "items": extracted_items,
+            "other_detected_items": other_assessments,
+            "missing_types": missing_types,
+            "warnings": warnings,
+        }
+
+    def post(self, request, *args, **kwargs):
+        from rest_framework.exceptions import ValidationError as DRFValidationError
+
+        user = cast(User, request.user)
+        uploaded_file = request.FILES.get("file")
+        if not uploaded_file:
+            raise DRFValidationError(
+                {"file": "Envie um arquivo de calendário acadêmico válido em formato PDF (.pdf) ou Word (.docx)."}
+            )
+
+        file_type, filename = self._validate_and_identify_file(uploaded_file)
+
+        ss_id = request.data.get("student_subject_id") or request.data.get("student_subject")
+        if not ss_id:
+            raise DRFValidationError(
+                {"student_subject_id": "Selecione a disciplina correspondente ao calendário."}
+            )
+
+        # Validação do ID e vínculo do estudante (parametrização ORM e prevenção de injeção)
+        try:
+            import uuid
+            valid_uuid = uuid.UUID(str(ss_id).strip())
+        except (ValueError, AttributeError) as exc:
+            raise DRFValidationError(
+                {"student_subject_id": "Identificador de disciplina inválido."}
+            ) from exc
+
+        student_subject = (
+            StudentSubject.objects.select_related("subject", "term")
+            .filter(id=valid_uuid, user=user)
+            .first()
+        )
+        if not student_subject:
+            raise DRFValidationError(
+                {"student_subject_id": "Disciplina não encontrada para este estudante."}
+            )
+
+        if file_type == "docx":
+            raw_text = self._extract_raw_text_from_docx(uploaded_file)
+        else:
+            raw_text = self._extract_raw_text_from_pdf(uploaded_file)
+
+        if not raw_text.strip():
+            return Response(
+                {
+                    "student_subject_id": str(student_subject.id),
+                    "subject_name": student_subject.subject.name,
+                    "detected_pdf_subject": None,
+                    "filename": filename,
+                    "items": [],
+                    "other_detected_items": [],
+                    "missing_types": list(self.EXPECTED_TYPES),
+                    "warnings": [
+                        f"Não foi possível extrair texto legível deste arquivo {file_type.upper()} (o arquivo pode estar digitalizado como imagem ou protegido). Você pode adicionar as datas manualmente abaixo."
+                    ],
+                },
+                status=drf_status.HTTP_200_OK,
+            )
+
+        result = self.parse_calendar_text(
+            raw_text=raw_text,
+            student_subject=student_subject,
+            user=user,
+            filename=filename,
+        )
+        return Response(result, status=drf_status.HTTP_200_OK)
+
+
+class CalendarPdfConfirmView(generics.GenericAPIView):
+    """
+    POST /api/v1/calendar/confirm-extracted
+    Persiste as avaliações conferidas/editadas pelo usuário na aba de Calendário,
+    garantindo o vínculo estrito com a disciplina selecionada e evitando duplicidade.
+    """
+    permission_classes = (IsAuthenticatedOr401,)
+    serializer_class = AcademicEventSerializer
+
+    def post(self, request, *args, **kwargs):
+        from datetime import datetime, timezone as dt_timezone
+        from django.db import transaction as db_transaction
+        from rest_framework.exceptions import ValidationError as DRFValidationError
+
+        user = cast(User, request.user)
+        ss_id = request.data.get("student_subject_id") or request.data.get("student_subject")
+        if not ss_id:
+            raise DRFValidationError(
+                {"student_subject_id": "Informe a disciplina à qual pertencem as avaliações."}
+            )
+
+        try:
+            import uuid
+            valid_uuid = uuid.UUID(str(ss_id).strip())
+        except (ValueError, AttributeError) as exc:
+            raise DRFValidationError(
+                {"student_subject_id": "Identificador de disciplina inválido."}
+            ) from exc
+
+        student_subject = (
+            StudentSubject.objects.select_related("subject")
+            .filter(id=valid_uuid, user=user)
+            .first()
+        )
+        if not student_subject:
+            raise DRFValidationError(
+                {"student_subject_id": "Disciplina inválida ou não pertence ao usuário."}
+            )
+
+        raw_items = request.data.get("items")
+        if not isinstance(raw_items, list) or len(raw_items) == 0:
+            raise DRFValidationError(
+                {"items": "Confirme ao menos uma avaliação com data válida para cadastrar."}
+            )
+
+        saved_events: list[AcademicEvent] = []
+        created_count = 0
+        updated_count = 0
+
+        with db_transaction.atomic():
+            seen_batch_keys: set[tuple[str | None, str, str]] = set()
+            for idx, item in enumerate(raw_items, start=1):
+                if not isinstance(item, dict):
+                    continue
+                # Sanitização contra injeção de caracteres nulos, controle ou payload desmedido
+                title = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", str(item.get("title") or "")).strip()[:200]
+                date_str = str(item.get("date") or "").strip()[:10]
+                raw_type = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", str(item.get("assessment_type") or "")).strip()[:50]
+                source_snippet = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", " ", str(item.get("source_snippet") or "")).strip()[:500]
+
+                if not title or not date_str:
+                    raise DRFValidationError(
+                        {"items": f"O item #{idx} precisa ter nome da avaliação e data preenchidos."}
+                    )
+
+                try:
+                    parsed_date = datetime.strptime(date_str[:10], "%Y-%m-%d").date()
+                except ValueError as exc:
+                    raise DRFValidationError(
+                        {"items": f"Data inválida '{date_str}' no item '{title}'. Use AAAA-MM-DD."}
+                    ) from exc
+
+                # Provas PAI são avaliações universais (não pertencem a uma disciplina específica)
+                is_pai = (
+                    raw_type in ("PAI 1", "PAI 2", "PAI 3")
+                    or "pai" in title.lower()
+                    or "programa de aprendizagem interdisciplinar" in title.lower()
+                )
+
+                if is_pai:
+                    if "1" in raw_type or "pai 1" in title.lower() or "pai i" in title.lower():
+                        assessment_type = "PAI 1"
+                    elif "2" in raw_type or "pai 2" in title.lower() or "pai ii" in title.lower():
+                        assessment_type = "PAI 2"
+                    elif "3" in raw_type or "pai 3" in title.lower() or "pai iii" in title.lower():
+                        assessment_type = "PAI 3"
+                    else:
+                        assessment_type = raw_type or "PAI 1"
+
+                    target_student_subject = None
+                    final_title = f"Prova {assessment_type}"
+                    description = (
+                        f"Tipo: {assessment_type} | Avaliação Universal Interdisciplinar"
+                        + (f"\nFonte no calendário: {source_snippet}" if source_snippet else "")
+                    )
+                else:
+                    assessment_type = raw_type or "PROVA"
+                    target_student_subject = student_subject
+                    final_title = title
+                    description = (
+                        f"Tipo: {assessment_type} | Disciplina: {student_subject.subject.name}"
+                        + (f"\nFonte no calendário: {source_snippet}" if source_snippet else "")
+                    )
+
+                # Prevenção de duplicidade por lote
+                batch_key = (
+                    None if is_pai else str(student_subject.id),
+                    parsed_date.isoformat(),
+                    assessment_type.lower(),
+                )
+                if batch_key in seen_batch_keys:
+                    continue
+                seen_batch_keys.add(batch_key)
+
+                starts_at = datetime(
+                    parsed_date.year,
+                    parsed_date.month,
+                    parsed_date.day,
+                    12,
+                    0,
+                    0,
+                    tzinfo=dt_timezone.utc,
+                )
+                ends_at = datetime(
+                    parsed_date.year,
+                    parsed_date.month,
+                    parsed_date.day,
+                    13,
+                    0,
+                    0,
+                    tzinfo=dt_timezone.utc,
+                )
+
+                if is_pai:
+                    # Deduplica evento universal PAI para o usuário nessa data
+                    existing_ev = (
+                        AcademicEvent.objects.filter(
+                            user=user,
+                            starts_at__date=parsed_date,
+                        )
+                        .filter(
+                            models.Q(title__icontains=assessment_type)
+                            | models.Q(description__icontains=f"Tipo: {assessment_type}")
+                            | models.Q(student_subject__isnull=True, title__icontains="pai")
+                        )
+                        .first()
+                    )
+                else:
+                    existing_ev = (
+                        AcademicEvent.objects.filter(
+                            user=user,
+                            student_subject=student_subject,
+                            starts_at__date=parsed_date,
+                        )
+                        .filter(
+                            models.Q(title__iexact=final_title)
+                            | models.Q(description__icontains=f"Tipo: {assessment_type}")
+                        )
+                        .first()
+                    )
+
+                if existing_ev:
+                    existing_ev.title = final_title
+                    existing_ev.kind = AcademicEvent.Kind.EXAM
+                    existing_ev.starts_at = starts_at
+                    existing_ev.ends_at = ends_at
+                    existing_ev.all_day = True
+                    existing_ev.description = description
+                    existing_ev.student_subject = target_student_subject
+                    existing_ev.save()
+                    event_obj = existing_ev
+                    updated_count += 1
+                else:
+                    event_obj = AcademicEvent.objects.create(
+                        user=user,
+                        student_subject=target_student_subject,
+                        title=final_title,
+                        kind=AcademicEvent.Kind.EXAM,
+                        starts_at=starts_at,
+                        ends_at=ends_at,
+                        all_day=True,
+                        description=description,
+                    )
+                    created_count += 1
+
+                AcademicTask.objects.update_or_create(
+                    linked_event=event_obj,
+                    defaults={
+                        "user": user,
+                        "student_subject": target_student_subject,
+                        "category": "exam",
+                        "title": final_title,
+                        "description": description,
+                        "due_date": starts_at,
+                        "end_date": ends_at,
+                        "all_day": True,
+                        "estimated_minutes": 60,
+                    },
+                )
+                saved_events.append(event_obj)
+
+        return Response(
+            {
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "items": AcademicEventSerializer(
+                    saved_events, many=True, context={"request": request}
+                ).data,
+            },
+            status=drf_status.HTTP_201_CREATED,
+        )
+
 
 
 

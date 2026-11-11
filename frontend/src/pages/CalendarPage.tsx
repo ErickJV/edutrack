@@ -1,9 +1,12 @@
 import {
+  AlertTriangle,
   BookOpen,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Edit3,
+  FileUp,
   GraduationCap,
   ListTodo,
   LogOut,
@@ -19,20 +22,27 @@ import { Link } from 'react-router-dom'
 
 import {
   ApiError,
+  confirmExtractedCalendarEvents,
   createAcademicTask,
   deleteAcademicEvent,
   deleteAcademicTask,
+  extractCalendarPdf,
   listCalendarItems,
   listCurriculum,
   listStudentSubjects,
   recordAttendance,
   toggleAcademicTaskComplete,
+  updateAcademicEvent,
+  updateAcademicTask,
 } from '../api/client'
 import type {
+  AcademicEventKind,
   AcademicSubject,
   AcademicTaskCategory,
   CalendarItem,
   CalendarItemKind,
+  CalendarPdfExtractResponse,
+  ExtractedCalendarAssessment,
   StudentSubject,
 } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
@@ -204,10 +214,12 @@ export function CalendarPage() {
   const [items, setItems] = useState<CalendarItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [actionBusyId, setActionBusyId] = useState<string | null>(null)
 
-  // Modal de nova tarefa / evento sincronizado
+  // Modal de nova ou edição de tarefa / evento sincronizado
   const [showNewEventModal, setShowNewEventModal] = useState(false)
+  const [editingItem, setEditingItem] = useState<CalendarItem | null>(null)
   const [eventTitle, setEventTitle] = useState('')
   const [eventKind, setEventKind] = useState<AcademicTaskCategory>('task')
   const [eventDate, setEventDate] = useState(() => toLocalDateKey(today))
@@ -218,6 +230,18 @@ export function CalendarPage() {
   const [eventSubjectId, setEventSubjectId] = useState('')
   const [eventDescription, setEventDescription] = useState('')
   const [savingEvent, setSavingEvent] = useState(false)
+
+  // Modal de Upload e Leitura Automática de Calendário Acadêmico (PDF)
+  const [showPdfModal, setShowPdfModal] = useState(false)
+  const [pdfSubjectId, setPdfSubjectId] = useState('')
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [extractingPdf, setExtractingPdf] = useState(false)
+  const [confirmingPdf, setConfirmingPdf] = useState(false)
+  const [pdfResult, setPdfResult] = useState<CalendarPdfExtractResponse | null>(null)
+  const [editableExtractedItems, setEditableExtractedItems] = useState<
+    ExtractedCalendarAssessment[]
+  >([])
+  const [pdfError, setPdfError] = useState('')
 
   // Calcula as células da grade mensal (Segunda a Domingo) cobrindo todas as semanas do mês
   const calendarDays = useMemo(() => {
@@ -325,9 +349,19 @@ export function CalendarPage() {
     [subjects],
   )
 
+  const currentSemesterNumber = useMemo(() => {
+    if (subjects.length === 0) return null
+    return Math.max(...subjects.map((s) => s.subject.semester))
+  }, [subjects])
+
   const extraCurriculumSubjects = useMemo(
-    () => curriculum.filter((item) => !enrolledSubjectIds.has(item.id)),
-    [curriculum, enrolledSubjectIds],
+    () =>
+      curriculum.filter(
+        (item) =>
+          !enrolledSubjectIds.has(item.id) &&
+          (currentSemesterNumber === null || item.semester === currentSemesterNumber),
+      ),
+    [curriculum, enrolledSubjectIds, currentSemesterNumber],
   )
 
   // Agrupamento por data local YYYY-MM-DD
@@ -452,12 +486,50 @@ export function CalendarPage() {
   }
 
   function openNewEventForDate(dateKey: string) {
+    setEditingItem(null)
     setSelectedDateKey(dateKey)
     setEventDate(dateKey)
     setEventTitle('')
     setEventKind('task')
+    setEventAllDay(false)
+    setEventStartTime('19:00')
+    setEventEndTime('21:00')
     setEventRoom('')
     setEventDescription('')
+    setShowNewEventModal(true)
+  }
+
+  function openEditItemModal(item: CalendarItem) {
+    setEditingItem(item)
+    const dtKey = itemToDateKey(item)
+    setSelectedDateKey(dtKey)
+    setEventDate(dtKey)
+    setEventTitle(item.title)
+    const kindVal: AcademicTaskCategory =
+      item.kind === 'exam' || item.kind === 'assignment' || item.kind === 'other'
+        ? item.kind
+        : 'task'
+    setEventKind(kindVal)
+    setEventAllDay(Boolean(item.all_day))
+    const startDt = new Date(item.starts_at)
+    if (!Number.isNaN(startDt.getTime()) && !item.all_day) {
+      setEventStartTime(
+        `${String(startDt.getHours()).padStart(2, '0')}:${String(startDt.getMinutes()).padStart(2, '0')}`,
+      )
+    } else {
+      setEventStartTime('19:00')
+    }
+    const endDt = item.ends_at ? new Date(item.ends_at) : null
+    if (endDt && !Number.isNaN(endDt.getTime()) && !item.all_day) {
+      setEventEndTime(
+        `${String(endDt.getHours()).padStart(2, '0')}:${String(endDt.getMinutes()).padStart(2, '0')}`,
+      )
+    } else {
+      setEventEndTime('21:00')
+    }
+    setEventRoom(item.room || '')
+    setEventSubjectId(item.student_subject_id || '')
+    setEventDescription(item.description || '')
     setShowNewEventModal(true)
   }
 
@@ -471,27 +543,56 @@ export function CalendarPage() {
     setError('')
     try {
       const startsAtIso = eventAllDay
-        ? new Date(`${eventDate}T08:00:00`).toISOString()
+        ? new Date(`${eventDate}T12:00:00`).toISOString()
         : new Date(`${eventDate}T${eventStartTime || '19:00'}:00`).toISOString()
       const endsAtIso = eventAllDay
-        ? new Date(`${eventDate}T22:00:00`).toISOString()
+        ? new Date(`${eventDate}T13:00:00`).toISOString()
         : eventEndTime
           ? new Date(`${eventDate}T${eventEndTime}:00`).toISOString()
           : null
 
-      // Cria a tarefa sincronizada que aparece tanto em Tarefas quanto no Calendário
-      await createAcademicTask({
-        student_subject: eventSubjectId || null,
-        category: eventKind,
-        title: eventTitle.trim(),
-        description: eventDescription.trim(),
-        due_date: startsAtIso,
-        end_date: endsAtIso,
-        all_day: eventAllDay,
-        room: eventRoom.trim(),
-        status: 'pending',
-        estimated_minutes: 60,
-      })
+      if (editingItem) {
+        if (editingItem.source_type === 'event') {
+          const evKind: AcademicEventKind =
+            eventKind === 'exam' || eventKind === 'assignment' ? eventKind : 'other'
+          await updateAcademicEvent(editingItem.source_id, {
+            title: eventTitle.trim(),
+            kind: evKind,
+            starts_at: startsAtIso,
+            ends_at: endsAtIso,
+            all_day: eventAllDay,
+            room: eventRoom.trim(),
+            description: eventDescription.trim(),
+            student_subject_id: eventSubjectId || null,
+          })
+        } else {
+          await updateAcademicTask(editingItem.source_id, {
+            student_subject: eventSubjectId || null,
+            category: eventKind,
+            title: eventTitle.trim(),
+            description: eventDescription.trim(),
+            due_date: startsAtIso,
+            end_date: endsAtIso,
+            all_day: eventAllDay,
+            room: eventRoom.trim(),
+          })
+        }
+        setSuccessMessage('Compromisso atualizado no calendário com sucesso!')
+      } else {
+        await createAcademicTask({
+          student_subject: eventSubjectId || null,
+          category: eventKind,
+          title: eventTitle.trim(),
+          description: eventDescription.trim(),
+          due_date: startsAtIso,
+          end_date: endsAtIso,
+          all_day: eventAllDay,
+          room: eventRoom.trim(),
+          status: 'pending',
+          estimated_minutes: 60,
+        })
+        setSuccessMessage('Compromisso cadastrado no calendário com sucesso!')
+      }
 
       if (eventSubjectId && !subjects.some((s) => s.id === eventSubjectId)) {
         void listStudentSubjects()
@@ -500,6 +601,7 @@ export function CalendarPage() {
       }
 
       setShowNewEventModal(false)
+      setEditingItem(null)
       setSelectedDateKey(eventDate)
       await loadCalendarData()
     } catch (reason) {
@@ -510,6 +612,193 @@ export function CalendarPage() {
       )
     } finally {
       setSavingEvent(false)
+    }
+  }
+
+  function openPdfUploadModal() {
+    const defaultSubject = selectedSubjectId || subjects[0]?.id || ''
+    setPdfSubjectId(defaultSubject)
+    setPdfFile(null)
+    setPdfResult(null)
+    setEditableExtractedItems([])
+    setPdfError('')
+    setShowPdfModal(true)
+  }
+
+  async function runPdfExtraction(fileToExtract: File, targetSubjectId: string) {
+    if (!targetSubjectId) {
+      setPdfError('Selecione a disciplina antes de enviar o calendário PDF.')
+      return
+    }
+    setExtractingPdf(true)
+    setPdfError('')
+    try {
+      const response = await extractCalendarPdf(fileToExtract, targetSubjectId)
+      setPdfResult(response)
+      setEditableExtractedItems(response.items)
+    } catch (reason) {
+      setPdfError(
+        reason instanceof ApiError
+          ? reason.message
+          : 'Não foi possível ler o arquivo PDF enviado.',
+      )
+    } finally {
+      setExtractingPdf(false)
+    }
+  }
+
+  function handlePdfFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] || null
+    if (!file) return
+
+    const lowerName = file.name.toLowerCase()
+    const isPdf = lowerName.endsWith('.pdf')
+    const isDocx = lowerName.endsWith('.docx')
+
+    if (!isPdf && !isDocx) {
+      setPdfError(
+        'Formato de arquivo inválido. Selecione exclusivamente arquivos em formato PDF (.pdf) ou Word (.docx).',
+      )
+      setPdfFile(null)
+      e.target.value = ''
+      return
+    }
+
+    setPdfFile(file)
+    setPdfError('')
+    const targetSubj = pdfSubjectId || subjects[0]?.id || ''
+    if (targetSubj && !pdfSubjectId) {
+      setPdfSubjectId(targetSubj)
+    }
+    void runPdfExtraction(file, targetSubj)
+  }
+
+  function handlePdfSubjectChange(nextSubjectId: string) {
+    setPdfSubjectId(nextSubjectId)
+    const subjObj = subjects.find((s) => s.id === nextSubjectId)
+    if (pdfFile && nextSubjectId) {
+      void runPdfExtraction(pdfFile, nextSubjectId)
+    } else if (subjObj) {
+      setEditableExtractedItems((prev) =>
+        prev.map((item) => ({
+          ...item,
+          student_subject_id: subjObj.id,
+          subject_name: subjObj.subject.name,
+        })),
+      )
+    }
+  }
+
+  function handleUpdateExtractedRow(
+    index: number,
+    patch: Partial<ExtractedCalendarAssessment>,
+  ) {
+    setEditableExtractedItems((prev) =>
+      prev.map((row, idx) => {
+        if (idx !== index) return row
+        const updated = { ...row, ...patch }
+        if (patch.assessment_type) {
+          const isNowPai = patch.assessment_type.includes('PAI')
+          if (isNowPai) {
+            updated.student_subject_id = null
+            updated.subject_name = 'Interdisciplinar (Geral)'
+            if (!updated.title || updated.title.includes('—')) {
+              updated.title = `Prova ${patch.assessment_type}`
+            }
+          } else {
+            const subjObj = subjects.find((s) => s.id === pdfSubjectId)
+            const fallbackSubj = subjObj?.subject.name || pdfResult?.subject_name || 'Disciplina'
+            updated.student_subject_id = pdfSubjectId
+            updated.subject_name = fallbackSubj
+            if (updated.title.startsWith('Prova PAI')) {
+              updated.title = `${patch.assessment_type} — ${fallbackSubj}`
+            }
+          }
+        }
+        return updated
+      }),
+    )
+  }
+
+  function handleRemoveExtractedRow(index: number) {
+    setEditableExtractedItems((prev) => prev.filter((_, idx) => idx !== index))
+  }
+
+  function handleAddManualExtractedRow(preset?: Partial<ExtractedCalendarAssessment>) {
+    const isPai = Boolean(preset?.assessment_type?.includes('PAI'))
+    const subjObj = subjects.find((s) => s.id === pdfSubjectId)
+    const subjName = isPai
+      ? 'Interdisciplinar (Geral)'
+      : (subjObj?.subject.name || pdfResult?.subject_name || 'Disciplina')
+    const aType = preset?.assessment_type || 'PAI 1'
+    setEditableExtractedItems((prev) => [
+      ...prev,
+      {
+        assessment_type: aType,
+        title: preset?.title || (isPai ? `Prova ${aType}` : `${aType} — ${subjName}`),
+        date: preset?.date || selectedDateKey,
+        student_subject_id: isPai ? null : (preset?.student_subject_id || pdfSubjectId),
+        subject_name: subjName,
+        source_snippet: preset?.source_snippet || 'Adicionado na conferência pelo usuário',
+      },
+    ])
+
+    // Requisito 3: Se veio de uma sugestão de outra data identificada, remove-a imediatamente da lista
+    if (preset && pdfResult) {
+      setPdfResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              other_detected_items: prev.other_detected_items.filter(
+                (item) => !(item.date === preset.date && item.title === preset.title),
+              ),
+            }
+          : null,
+      )
+    }
+  }
+
+  async function handleConfirmExtractedPdf() {
+    if (!pdfSubjectId) {
+      setPdfError('Selecione a disciplina correspondente.')
+      return
+    }
+    if (editableExtractedItems.length === 0) {
+      setPdfError('Adicione ou mantenha ao menos uma data de avaliação para confirmar.')
+      return
+    }
+    setConfirmingPdf(true)
+    setPdfError('')
+    try {
+      const res = await confirmExtractedCalendarEvents({
+        student_subject_id: pdfSubjectId,
+        items: editableExtractedItems.map((it) => ({
+          title: it.title.trim(),
+          date: it.date,
+          assessment_type: it.assessment_type,
+          source_snippet: it.source_snippet,
+        })),
+      })
+
+      setShowPdfModal(false)
+      const firstDateStr = editableExtractedItems[0]?.date
+      if (firstDateStr) {
+        const parsedFirst = parseDateKey(firstDateStr)
+        setCurrentMonth(new Date(parsedFirst.getFullYear(), parsedFirst.getMonth(), 1))
+        setSelectedDateKey(firstDateStr)
+      }
+      await loadCalendarData()
+      setSuccessMessage(
+        `Calendário acadêmico processado: ${res.created_count} avaliação(ões) cadastrada(s) e ${res.updated_count} atualizada(s) em ${pdfResult?.subject_name || 'sua disciplina'}.`,
+      )
+    } catch (reason) {
+      setPdfError(
+        reason instanceof ApiError
+          ? reason.message
+          : 'Erro ao confirmar e salvar as datas no calendário.',
+      )
+    } finally {
+      setConfirmingPdf(false)
     }
   }
 
@@ -549,6 +838,10 @@ export function CalendarPage() {
   }
 
   async function handleDeleteItem(item: CalendarItem) {
+    const confirmed = window.confirm(
+      `Deseja realmente excluir "${item.title}" do calendário?`,
+    )
+    if (!confirmed) return
     setActionBusyId(item.id)
     setError('')
     try {
@@ -558,6 +851,7 @@ export function CalendarPage() {
         await deleteAcademicEvent(item.source_id)
       }
       await loadCalendarData()
+      setSuccessMessage('Item excluído do calendário.')
     } catch (reason) {
       setError(
         reason instanceof ApiError ? reason.message : 'Não foi possível remover o item.',
@@ -608,25 +902,43 @@ export function CalendarPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => openNewEventForDate(selectedDateKey)}
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#0d3950]/20 transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
-                Nova Tarefa / Evento
+                <span>Nova Tarefa / Evento</span>
               </button>
-              <button
-                type="button"
-                onClick={() => void loadCalendarData()}
-                disabled={loading}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3.5 py-2.5 text-sm font-bold text-[#0d3950] transition hover:bg-slate-100 disabled:opacity-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
-                title="Sincronizar calendário"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                <span>Atualizar</span>
-              </button>
+
+              {/* Botões Importar Calendário e Atualizar posicionados lado a lado de forma discreta e alinhada */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={openPdfUploadModal}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-[#0d3950] shadow-2xs transition hover:bg-slate-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-cyan-300 dark:hover:bg-[#081a26]"
+                  title="Importar calendário acadêmico em PDF (.pdf) ou Word (.docx)"
+                  aria-label="Importar Calendário Acadêmico em PDF ou Word"
+                >
+                  <FileUp className="h-4 w-4 text-[#006768] dark:text-cyan-300" aria-hidden="true" />
+                  <span>Importar Calendário</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void loadCalendarData()}
+                  disabled={loading}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-[#0d3950] shadow-2xs transition hover:bg-slate-50 hover:text-[#005063] disabled:opacity-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200 dark:hover:bg-[#081a26] dark:hover:text-cyan-300"
+                  title="Atualizar dados do calendário"
+                  aria-label="Atualizar dados do calendário"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+                    aria-hidden="true"
+                  />
+                  <span className="sr-only">Atualizar dados do calendário</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -735,6 +1047,19 @@ export function CalendarPage() {
         </section>
 
         {error ? <Alert tone="error">{error}</Alert> : null}
+
+        {successMessage ? (
+          <div className="flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-xs font-bold text-emerald-900 dark:text-emerald-200">
+            <span>{successMessage}</span>
+            <button
+              type="button"
+              onClick={() => setSuccessMessage('')}
+              className="text-emerald-700 hover:underline dark:text-emerald-300"
+            >
+              Fechar
+            </button>
+          </div>
+        ) : null}
 
         {/* 2. SEÇÃO SUPERIOR: DETALHES E AÇÕES RÁPIDAS DA SEMANA (Logo abaixo do bloco Calendário Acadêmico) */}
         <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
@@ -856,7 +1181,13 @@ export function CalendarPage() {
                             {/* Linha 3: Disciplina */}
                             {item.subject_name && (
                               <p className="mt-0.5 line-clamp-2 break-words text-[11px] leading-tight font-semibold text-slate-600 dark:text-slate-300">
-                                {item.subject_name}
+                                {item.subject_name.includes('Interdisciplinar') || !item.student_subject_id ? (
+                                  <span className="inline-flex items-center gap-1 rounded bg-[#005063]/15 px-1.5 py-0.5 text-[10px] font-black text-[#005063] dark:bg-cyan-400/20 dark:text-cyan-300">
+                                    Universal Interdisciplinar
+                                  </span>
+                                ) : (
+                                  item.subject_name
+                                )}
                               </p>
                             )}
 
@@ -902,6 +1233,15 @@ export function CalendarPage() {
                                     <button
                                       type="button"
                                       disabled={isBusy}
+                                      onClick={() => openEditItemModal(item)}
+                                      title="Editar data ou avaliação"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-[#005063] hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:bg-[#041019] dark:text-cyan-400"
+                                    >
+                                      <Edit3 className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
                                       onClick={() => void handleDeleteItem(item)}
                                       title="Descartar / Excluir tarefa"
                                       className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
@@ -912,15 +1252,26 @@ export function CalendarPage() {
                                 )}
 
                                 {item.source_type === 'event' && (
-                                  <button
-                                    type="button"
-                                    disabled={isBusy}
-                                    onClick={() => void handleDeleteItem(item)}
-                                    title="Descartar / Excluir evento"
-                                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => openEditItemModal(item)}
+                                      title="Editar data ou avaliação"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-[#005063] hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:bg-[#041019] dark:text-cyan-400"
+                                    >
+                                      <Edit3 className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => void handleDeleteItem(item)}
+                                      title="Descartar / Excluir evento"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </>
                                 )}
 
                                 {item.source_type === 'class' && !item.cancelled && isPastClass && (
@@ -1097,7 +1448,9 @@ export function CalendarPage() {
                               </p>
                               {it.subject_name && (
                                 <p className="mt-0.5 truncate text-[10px] font-semibold opacity-80">
-                                  {it.subject_name}
+                                  {it.subject_name.includes('Interdisciplinar') || !it.student_subject_id
+                                    ? 'Universal'
+                                    : it.subject_name}
                                 </p>
                               )}
                             </div>
@@ -1216,7 +1569,9 @@ export function CalendarPage() {
                               <p className="mt-1 text-sm font-black">{it.title}</p>
                               {it.subject_name && (
                                 <p className="mt-0.5 text-xs font-semibold opacity-85">
-                                  Disciplina: {it.subject_name}
+                                  {it.subject_name.includes('Interdisciplinar') || !it.student_subject_id
+                                    ? 'Universal (Interdisciplinar)'
+                                    : `Disciplina: ${it.subject_name}`}
                                 </p>
                               )}
                             </div>
@@ -1232,7 +1587,7 @@ export function CalendarPage() {
         </section>
       </div>
 
-      {/* Modal de Criação de Tarefa / Evento Sincronizado */}
+      {/* Modal de Criação / Edição de Tarefa ou Evento Sincronizado */}
       {showNewEventModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
@@ -1250,12 +1605,17 @@ export function CalendarPage() {
                   id="modal-new-event-title"
                   className="text-lg font-black text-[#0d3950] dark:text-white"
                 >
-                  Nova Tarefa ou Evento no Calendário
+                  {editingItem
+                    ? 'Editar Data / Avaliação no Calendário'
+                    : 'Nova Tarefa ou Evento no Calendário'}
                 </h2>
               </div>
               <button
                 type="button"
-                onClick={() => setShowNewEventModal(false)}
+                onClick={() => {
+                  setShowNewEventModal(false)
+                  setEditingItem(null)
+                }}
                 aria-label="Fechar modal"
                 className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#041019]"
               >
@@ -1372,10 +1732,286 @@ export function CalendarPage() {
                   Cancelar
                 </button>
                 <PrimaryButton type="submit" disabled={savingEvent}>
-                  {savingEvent ? 'Salvando...' : 'Salvar em Tarefas e Calendário'}
+                  {savingEvent
+                    ? 'Salvando...'
+                    : editingItem
+                      ? 'Salvar Alterações'
+                      : 'Salvar em Tarefas e Calendário'}
                 </PrimaryButton>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Upload e Leitura Automática de Calendários Acadêmicos (PDF) */}
+      {showPdfModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-pdf-calendar-title"
+        >
+          <div className="flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-[#005063]/30">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#006768]/15 text-[#006768] dark:bg-cyan-400/15 dark:text-cyan-300">
+                  <FileUp className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-extrabold tracking-wider text-[#006768] uppercase dark:text-cyan-400">
+                    Leitura Automática de Avaliações (AP1, AP2, PAI, Oficial e Substitutiva)
+                  </p>
+                  <h2
+                    id="modal-pdf-calendar-title"
+                    className="text-lg font-black text-[#0d3950] dark:text-white"
+                  >
+                    Importar Calendário Acadêmico (PDF ou Word)
+                  </h2>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPdfModal(false)}
+                aria-label="Fechar modal de importação de calendário"
+                className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#041019]"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 space-y-5 overflow-y-auto p-6">
+              {pdfError ? <Alert tone="error">{pdfError}</Alert> : null}
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
+                    1. Disciplina correspondente *
+                  </span>
+                  <select
+                    value={pdfSubjectId}
+                    onChange={(e) => handlePdfSubjectChange(e.target.value)}
+                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                  >
+                    <option value="">Selecione a disciplina...</option>
+                    {subjects.map((sub) => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.subject.name} · {sub.subject.semester}º sem
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
+                    2. Arquivo do Calendário (PDF ou Word .docx) *
+                  </span>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={handlePdfFileChange}
+                    className="block min-h-11 w-full cursor-pointer rounded-xl border border-dashed border-[#005063]/40 bg-slate-50 px-3 py-2 text-xs font-bold text-[#0d3950] file:mr-3 file:rounded-lg file:border-0 file:bg-[#0d3950] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:bg-slate-100 dark:border-cyan-400/40 dark:bg-[#040f17] dark:text-slate-200 dark:file:bg-[#005063]"
+                  />
+                </label>
+              </div>
+
+              {extractingPdf ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center dark:border-slate-800 dark:bg-[#041019]">
+                  <RefreshCw className="mx-auto h-7 w-7 animate-spin text-[#006768] dark:text-cyan-400" />
+                  <p className="mt-2 text-sm font-bold text-[#0d3950] dark:text-white">
+                    Lendo o arquivo e identificando datas de avaliações...
+                  </p>
+                </div>
+              ) : null}
+
+              {pdfResult && !extractingPdf ? (
+                <div className="space-y-4">
+                  {/* Avisos e tratamento de inconsistências */}
+                  {pdfResult.warnings.length > 0 && (
+                    <div className="space-y-2 rounded-2xl border border-amber-500/35 bg-amber-500/10 p-4 text-xs text-amber-950 dark:text-amber-200">
+                      <div className="flex items-center gap-2 font-black">
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span>Observações da leitura automática para conferência:</span>
+                      </div>
+                      <ul className="list-disc space-y-1 pl-5 font-semibold">
+                        {pdfResult.warnings.map((w, idx) => (
+                          <li key={idx}>{w}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Cabeçalho das avaliações extraídas */}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-black text-[#0d3950] dark:text-white">
+                        Avaliações Identificadas ({editableExtractedItems.length})
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Confira, edite ou exclua qualquer data antes de confirmar o cadastro em{' '}
+                        <strong>{pdfResult.subject_name}</strong>
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAddManualExtractedRow()}
+                      className="inline-flex min-h-8 items-center gap-1 rounded-xl border border-[#005063]/30 bg-[#005063]/10 px-3 py-1.5 text-xs font-extrabold text-[#0d3950] hover:bg-[#005063]/20 dark:border-cyan-400/30 dark:bg-cyan-400/15 dark:text-cyan-300"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Adicionar Avaliação Manualmente
+                    </button>
+                  </div>
+
+                  {editableExtractedItems.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                      Nenhuma avaliação selecionada no momento. Clique em "Adicionar Avaliação Manualmente" se desejar cadastrar uma data.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {editableExtractedItems.map((row, idx) => (
+                        <div
+                          key={`${row.assessment_type}-${idx}`}
+                          className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-[#005063]/30 dark:bg-[#041019]/80"
+                        >
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
+                            <div className="sm:col-span-3">
+                              <label className="block text-[10px] font-extrabold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                                Tipo
+                              </label>
+                              <select
+                                value={row.assessment_type}
+                                onChange={(e) =>
+                                  handleUpdateExtractedRow(idx, {
+                                    assessment_type: e.target.value,
+                                  })
+                                }
+                                className="mt-1 min-h-9 w-full rounded-xl border border-slate-300 bg-white px-2.5 text-xs font-bold text-[#0d3950] dark:border-slate-700 dark:bg-[#081a26] dark:text-white"
+                              >
+                                <option value="AP1">AP1</option>
+                                <option value="AP2">AP2</option>
+                                <option value="PAI 1">PAI 1</option>
+                                <option value="PAI 2">PAI 2</option>
+                                <option value="PAI 3">PAI 3</option>
+                                <option value="Avaliação Oficial">Avaliação Oficial</option>
+                                <option value="Prova Substitutiva">Prova Substitutiva</option>
+                                <option value="OUTRA">Outra Avaliação</option>
+                              </select>
+                            </div>
+
+                            <div className="sm:col-span-5">
+                              <label className="block text-[10px] font-extrabold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                                Nome da Avaliação
+                              </label>
+                              <input
+                                type="text"
+                                value={row.title}
+                                onChange={(e) =>
+                                  handleUpdateExtractedRow(idx, { title: e.target.value })
+                                }
+                                className="mt-1 min-h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold text-[#0d3950] dark:border-slate-700 dark:bg-[#081a26] dark:text-white"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-3">
+                              <label className="block text-[10px] font-extrabold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                                Data
+                              </label>
+                              <input
+                                type="date"
+                                value={row.date}
+                                onChange={(e) =>
+                                  handleUpdateExtractedRow(idx, { date: e.target.value })
+                                }
+                                className="mt-1 min-h-9 w-full rounded-xl border border-slate-300 bg-white px-2.5 text-xs font-bold text-[#0d3950] dark:border-slate-700 dark:bg-[#081a26] dark:text-white"
+                              />
+                            </div>
+
+                            <div className="flex justify-end sm:col-span-1">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveExtractedRow(idx)}
+                                title="Remover esta data da importação"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                            <span>
+                              Disciplina vinculada:{' '}
+                              {row.assessment_type.includes('PAI') ||
+                              !row.student_subject_id ||
+                              row.subject_name.includes('Interdisciplinar') ? (
+                                <span className="inline-flex items-center gap-1 rounded bg-[#005063]/15 px-2 py-0.5 font-black text-[#005063] dark:bg-cyan-400/20 dark:text-cyan-300">
+                                  Universal Interdisciplinar (Geral)
+                                </span>
+                              ) : (
+                                <strong>{row.subject_name}</strong>
+                              )}
+                            </span>
+                            {row.already_exists ? (
+                              <span className="rounded-md bg-amber-500/15 px-2 py-0.5 font-bold text-amber-800 dark:text-amber-300">
+                                Já cadastrada (será atualizada sem duplicar)
+                              </span>
+                            ) : null}
+                          </div>
+                          {row.source_snippet ? (
+                            <p className="mt-1 truncate text-[11px] text-slate-400 dark:text-slate-500">
+                              Trecho lido: "{row.source_snippet}"
+                            </p>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Outras avaliações detectadas no PDF com nomenclatura diversa (ex.: Avaliações Oficiais, Prova Substitutiva) */}
+                  {pdfResult.other_detected_items.length > 0 && (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3.5 dark:border-slate-800 dark:bg-[#041019]/50">
+                      <p className="text-xs font-bold text-[#0d3950] dark:text-slate-200">
+                        Outras datas de provas identificadas no documento (clique para incluir se desejar):
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {pdfResult.other_detected_items.map((other, idx) => (
+                          <button
+                            key={`${other.title}-${other.date}-${idx}`}
+                            type="button"
+                            onClick={() => handleAddManualExtractedRow(other)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-[#0d3950] hover:bg-slate-100 dark:border-slate-700 dark:bg-[#081a26] dark:text-cyan-300"
+                          >
+                            <Plus className="h-3 w-3" />
+                            <span>
+                              {other.title.split(' — ')[0]} ({other.date.split('-').reverse().join('/')})
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4 dark:border-[#005063]/30">
+              <button
+                type="button"
+                onClick={() => setShowPdfModal(false)}
+                className="min-h-11 rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 dark:border-[#005063]/40 dark:text-slate-300 dark:hover:bg-[#041019]"
+              >
+                Cancelar
+              </button>
+              <PrimaryButton
+                type="button"
+                disabled={confirmingPdf || !pdfResult || editableExtractedItems.length === 0}
+                onClick={() => void handleConfirmExtractedPdf()}
+              >
+                {confirmingPdf
+                  ? 'Cadastrando no Calendário...'
+                  : `Confirmar e Cadastrar (${editableExtractedItems.length})`}
+              </PrimaryButton>
+            </div>
           </div>
         </div>
       )}
