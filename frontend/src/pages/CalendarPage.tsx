@@ -890,8 +890,8 @@ export function CalendarPage() {
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-10">
         {/* 1. BLOCO PRINCIPAL: CALENDÁRIO ACADÊMICO */}
         <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-2xl">
               <h1 className="text-2xl font-black tracking-tight text-[#0d3950] sm:text-3xl dark:text-white">
                 Calendário Acadêmico
               </h1>
@@ -902,38 +902,40 @@ export function CalendarPage() {
               </p>
             </div>
 
+            {/* Grupo de Ações: Nova Tarefa / Evento + (Importar Calendário e Atualizar posicionados lado a lado) */}
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => openNewEventForDate(selectedDateKey)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#0d3950]/20 transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0d3950] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#0d3950]/20 transition hover:bg-[#005063] focus:outline-none focus:ring-2 focus:ring-[#0d3950]/40 dark:bg-[#005063] dark:hover:bg-[#006b85]"
               >
-                <Plus className="h-4 w-4" aria-hidden="true" />
+                <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span>Nova Tarefa / Evento</span>
               </button>
 
-              {/* Botões Importar Calendário e Atualizar posicionados lado a lado de forma discreta e alinhada */}
-              <div className="flex items-center gap-1.5">
+              {/* Botões Importar Calendário e Atualizar posicionados estritamente lado a lado de forma discreta */}
+              <div className="inline-flex items-center gap-2">
                 <button
                   type="button"
                   onClick={openPdfUploadModal}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-[#0d3950] shadow-2xs transition hover:bg-slate-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-cyan-300 dark:hover:bg-[#081a26]"
-                  title="Importar calendário acadêmico em PDF (.pdf) ou Word (.docx)"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 shadow-2xs transition hover:border-slate-400 hover:bg-slate-50 hover:text-[#0d3950] focus:outline-none focus:ring-2 focus:ring-[#006768]/30 dark:border-[#005063]/50 dark:bg-[#041019] dark:text-slate-200 dark:hover:border-cyan-400 dark:hover:bg-[#081a26] dark:hover:text-cyan-300"
+                  title="Importar calendário acadêmico (.pdf, .docx)"
                   aria-label="Importar Calendário Acadêmico em PDF ou Word"
                 >
-                  <FileUp className="h-4 w-4 text-[#006768] dark:text-cyan-300" aria-hidden="true" />
+                  <FileUp className="h-4 w-4 shrink-0 text-[#006768] dark:text-cyan-400" aria-hidden="true" />
                   <span>Importar Calendário</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => void loadCalendarData()}
                   disabled={loading}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-[#0d3950] shadow-2xs transition hover:bg-slate-50 hover:text-[#005063] disabled:opacity-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200 dark:hover:bg-[#081a26] dark:hover:text-cyan-300"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-2xs transition hover:border-slate-400 hover:bg-slate-50 hover:text-[#0d3950] focus:outline-none focus:ring-2 focus:ring-[#006768]/30 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#005063]/50 dark:bg-[#041019] dark:text-slate-200 dark:hover:border-cyan-400 dark:hover:bg-[#081a26] dark:hover:text-cyan-300"
                   title="Atualizar dados do calendário"
                   aria-label="Atualizar dados do calendário"
                 >
                   <RefreshCw
-                    className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+                    className={`h-4 w-4 ${loading ? 'animate-spin text-[#006768] dark:text-cyan-400' : ''}`}
                     aria-hidden="true"
                   />
                   <span className="sr-only">Atualizar dados do calendário</span>
