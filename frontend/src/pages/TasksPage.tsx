@@ -43,19 +43,19 @@ const STATUS_LABELS: Record<'all' | AcademicTaskStatus, string> = {
 
 const CATEGORY_LABELS: Record<AcademicTaskCategory, { label: string; badgeClass: string }> = {
   task: {
-    label: 'Tarefa / Entrega',
+    label: 'Tarefa | Entrega',
     badgeClass: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
   },
   assignment: {
-    label: 'Trabalho / Projeto',
+    label: 'Trabalho | Projeto',
     badgeClass: 'bg-violet-500/15 text-violet-800 dark:text-violet-300 border-violet-500/30',
   },
   exam: {
-    label: 'Prova / Avaliação',
+    label: 'Prova | Avaliação',
     badgeClass: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30',
   },
   other: {
-    label: 'Estudo / Afins',
+    label: 'Estudo | Afins',
     badgeClass: 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border-sky-500/30',
   },
 }
@@ -379,7 +379,7 @@ export function TasksPage() {
             className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-[1.4fr_1.1fr_0.85fr_0.75fr_0.6fr_auto]"
           >
             <Input
-              label="Título da tarefa / entrega"
+              label="Título da tarefa | entrega"
               placeholder="Ex.: Entrega P1, Lista de Exercícios, Estudar..."
               value={quickTitle}
               onChange={(e) => setQuickTitle(e.target.value)}
@@ -391,7 +391,7 @@ export function TasksPage() {
               value={quickSubjectId}
               onChange={(e) => setQuickSubjectId(e.target.value)}
             >
-              <option value="">Geral / Outras Atividades</option>
+              <option value="">Geral | Outras Atividades</option>
               {subjects.length > 0 && (
                 <optgroup label="Disciplinas ativas">
                   {subjects.map((s) => (
@@ -417,10 +417,10 @@ export function TasksPage() {
               value={quickCategory}
               onChange={(e) => setQuickCategory(e.target.value as AcademicTaskCategory)}
             >
-              <option value="task">Tarefa / Entrega</option>
-              <option value="assignment">Trabalho / Projeto</option>
-              <option value="exam">Prova / Avaliação</option>
-              <option value="other">Estudo / Afins</option>
+              <option value="task">Tarefa | Entrega</option>
+              <option value="assignment">Trabalho | Projeto</option>
+              <option value="exam">Prova | Avaliação</option>
+              <option value="other">Estudo | Afins</option>
             </Select>
 
             <Input
@@ -475,7 +475,7 @@ export function TasksPage() {
               onChange={(event) => setSubjectFilter(event.target.value)}
             >
               <option value="all">Todas as disciplinas e atividades</option>
-              <option value="general">Geral / Outras Atividades (Sem disciplina)</option>
+              <option value="general">Geral | Outras Atividades (Sem disciplina)</option>
               {subjectOptions.map(([id, name]) => (
                 <option key={id} value={id}>
                   {name}
@@ -667,7 +667,7 @@ export function TasksPage() {
                               <dl className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2 dark:text-slate-300">
                                 <div>
                                   <dt className="font-semibold text-slate-500 dark:text-slate-400">
-                                    Data no Calendário / Prazo
+                                    Data no Calendário | Prazo
                                   </dt>
                                   <dd className="mt-1 font-bold text-[#0d3950] dark:text-white">
                                     {formatDate(task.due_date)}

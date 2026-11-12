@@ -1040,7 +1040,7 @@ export function FlashcardsPage() {
                     onChange={(e) => setAiSubjectId(e.target.value)}
                     className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
                   >
-                    <option value="">(Geral / Qualquer disciplina)</option>
+                    <option value="">(Geral | Qualquer disciplina)</option>
                     {subjects.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.subject.name}
@@ -1111,7 +1111,7 @@ export function FlashcardsPage() {
 
               <label className="block">
                 <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
-                  Texto / Resumo de Aula para a IA Analisar (Opcional)
+                  Texto | Resumo de Aula para a IA Analisar (Opcional)
                 </span>
                 <textarea
                   rows={4}
@@ -1185,7 +1185,7 @@ export function FlashcardsPage() {
                     }}
                     className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
                   >
-                    <option value="">(Geral / Sem disciplina específica)</option>
+                    <option value="">(Geral | Sem disciplina específica)</option>
                     {subjects.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.subject.name}
@@ -1196,7 +1196,7 @@ export function FlashcardsPage() {
 
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
-                    Categoria / Grupo de Cards
+                    Categoria | Grupo de Cards
                   </span>
                   <input
                     type="text"
@@ -1210,7 +1210,7 @@ export function FlashcardsPage() {
 
               <label className="block">
                 <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
-                  Frente do Card (Pergunta / Conceito) *
+                  Frente do Card (Pergunta | Conceito) *
                 </span>
                 <textarea
                   rows={3}
@@ -1224,7 +1224,7 @@ export function FlashcardsPage() {
 
               <label className="block">
                 <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
-                  Verso do Card (Resposta / Explicação) *
+                  Verso do Card (Resposta | Explicação) *
                 </span>
                 <textarea
                   rows={4}

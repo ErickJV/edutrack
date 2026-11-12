@@ -119,7 +119,7 @@ export function TaskFormModal({
   const [error, setError] = useState('')
 
   const isEditing = Boolean(initialTask)
-  const title = isEditing ? 'Editar tarefa / entrega' : 'Cadastrar nova tarefa / atividade'
+  const title = isEditing ? 'Editar tarefa | entrega' : 'Cadastrar nova tarefa | atividade'
 
   useEffect(() => {
     if (!open) return
@@ -258,7 +258,7 @@ export function TaskFormModal({
                 }
                 error={fieldErrors.student_subject}
               >
-                <option value="">Geral / Outras Atividades (Sem disciplina específica)</option>
+                <option value="">Geral | Outras Atividades (Sem disciplina específica)</option>
                 {subjects.length > 0 && (
                   <optgroup label="Disciplinas ativas no semestre">
                     {subjects.map((subject) => (
@@ -289,10 +289,10 @@ export function TaskFormModal({
                   }))
                 }
               >
-                <option value="task">Tarefa / Lista / Exercício</option>
-                <option value="assignment">Trabalho / Projeto</option>
-                <option value="exam">Prova / Avaliação</option>
-                <option value="other">Estudo / Outra Atividade</option>
+                <option value="task">Tarefa | Lista | Exercício</option>
+                <option value="assignment">Trabalho | Projeto</option>
+                <option value="exam">Prova | Avaliação</option>
+                <option value="other">Estudo | Outra Atividade</option>
               </Select>
             </div>
 
@@ -309,7 +309,7 @@ export function TaskFormModal({
 
             <label className="block">
               <span className="mb-2 block text-sm font-bold text-slate-800 dark:text-slate-200">
-                Descrição / Observações (opcional)
+                Descrição | Observações (opcional)
               </span>
               <textarea
                 value={values.description}
@@ -324,7 +324,7 @@ export function TaskFormModal({
 
             <div className="grid gap-4 sm:grid-cols-3">
               <Input
-                label="Data no Calendário / Prazo"
+                label="Data no Calendário | Prazo"
                 name="due_date"
                 type="date"
                 value={values.due_date}
@@ -359,13 +359,13 @@ export function TaskFormModal({
 
             <div className="grid gap-4 sm:grid-cols-3">
               <Input
-                label="Sala / Local (opcional)"
+                label="Sala | Local (opcional)"
                 name="room"
                 value={values.room}
                 onChange={(event) =>
                   setValues((current) => ({ ...current, room: event.target.value }))
                 }
-                placeholder="Ex.: Sala 304 / Online"
+                placeholder="Ex.: Sala 304 | Online"
               />
               <Input
                 label="Minutos estimados"

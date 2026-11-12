@@ -137,7 +137,7 @@ export function ReadingModal({
               htmlFor={titleId}
               className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
             >
-              Título da Obra / Artigo *
+              Título da Obra | Artigo *
             </label>
             <input
               id={titleId}
@@ -156,7 +156,7 @@ export function ReadingModal({
                 htmlFor={authorId}
                 className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
               >
-                Autor / Organizador
+                Autor | Organizador
               </label>
               <input
                 id={authorId}
@@ -181,7 +181,7 @@ export function ReadingModal({
                 onChange={(e) => setStudentSubject(e.target.value)}
                 className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-100 dark:focus:border-[#006768]"
               >
-                <option value="">(Geral / Sem disciplina)</option>
+                <option value="">(Geral | Sem disciplina)</option>
                 {subjects.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.subject.name}
@@ -253,7 +253,7 @@ export function ReadingModal({
           {/* Exam Linkage Section */}
           <div className="rounded-xl border border-[#005063]/20 bg-[#005063]/5 p-3 dark:border-[#005063]/30 dark:bg-[#041019]">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#005063] dark:text-[#a8d5e5]">
-              Vínculo com Avaliação / Prova (Opcional)
+              Vínculo com Avaliação | Prova (Opcional)
             </span>
 
             <div className="mt-2.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -262,7 +262,7 @@ export function ReadingModal({
                   htmlFor={examNameId}
                   className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
                 >
-                  Exame / Prova
+                  Exame | Prova
                 </label>
                 <input
                   id={examNameId}

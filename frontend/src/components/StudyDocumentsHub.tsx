@@ -441,7 +441,7 @@ export function StudyDocumentsHub({
                 onChange={(e) => setUploadFolderId(e.target.value)}
                 className="min-h-8 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-[#0d3950] focus:border-[#005063] focus:outline-hidden dark:border-slate-700 dark:bg-[#040f17] dark:text-slate-100"
               >
-                <option value="">📁 Vincular ao caderno/pasta (opcional)</option>
+                <option value="">📁 Vincular ao caderno | pasta (opcional)</option>
                 {folders.map((f) => (
                   <option key={f.id} value={f.id}>
                     📁 {f.name}
@@ -739,7 +739,7 @@ export function StudyDocumentsHub({
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
                                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#0d3950]/10 px-2.5 py-1 text-xs font-black text-[#0d3950] dark:bg-cyan-400/15 dark:text-cyan-300">
-                                  Página / Slide {p.page_number}
+                                  Página | Slide {p.page_number}
                                 </span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-[11px] font-semibold text-slate-400">

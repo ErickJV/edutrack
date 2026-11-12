@@ -92,7 +92,7 @@ const FONT_OPTIONS: {
     id: 'merriweather',
     label: 'Merriweather',
     shortLabel: 'Merriweather',
-    category: 'Leitura / Caderno',
+    category: 'Leitura | Caderno',
     className: 'font-merriweather',
     fontFamilyCss: '"Merriweather", Georgia, serif',
   },
@@ -132,7 +132,7 @@ const FONT_OPTIONS: {
     id: 'mono',
     label: 'Monospace',
     shortLabel: 'Monospace',
-    category: 'Código / Técnica',
+    category: 'Código | Técnica',
     className: 'font-mono',
     fontFamilyCss: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
   },
@@ -144,7 +144,7 @@ const TEXT_COLORS = [
   { name: 'Pinheiro', hex: '#006768' },
   { name: 'Esmeralda', hex: '#059669' },
   { name: 'Âmbar', hex: '#d97706' },
-  { name: 'Rosa / Crítico', hex: '#e11d48' },
+  { name: 'Rosa | Crítico', hex: '#e11d48' },
   { name: 'Roxo', hex: '#7c3aed' },
 ]
 
@@ -735,7 +735,7 @@ export function StudyNotesWorkspace({
       tip: {
         border: '#10b981',
         bg: 'rgba(16, 185, 129, 0.11)',
-        title: '💡 Dica / Exemplo Prático',
+        title: '💡 Dica | Exemplo Prático',
       },
       warning: {
         border: '#f59e0b',
@@ -757,7 +757,7 @@ export function StudyNotesWorkspace({
 
   const handleInsertTable = () => {
     insertVisualHtmlBlock(
-      `<table style="width:100%;border-collapse:collapse;font-size:0.875rem;"><thead><tr style="background:rgba(0,80,99,0.12);"><th style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;text-align:left;">Tópico / Conceito</th><th style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;text-align:left;">Explicação / Resumo</th></tr></thead><tbody><tr><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Conceito 1</td><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Anotação...</td></tr><tr><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Conceito 2</td><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Anotação...</td></tr></tbody></table><p><br/></p>`,
+      `<table style="width:100%;border-collapse:collapse;font-size:0.875rem;"><thead><tr style="background:rgba(0,80,99,0.12);"><th style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;text-align:left;">Tópico | Conceito</th><th style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;text-align:left;">Explicação | Resumo</th></tr></thead><tbody><tr><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Conceito 1</td><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Anotação...</td></tr><tr><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Conceito 2</td><td style="border:1px solid rgba(148,163,184,0.4);padding:0 10px;">Anotação...</td></tr></tbody></table><p><br/></p>`,
     )
   }
 
@@ -1530,7 +1530,7 @@ export function StudyNotesWorkspace({
                               className="flex w-full items-center gap-2 rounded-xl p-2 text-left text-xs font-bold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
                             >
                               <Lightbulb className="size-4" />
-                              <span>💡 Dica / Exemplo Prático</span>
+                              <span>💡 Dica | Exemplo Prático</span>
                             </button>
                             <button
                               type="button"
