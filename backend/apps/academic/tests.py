@@ -866,5 +866,88 @@ class FlashcardsAndNotesQualityTests(TestCase):
         # Confirma que a tabela continua intacta e funcional
         self.assertTrue(AcademicEvent.objects.exists())
 
+    def test_advanced_search_and_pdf_report_generation(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from apps.academic.models import AcademicTask
+        from apps.catalog.models import CourseOffering
+
+        offering = CourseOffering.objects.create(
+            course=self.course,
+            modality=CourseOffering.Modality.IN_PERSON,
+            external_slug="ads-presencial",
+        )
+        self.user.course_offering = offering
+        self.user.save(update_fields=["course_offering"])
+
+        subj_agile = Subject.objects.create(
+            course=self.course,
+            name="Agile Software Development",
+            code="ADS205",
+            semester=2,
+            workload_hours=80,
+        )
+        subj_data = Subject.objects.create(
+            course=self.course,
+            name="Data Governance",
+            code="ADS206",
+            semester=2,
+            workload_hours=80,
+        )
+        ss_agile = StudentSubject.objects.create(
+            user=self.user,
+            subject=subj_agile,
+            status=StudentSubject.Status.ACTIVE,
+            semester_period="2026/2",
+        )
+        ss_data = StudentSubject.objects.create(
+            user=self.user,
+            subject=subj_data,
+            status=StudentSubject.Status.ACTIVE,
+            semester_period="2026/2",
+        )
+
+        # Tarefa vencida na disciplina Agile Software Development
+        AcademicTask.objects.create(
+            user=self.user,
+            student_subject=ss_agile,
+            title="Entrega Sprint 1",
+            due_date=timezone.now() - timedelta(days=2),
+            status=AcademicTask.Status.PENDING,
+        )
+        # Tarefa concluída em Data Governance
+        AcademicTask.objects.create(
+            user=self.user,
+            student_subject=ss_data,
+            title="Politica de Dados",
+            due_date=timezone.now() - timedelta(days=1),
+            status=AcademicTask.Status.COMPLETED,
+        )
+
+        # 1. Busca textual por nome da disciplina
+        search_resp = self.client.get("/api/v1/student-subjects?search=Governance")
+        self.assertEqual(search_resp.status_code, 200)
+        self.assertEqual(len(search_resp.json()), 1)
+        self.assertEqual(search_resp.json()[0]["subject"]["name"], "Data Governance")
+
+        # 2. Filtro por disciplinas que possuem tarefas atrasadas
+        overdue_resp = self.client.get("/api/v1/student-subjects?has_overdue_tasks=true")
+        self.assertEqual(overdue_resp.status_code, 200)
+        self.assertEqual(len(overdue_resp.json()), 1)
+        self.assertEqual(overdue_resp.json()[0]["subject"]["name"], "Agile Software Development")
+
+        # 3. Geração do relatório de desempenho em PDF
+        report_resp = self.client.get("/api/v1/reports/generate")
+        self.assertEqual(report_resp.status_code, 200)
+        self.assertEqual(report_resp["Content-Type"], "application/pdf")
+        self.assertTrue(report_resp.content.startswith(b"%PDF-1.4"))
+
+        # 4. Remoção de matrícula via DELETE
+        del_resp = self.client.delete(f"/api/v1/student-subjects/{ss_data.id}")
+        self.assertEqual(del_resp.status_code, 204)
+        ss_data.refresh_from_db()
+        self.assertEqual(ss_data.status, StudentSubject.Status.DROPPED)
+
+
 
 
