@@ -1,12 +1,19 @@
-from django.db import connection
+from django.contrib.auth import logout
+from django.core.files.storage import default_storage
+from django.db import connection, transaction
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.academic.models import StudyDocument
+
+from .export import build_user_export
 from .serializers import (
     HealthSerializer,
     ProfileCompletionSerializer,
+    ProfileDeleteSerializer,
     ProfileSerializer,
     ProfileUpdateSerializer,
     SessionPreferenceSerializer,
@@ -34,6 +41,33 @@ class ProfileView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(ProfileSerializer(user).data)
+
+    @extend_schema(request=ProfileDeleteSerializer, responses={204: None})
+    def delete(self, request):
+        serializer = ProfileDeleteSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        stored_files = [
+            str(name)
+            for name in StudyDocument.objects.filter(user=request.user)
+            .exclude(file="")
+            .values_list("file", flat=True)
+        ]
+        with transaction.atomic():
+            request.user.delete()
+        for name in stored_files:
+            default_storage.delete(name)
+        logout(request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProfileExportView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        response = Response(build_user_export(request.user))
+        filename = f'impatrack-dados-{timezone.now():%Y-%m-%d}.json'
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 class HealthView(APIView):

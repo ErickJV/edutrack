@@ -39,8 +39,44 @@ export type ProfilePayload = {
 
 export type ProfileUpdatePayload = {
   full_name?: string
-  email?: string
   course_offering_id?: string
+}
+
+export type AccountEmail = {
+  email: string
+  verified: boolean
+  primary: boolean
+}
+
+export type AuthConfig = {
+  account: {
+    email_verification_by_code_enabled: boolean
+    is_open_for_signup: boolean
+  }
+}
+
+export type AccountSession = {
+  id: number
+  ip: string
+  user_agent: string
+  created_at: number
+  is_current: boolean
+}
+
+export type SocialAccountProvider = {
+  uid: string
+  display: string
+  provider: {
+    id: string
+    name: string
+    flows?: string[]
+    client_id?: string
+  }
+}
+
+export type DeleteAccountPayload = {
+  confirmation: string
+  password?: string
 }
 
 export type AcademicSubject = {

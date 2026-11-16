@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "allauth",
     "allauth.account",
+    "allauth.usersessions",
     "allauth.headless",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
@@ -69,6 +70,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "apps.accounts.middleware.EnsureUserSessionMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "edutrack.middleware.SecurityHeadersMiddleware",
@@ -152,6 +154,7 @@ ACCOUNT_PREVENT_ENUMERATION = True
 ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = True
 ACCOUNT_EMAIL_NOTIFICATIONS = True
 ACCOUNT_SESSION_REMEMBER = None
+ACCOUNT_CHANGE_EMAIL = True
 ACCOUNT_LOGOUT_ON_GET = False
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = False
 ALLAUTH_USER_CODE_FORMAT = {"numeric": True, "dashed": False, "length": 6}

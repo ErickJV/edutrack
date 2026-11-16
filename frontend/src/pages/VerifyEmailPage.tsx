@@ -1,6 +1,6 @@
-import { MailCheck } from 'lucide-react'
+import { LoaderCircle, MailCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { ApiError, resendVerification, verifyEmail } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
@@ -10,20 +10,61 @@ import { Input, PrimaryButton } from '../components/FormControls'
 
 export function VerifyEmailPage() {
   const navigate = useNavigate()
-  const { setUser } = useAuth()
+  const { key } = useParams()
+  const { user, loading: authLoading, setUser, refresh } = useAuth()
   const inputRef = useRef<HTMLInputElement>(null)
+  const attemptedLink = useRef(false)
   const email = sessionStorage.getItem('edutrack_pending_email') || 'seu e-mail institucional'
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [seconds, setSeconds] = useState(60)
+  const [linkState, setLinkState] = useState<'idle' | 'checking' | 'done' | 'error'>('idle')
 
   useEffect(() => {
     if (seconds <= 0) return
     const timer = window.setInterval(() => setSeconds((value) => value - 1), 1000)
     return () => window.clearInterval(timer)
   }, [seconds])
+
+  useEffect(() => {
+    if (!key || authLoading || attemptedLink.current) return
+    attemptedLink.current = true
+    const wasAuthenticated = Boolean(user)
+    let alive = true
+    setLinkState('checking')
+    verifyEmail(key)
+      .then(async (response) => {
+        if (!alive) return
+        const refreshed = await refresh()
+        const verifiedUser = refreshed ?? response.data?.user ?? null
+        if (verifiedUser) setUser(verifiedUser)
+        sessionStorage.removeItem('edutrack_pending_email')
+        setLinkState('done')
+        setMessage('E-mail verificado com sucesso!')
+        const target = wasAuthenticated
+          ? '/perfil'
+          : verifiedUser?.profile_complete
+            ? '/home'
+            : '/completar-perfil'
+        window.setTimeout(() => {
+          if (alive) navigate(target, { replace: true })
+        }, 1200)
+      })
+      .catch((reason) => {
+        if (!alive) return
+        setLinkState('error')
+        setError(
+          reason instanceof ApiError
+            ? reason.message
+            : 'Não foi possível confirmar este link. Ele pode ter expirado.',
+        )
+      })
+    return () => {
+      alive = false
+    }
+  }, [key, authLoading, user, setUser, refresh, navigate])
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -59,6 +100,34 @@ export function VerifyEmailPage() {
     } catch (reason) {
       setError(reason instanceof ApiError ? reason.message : 'Aguarde antes de solicitar outro código.')
     }
+  }
+
+  if (key) {
+    return (
+      <AuthShell
+        title="Confirmação de e-mail"
+        description="Estamos validando o link enviado para o seu e-mail institucional."
+      >
+        <div className="space-y-6">
+          {linkState === 'checking' ? (
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 font-arial text-sm font-medium text-[#0d3950]">
+              <LoaderCircle className="animate-spin text-[#005063]" size={20} aria-hidden="true" />
+              Confirmando seu link…
+            </div>
+          ) : null}
+          {error ? <Alert>{error}</Alert> : null}
+          {message ? <Alert tone="success">{message}</Alert> : null}
+          <p className="text-center font-arial text-sm">
+            <Link
+              to="/perfil"
+              className="font-semibold text-[#005063] transition-colors hover:text-[#0d3950] hover:underline"
+            >
+              Ir para o perfil
+            </Link>
+          </p>
+        </div>
+      </AuthShell>
+    )
   }
 
   return (

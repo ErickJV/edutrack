@@ -4,6 +4,11 @@ import type {
   AcademicReading,
   AcademicReadingPayload,
   AcademicSubject,
+  AccountEmail,
+  AccountSession,
+  AuthConfig,
+  DeleteAccountPayload,
+  SocialAccountProvider,
   AcademicTask,
   AcademicTaskPayload,
   AcademicTaskStatus,
@@ -201,6 +206,89 @@ export async function completeProfile(payload: ProfilePayload): Promise<AuthUser
 
 export async function updateProfile(payload: ProfileUpdatePayload): Promise<AuthUser> {
   return request<AuthUser>('/api/v1/profile', { method: 'PATCH', body: JSON.stringify(payload) })
+}
+
+export async function getAuthConfig(): Promise<AuthConfig> {
+  const body = await request<{ data: AuthConfig }>('/_allauth/browser/v1/config', {}, [401])
+  return body.data
+}
+
+export async function listAccountEmails(): Promise<AccountEmail[]> {
+  const body = await request<{ data: AccountEmail[] }>('/_allauth/browser/v1/account/email')
+  return body.data
+}
+
+export async function addAccountEmail(email: string): Promise<AccountEmail[]> {
+  const body = await request<{ data: AccountEmail[] }>('/_allauth/browser/v1/account/email', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+  return body.data
+}
+
+export async function resendAccountEmailVerification(email: string): Promise<void> {
+  await request('/_allauth/browser/v1/account/email', {
+    method: 'PUT',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export async function deleteAccountEmail(email: string): Promise<AccountEmail[]> {
+  const body = await request<{ data: AccountEmail[] }>('/_allauth/browser/v1/account/email', {
+    method: 'DELETE',
+    body: JSON.stringify({ email }),
+  })
+  return body.data
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<AuthUser> {
+  const payload: Record<string, string> = { new_password: newPassword }
+  if (currentPassword) payload.current_password = currentPassword
+  const body = await request<AuthResponse>('/_allauth/browser/v1/account/password/change', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  if (!body.data?.user) throw new ApiError('Não foi possível atualizar a senha.')
+  return body.data.user
+}
+
+export async function listAccountSessions(): Promise<AccountSession[]> {
+  const body = await request<{ data: AccountSession[] }>('/_allauth/browser/v1/auth/sessions')
+  return body.data
+}
+
+export async function endAccountSessions(ids: number[]): Promise<AccountSession[]> {
+  const body = await request<{ data?: AccountSession[] }>(
+    '/_allauth/browser/v1/auth/sessions',
+    { method: 'DELETE', body: JSON.stringify({ sessions: ids }) },
+  )
+  return body.data ?? []
+}
+
+export async function listSocialAccounts(): Promise<SocialAccountProvider[]> {
+  const body = await request<{ data: SocialAccountProvider[] }>(
+    '/_allauth/browser/v1/account/providers',
+  )
+  return body.data
+}
+
+export async function deleteAccount(payload: DeleteAccountPayload): Promise<void> {
+  await request('/api/v1/profile', { method: 'DELETE', body: JSON.stringify(payload) })
+}
+
+export async function downloadProfileExport(): Promise<Blob> {
+  const response = await fetch(`${API_ORIGIN}/api/v1/profile/export`, {
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    const contentType = response.headers.get('content-type') || ''
+    const body = contentType.includes('application/json') ? await response.json() : null
+    throw errorFrom(body, response.status)
+  }
+  return response.blob()
 }
 
 export async function listCurriculum(): Promise<AcademicSubject[]> {

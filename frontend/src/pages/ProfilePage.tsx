@@ -5,6 +5,8 @@ import { ApiError, listCourseOfferings, updateProfile } from '../api/client'
 import type { CourseOffering } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { AppNavigation } from '../components/AppNavigation'
+import { AccountPrivacySection } from '../components/account/AccountPrivacySection'
+import { AccountSecuritySection } from '../components/account/AccountSecuritySection'
 import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
 import { Input, PrimaryButton, Select } from '../components/FormControls'
@@ -15,7 +17,6 @@ export function ProfilePage() {
   const [leaving, setLeaving] = useState(false)
   const [offerings, setOfferings] = useState<CourseOffering[]>([])
   const [fullName, setFullName] = useState(user?.full_name || '')
-  const [email, setEmail] = useState(user?.email || '')
   const [selectedCourseSlug, setSelectedCourseSlug] = useState(
     user?.course_offering?.course_slug || '',
   )
@@ -28,12 +29,10 @@ export function ProfilePage() {
 
   useEffect(() => {
     setFullName(user?.full_name || '')
-    setEmail(user?.email || '')
     setSelectedCourseSlug(user?.course_offering?.course_slug || '')
     setSelectedModality(user?.course_offering?.modality || '')
   }, [
     user?.full_name,
-    user?.email,
     user?.course_offering?.course_slug,
     user?.course_offering?.modality,
   ])
@@ -116,17 +115,12 @@ export function ProfilePage() {
 
   const hasChanges =
     fullName.trim() !== (user?.full_name || '').trim() ||
-    email.trim().toLowerCase() !== (user?.email || '').trim().toLowerCase() ||
     (resolvedOfferingId !== '' && resolvedOfferingId !== user?.course_offering?.id)
 
   async function handleSaveProfile(event: React.FormEvent) {
     event.preventDefault()
     if (fullName.trim().length < 3) {
       setError('Informe seu nome completo (mínimo de 3 caracteres).')
-      return
-    }
-    if (!email.trim()) {
-      setError('Informe o e-mail institucional.')
       return
     }
     if (!resolvedOfferingId) {
@@ -140,7 +134,6 @@ export function ProfilePage() {
     try {
       const updatedUser = await updateProfile({
         full_name: fullName.trim(),
-        email: email.trim().toLowerCase(),
         course_offering_id: resolvedOfferingId,
       })
       setUser(updatedUser)
@@ -279,21 +272,6 @@ export function ProfilePage() {
                 required
               />
 
-              <Input
-                label="E-mail cadastrado"
-                name="email"
-                type="email"
-                autoComplete="email"
-                hint="Utilize seu e-mail institucional @aluno.impacta.edu.br"
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value)
-                  setSuccessMessage('')
-                  setError('')
-                }}
-                required
-              />
-
               <Select
                 label="Nome do curso"
                 name="course_slug"
@@ -345,6 +323,9 @@ export function ProfilePage() {
             </div>
           </form>
         </section>
+
+        <AccountSecuritySection />
+        <AccountPrivacySection />
       </div>
     </main>
   )
