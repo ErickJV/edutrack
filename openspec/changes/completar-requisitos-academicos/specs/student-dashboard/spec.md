@@ -13,6 +13,11 @@ O Dashboard MUST apresentar seções de tarefas pendentes/em andamento, atrasada
 - **THEN** os dois primeiros casos não entram em urgentes e a tarefa concluída sai dos alertas após salvar
 - **AND** falha de salvamento restaura o estado anterior e anuncia erro; cada lista vazia apresenta mensagem correspondente.
 
+#### Scenario: Nenhuma entrega urgente nas próximas 48 horas
+- **WHEN** o estudante não possui nenhuma tarefa com prazo nas próximas 48 horas
+- **THEN** a seção no topo exibe estado vazio amigável informando que não há entregas urgentes no momento
+- **AND** preserva o layout e a saudação personalizada sem quebras visuais.
+
 ## ADDED Requirements
 
 ### Requirement: Indicadores pedagógicos separados

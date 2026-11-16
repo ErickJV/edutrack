@@ -22,3 +22,8 @@
 - **WHEN** um usuário anônimo requisita o resumo ou um aluno recarrega a Home
 - **THEN** o primeiro recebe 401 e o segundo recebe somente suas métricas atuais
 - **AND** erros são anunciados com nova tentativa, sem mascarar falha como contadores zerados.
+
+#### Scenario: Aluno sem tarefas vencidas
+- **WHEN** o estudante não possui tarefas com data limite no passado ou todas as tarefas passadas estão concluídas
+- **THEN** o campo `overdue_tasks_count` retorna o valor `0`
+- **AND** o card de métricas exibe `0` com apresentação neutra sem alarme de atraso.

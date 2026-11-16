@@ -12,6 +12,12 @@ O sistema MUST permitir apontar tempo estudado manualmente ou pelo cronômetro, 
 - **WHEN** um cliente tenta substituir `actual_minutes` diretamente
 - **THEN** recebe 400 com instrução para o recurso de registros e nenhum total é alterado silenciosamente.
 
+#### Scenario: Redirecionamento da tarefa para sessão de estudo Pomodoro
+- **WHEN** o estudante clica na ação de iniciar estudo a partir de um card de tarefa na página `/tarefas`
+- **THEN** a interface redireciona o usuário para a rota `/estudo` passando o identificador da tarefa como parâmetro
+- **AND** a tela de estudo inicializa com a tarefa e a disciplina selecionadas como contexto do Pomodoro
+- **AND** ao concluir ciclos de foco na sessão, os minutos transcorridos são persistidos e somados ao `actual_minutes` da respectiva tarefa.
+
 ### Requirement: Visualização, Filtros e Acessibilidade na Página de Tarefas
 `GET /api/v1/tasks` MUST aceitar filtros combinados `q` (até 200 caracteres, título/descrição), `student_subject` UUID, `status=pending|in_progress|completed|active` (active reúne pending e in_progress) e `due_from`/`due_to` datas locais [início,fim). `due_bucket=urgent|overdue` usa exatamente os limites do servidor da Home e exclui concluídas, permitindo abrir a lista completa dos alertas sem aproximar 48h para dias inteiros. Sem filtros de data, tarefas sem prazo permanecem listadas por último; com datas, são excluídas. Parâmetros inválidos retornam 400; id alheio/inexistente retorna 404. Ordenação estável por prazo, criação e id. A interface MUST filtrar sem recarga completa, persistir filtros na URL e conservar o formato de lista atual nesta entrega. Tarefas vencidas MUST ter rótulo de atraso e contraste AA; controles com teclado e alvo mínimo de 44 px.
 
