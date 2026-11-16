@@ -1,11 +1,10 @@
 # Proposal
 
 ## Why
-The app header currently shows only the Impatrack tile icon, with no wordmark. The calendar page renders the weekly programme card between the calendar heading and the month grid, so the month grid appears after the weekly card. Clippit still authenticates through local `oh-my-pi` / Google Antigravity OAuth credentials, exposes provider/model text in the UI, and uses an amber/cream visual palette. This change adds the wordmark, moves the weekly card below the full calendar, switches Clippit's backend to a server-side DeepSeek API key, removes the three unwanted Clippit UI elements, and replaces the amber palette with white/slate surfaces and the existing teal accents. No provider or model name is shown to end users.
+The app header currently shows only the Impatrack tile icon, with no wordmark. Clippit still authenticates through local `oh-my-pi` / Google Antigravity OAuth credentials, exposes provider/model text in the UI, and uses an amber/cream visual palette. This change adds the wordmark, switches Clippit's backend to a server-side DeepSeek API key, removes the three unwanted Clippit UI elements, and replaces the amber palette with white/slate surfaces and the existing teal accents. No provider or model name is shown to end users.
 
 ## What Changes
 - Add the `Impatrack` wordmark to the shared `Brand` component, immediately right of the existing SVG icon.
-- Move the `Programação Semanal` section in `CalendarPage` to after the full month grid.
 - Replace `backend/apps/assistant/antigravity.py` with `backend/apps/assistant/deepseek.py`: server-side `DEEPSEEK_API_KEY`, OpenAI-compatible `POST https://api.deepseek.com/chat/completions`, no OMP/OAuth discovery, no custom token header.
 - Remove the `Copiloto Impatrack` badge, the `Online` pill, and the chat footer from `ClippitWindow`.
 - Replace amber/cream styling in the Clippit window, floating balloon, and chat bubbles with white/slate surfaces and teal accents.
@@ -19,11 +18,10 @@ None.
 ### Modified Capabilities
 - `clippit-assistant`: autenticação por chave de API do servidor e janela limpa.
 - `icone-marca-impatrack`: wordmark `Impatrack` visível ao lado do ícone da marca.
-- `academic-calendar`: programação semanal posicionada após a grade mensal.
 
 ## Impact
 - `frontend/src/components/Brand.tsx` — `Brand` component: add the wordmark span and gap; all headers inherit it.
-- `frontend/src/pages/CalendarPage.tsx` — weekly section currently at lines 1066–1309; month-grid section currently at 1311–1600; move the weekly block after line 1600.
 - `frontend/src/components/clippit/ClippitWindow.tsx` — title bar ~235, hero ~270–296, quick actions ~313, assistant bubbles ~336–358, footer ~380–390.
 - `frontend/src/components/clippit/clippy.css` — `.office97-speech-balloon` and `.clippy-bubble-assistant` light/dark rules.
 - `backend/apps/assistant/deepseek.py` — new transport/client; replaces `antigravity.py`.
+- `frontend/src/pages/CalendarPage.tsx` — nenhuma mudança: a ordem `Programação Semanal` → grade mensal foi mantida.

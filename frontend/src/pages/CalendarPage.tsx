@@ -1063,7 +1063,252 @@ export function CalendarPage() {
           </div>
         ) : null}
 
-        {/* 2. GRADE MENSAL EM LARGURA TOTAL */}
+        {/* 2. SEÇÃO SUPERIOR: DETALHES E AÇÕES RÁPIDAS DA SEMANA (Logo abaixo do bloco Calendário Acadêmico) */}
+        <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4 dark:border-[#005063]/30">
+            <div>
+              <p className="text-xs font-extrabold tracking-wider text-[#005063] uppercase dark:text-cyan-300">
+                Programação Semanal ({selectedWeekRangeLabel})
+              </p>
+              <h3 className="mt-1 text-xl font-black text-[#0d3950] dark:text-white">
+                Detalhes e Ações Rápidas da Semana ({selectedWeekTotalItems}{' '}
+                {selectedWeekTotalItems === 1 ? 'compromisso' : 'compromissos'})
+              </h3>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleShiftWeek(-7)}
+                className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Semana anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => handleShiftWeek(7)}
+                className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
+              >
+                Próxima semana
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => openNewEventForDate(selectedDateKey)}
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3.5 text-xs font-extrabold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar na Semana
+              </button>
+            </div>
+          </div>
+
+          {/* Visão dos 7 dias da semana com todos os compromissos alinhados dentro do esqueleto */}
+          <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+            {selectedWeekDays.map((day) => (
+              <div
+                key={day.key}
+                onClick={() => setSelectedDateKey(day.key)}
+                className={`flex min-w-0 cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-3 transition ${
+                  day.isSelected
+                    ? 'border-[#0d3950] bg-[#0d3950]/5 ring-2 ring-[#0d3950]/20 dark:border-cyan-400 dark:bg-cyan-400/10'
+                    : day.isToday
+                      ? 'border-emerald-500/40 bg-emerald-500/5 dark:border-emerald-400/40 dark:bg-emerald-950/20'
+                      : 'border-slate-200/80 bg-slate-50/70 hover:border-[#0d3950]/40 dark:border-[#005063]/30 dark:bg-[#041019]/80'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center justify-between gap-1.5 border-b border-slate-200/60 pb-2 dark:border-slate-800">
+                    <div className="min-w-0">
+                      <span className="block truncate text-[10px] font-extrabold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                        {day.weekdayFull}
+                      </span>
+                      <span className="block truncate text-sm font-black text-[#0d3950] dark:text-white">
+                        {day.date.toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                        })}
+                        {day.isToday ? ' · Hoje' : ''}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openNewEventForDate(day.key)
+                      }}
+                      title={`Adicionar tarefa ou evento em ${day.weekdayFull}`}
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-[#0d3950] shadow-2xs hover:bg-slate-100 dark:bg-[#081a26] dark:text-cyan-300"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  {day.items.length === 0 ? (
+                    <p className="py-5 text-center text-xs text-slate-400 dark:text-slate-500">
+                      Livre
+                    </p>
+                  ) : (
+                    <div className="mt-2.5 space-y-2">
+                      {day.items.map((item) => {
+                        const meta = getCategoryMeta(item)
+                        const isBusy = actionBusyId === item.id
+                        const isPastClass =
+                          item.source_type === 'class' &&
+                          !item.cancelled &&
+                          new Date(item.ends_at || item.starts_at) <= new Date()
+
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={(e) => e.stopPropagation()}
+                            className="min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-2xs dark:border-[#005063]/30 dark:bg-[#081a26]"
+                          >
+                            {/* Linha 1: Badge compacto sem quebrar linha */}
+                            <div className="flex items-center justify-between gap-1">
+                              <span
+                                className={`inline-flex max-w-full items-center gap-1 truncate rounded-full border px-2 py-0.5 text-[10px] font-extrabold whitespace-nowrap ${meta.badgeClass}`}
+                              >
+                                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${meta.dotClass}`} />
+                                <span className="truncate">{meta.shortLabel}</span>
+                              </span>
+                            </div>
+
+                            {/* Linha 2: Título */}
+                            <h4 className="mt-1.5 break-words text-xs leading-snug font-black text-[#0d3950] dark:text-white">
+                              {item.title}
+                            </h4>
+
+                            {/* Linha 3: Disciplina */}
+                            {item.student_subject_id && item.subject_name && !item.subject_name.includes('Interdisciplinar') ? (
+                              <p className="mt-0.5 line-clamp-2 break-words text-[11px] leading-tight font-semibold text-slate-600 dark:text-slate-300">
+                                {item.subject_name}
+                              </p>
+                            ) : null}
+
+                            {/* Linha 4: Horário e Sala */}
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                              <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
+                                <Clock className="h-3 w-3 shrink-0" />
+                                {formatTimeRange(item)}
+                              </span>
+                              {item.room && (
+                                <span className="inline-flex items-center gap-0.5 truncate">
+                                  <MapPin className="h-3 w-3 shrink-0" />
+                                  <span className="truncate">{item.room}</span>
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Linha 5: Rodapé de Ações Rápidas apenas por ícones compactos */}
+                            {(item.source_type === 'task' ||
+                              item.source_type === 'event' ||
+                              (item.source_type === 'class' && !item.cancelled && isPastClass)) && (
+                              <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-slate-200/60 pt-1.5 dark:border-slate-700/50">
+                                {item.source_type === 'task' && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => void handleToggleTask(item)}
+                                      title={item.task_status === 'completed' ? 'Reabrir tarefa' : 'Concluir tarefa'}
+                                      className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border transition ${
+                                        item.task_status === 'completed'
+                                          ? 'border-emerald-500 bg-emerald-500 text-white'
+                                          : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300'
+                                      } disabled:opacity-50`}
+                                    >
+                                      <CheckCircle2 className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => openEditItemModal(item)}
+                                      title="Editar data ou avaliação"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-[#005063] hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:bg-[#041019] dark:text-cyan-400"
+                                    >
+                                      <Edit3 className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => void handleDeleteItem(item)}
+                                      title="Descartar | Excluir tarefa"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </>
+                                )}
+
+                                {item.source_type === 'event' && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => openEditItemModal(item)}
+                                      title="Editar data ou avaliação"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-[#005063] hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:bg-[#041019] dark:text-cyan-400"
+                                    >
+                                      <Edit3 className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => void handleDeleteItem(item)}
+                                      title="Descartar | Excluir evento"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </>
+                                )}
+
+                                {item.source_type === 'class' && !item.cancelled && isPastClass && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => void handleAttendance(item, 'present')}
+                                      title="Registrar Presença"
+                                      className={`inline-flex h-7 px-1.5 items-center justify-center rounded-md text-[10px] font-bold ${
+                                        item.attendance_status === 'present'
+                                          ? 'bg-emerald-600 text-white'
+                                          : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                                      }`}
+                                    >
+                                      P
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => void handleAttendance(item, 'absent')}
+                                      title="Registrar Falta"
+                                      className={`inline-flex h-7 px-1.5 items-center justify-center rounded-md text-[10px] font-bold ${
+                                        item.attendance_status === 'absent'
+                                          ? 'bg-rose-600 text-white'
+                                          : 'bg-rose-500/15 text-rose-800 dark:text-rose-300'
+                                      }`}
+                                    >
+                                      F
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 3. GRADE MENSAL EM LARGURA TOTAL */}
         <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-xl shadow-[#0d3950]/5 sm:p-6 lg:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 pb-4 text-xs font-bold text-slate-600 dark:border-[#005063]/30 dark:text-slate-300">
             <div className="flex flex-wrap items-center gap-4">
@@ -1351,251 +1596,6 @@ export function CalendarPage() {
                 )
               })}
             </div>
-          </div>
-        </section>
-
-        {/* 3. PROGRAMAÇÃO SEMANAL: DETALHES E AÇÕES RÁPIDAS (após a grade mensal) */}
-        <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4 dark:border-[#005063]/30">
-            <div>
-              <p className="text-xs font-extrabold tracking-wider text-[#005063] uppercase dark:text-cyan-300">
-                Programação Semanal ({selectedWeekRangeLabel})
-              </p>
-              <h3 className="mt-1 text-xl font-black text-[#0d3950] dark:text-white">
-                Detalhes e Ações Rápidas da Semana ({selectedWeekTotalItems}{' '}
-                {selectedWeekTotalItems === 1 ? 'compromisso' : 'compromissos'})
-              </h3>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleShiftWeek(-7)}
-                className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Semana anterior
-              </button>
-              <button
-                type="button"
-                onClick={() => handleShiftWeek(7)}
-                className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
-              >
-                Próxima semana
-                <ChevronRight className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => openNewEventForDate(selectedDateKey)}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3.5 text-xs font-extrabold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
-              >
-                <Plus className="h-4 w-4" />
-                Adicionar na Semana
-              </button>
-            </div>
-          </div>
-
-          {/* Visão dos 7 dias da semana com todos os compromissos alinhados dentro do esqueleto */}
-          <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-            {selectedWeekDays.map((day) => (
-              <div
-                key={day.key}
-                onClick={() => setSelectedDateKey(day.key)}
-                className={`flex min-w-0 cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-3 transition ${
-                  day.isSelected
-                    ? 'border-[#0d3950] bg-[#0d3950]/5 ring-2 ring-[#0d3950]/20 dark:border-cyan-400 dark:bg-cyan-400/10'
-                    : day.isToday
-                      ? 'border-emerald-500/40 bg-emerald-500/5 dark:border-emerald-400/40 dark:bg-emerald-950/20'
-                      : 'border-slate-200/80 bg-slate-50/70 hover:border-[#0d3950]/40 dark:border-[#005063]/30 dark:bg-[#041019]/80'
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center justify-between gap-1.5 border-b border-slate-200/60 pb-2 dark:border-slate-800">
-                    <div className="min-w-0">
-                      <span className="block truncate text-[10px] font-extrabold tracking-wider text-slate-500 uppercase dark:text-slate-400">
-                        {day.weekdayFull}
-                      </span>
-                      <span className="block truncate text-sm font-black text-[#0d3950] dark:text-white">
-                        {day.date.toLocaleDateString('pt-BR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                        })}
-                        {day.isToday ? ' · Hoje' : ''}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        openNewEventForDate(day.key)
-                      }}
-                      title={`Adicionar tarefa ou evento em ${day.weekdayFull}`}
-                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-[#0d3950] shadow-2xs hover:bg-slate-100 dark:bg-[#081a26] dark:text-cyan-300"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-
-                  {day.items.length === 0 ? (
-                    <p className="py-5 text-center text-xs text-slate-400 dark:text-slate-500">
-                      Livre
-                    </p>
-                  ) : (
-                    <div className="mt-2.5 space-y-2">
-                      {day.items.map((item) => {
-                        const meta = getCategoryMeta(item)
-                        const isBusy = actionBusyId === item.id
-                        const isPastClass =
-                          item.source_type === 'class' &&
-                          !item.cancelled &&
-                          new Date(item.ends_at || item.starts_at) <= new Date()
-
-                        return (
-                          <div
-                            key={item.id}
-                            onClick={(e) => e.stopPropagation()}
-                            className="min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-2xs dark:border-[#005063]/30 dark:bg-[#081a26]"
-                          >
-                            {/* Linha 1: Badge compacto sem quebrar linha */}
-                            <div className="flex items-center justify-between gap-1">
-                              <span
-                                className={`inline-flex max-w-full items-center gap-1 truncate rounded-full border px-2 py-0.5 text-[10px] font-extrabold whitespace-nowrap ${meta.badgeClass}`}
-                              >
-                                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${meta.dotClass}`} />
-                                <span className="truncate">{meta.shortLabel}</span>
-                              </span>
-                            </div>
-
-                            {/* Linha 2: Título */}
-                            <h4 className="mt-1.5 break-words text-xs leading-snug font-black text-[#0d3950] dark:text-white">
-                              {item.title}
-                            </h4>
-
-                            {/* Linha 3: Disciplina */}
-                            {item.student_subject_id && item.subject_name && !item.subject_name.includes('Interdisciplinar') ? (
-                              <p className="mt-0.5 line-clamp-2 break-words text-[11px] leading-tight font-semibold text-slate-600 dark:text-slate-300">
-                                {item.subject_name}
-                              </p>
-                            ) : null}
-
-                            {/* Linha 4: Horário e Sala */}
-                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                              <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
-                                <Clock className="h-3 w-3 shrink-0" />
-                                {formatTimeRange(item)}
-                              </span>
-                              {item.room && (
-                                <span className="inline-flex items-center gap-0.5 truncate">
-                                  <MapPin className="h-3 w-3 shrink-0" />
-                                  <span className="truncate">{item.room}</span>
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Linha 5: Rodapé de Ações Rápidas apenas por ícones compactos */}
-                            {(item.source_type === 'task' ||
-                              item.source_type === 'event' ||
-                              (item.source_type === 'class' && !item.cancelled && isPastClass)) && (
-                              <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-slate-200/60 pt-1.5 dark:border-slate-700/50">
-                                {item.source_type === 'task' && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      disabled={isBusy}
-                                      onClick={() => void handleToggleTask(item)}
-                                      title={item.task_status === 'completed' ? 'Reabrir tarefa' : 'Concluir tarefa'}
-                                      className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border transition ${
-                                        item.task_status === 'completed'
-                                          ? 'border-emerald-500 bg-emerald-500 text-white'
-                                          : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300'
-                                      } disabled:opacity-50`}
-                                    >
-                                      <CheckCircle2 className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      disabled={isBusy}
-                                      onClick={() => openEditItemModal(item)}
-                                      title="Editar data ou avaliação"
-                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-[#005063] hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:bg-[#041019] dark:text-cyan-400"
-                                    >
-                                      <Edit3 className="h-3.5 w-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      disabled={isBusy}
-                                      onClick={() => void handleDeleteItem(item)}
-                                      title="Descartar | Excluir tarefa"
-                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
-                                  </>
-                                )}
-
-                                {item.source_type === 'event' && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      disabled={isBusy}
-                                      onClick={() => openEditItemModal(item)}
-                                      title="Editar data ou avaliação"
-                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-[#005063] hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:bg-[#041019] dark:text-cyan-400"
-                                    >
-                                      <Edit3 className="h-3.5 w-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      disabled={isBusy}
-                                      onClick={() => void handleDeleteItem(item)}
-                                      title="Descartar | Excluir evento"
-                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
-                                  </>
-                                )}
-
-                                {item.source_type === 'class' && !item.cancelled && isPastClass && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      disabled={isBusy}
-                                      onClick={() => void handleAttendance(item, 'present')}
-                                      title="Registrar Presença"
-                                      className={`inline-flex h-7 px-1.5 items-center justify-center rounded-md text-[10px] font-bold ${
-                                        item.attendance_status === 'present'
-                                          ? 'bg-emerald-600 text-white'
-                                          : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
-                                      }`}
-                                    >
-                                      P
-                                    </button>
-                                    <button
-                                      type="button"
-                                      disabled={isBusy}
-                                      onClick={() => void handleAttendance(item, 'absent')}
-                                      title="Registrar Falta"
-                                      className={`inline-flex h-7 px-1.5 items-center justify-center rounded-md text-[10px] font-bold ${
-                                        item.attendance_status === 'absent'
-                                          ? 'bg-rose-600 text-white'
-                                          : 'bg-rose-500/15 text-rose-800 dark:text-rose-300'
-                                      }`}
-                                    >
-                                      F
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
           </div>
         </section>
       </div>

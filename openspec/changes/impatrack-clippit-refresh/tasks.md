@@ -1,9 +1,9 @@
 # Tasks
 
-## 1. Marca e layout do calendário
+## 1. Marca
 
 - [x] 1.1 Adicionar o wordmark `Impatrack` em `frontend/src/components/Brand.tsx` (Montserrat extrabold, cores de tema, gap flex) e verificar o cabeçalho de `/home`.
-- [x] 1.2 Mover o JSX da seção semanal em `frontend/src/pages/CalendarPage.tsx` para depois da grade mensal e renumerar os comentários de seção.
+- [x] 1.2 Manter a ordem original de `/calendario` (`Programação Semanal` antes da grade mensal) — a mudança de posição foi revertida a pedido, sem diff em `CalendarPage.tsx`.
 
 ## 2. Limpeza da UI do Clippit
 
@@ -28,6 +28,6 @@
 - [x] 5.2 `pnpm lint && pnpm typecheck && pnpm build` — `tsc -b` sem erros e `vite build` OK; `eslint` sem problemas nos arquivos alterados (os 5 erros restantes são pré-existentes em `ProfilePage.tsx` e no `useEffect` de `CalendarPage.tsx`, idênticos em `HEAD`).
 - [x] 5.3 Verificação em navegador headless (WebKit) com servidores locais:
   - `/home`: `Brand` renderiza `<svg>` + `<span>Impatrack</span>` com `gap-2.5 sm:gap-3`.
-  - `/calendario`: ordem das seções = Calendário Acadêmico → grade mensal → Programação Semanal; navegação de semana altera o label (16–22 nov. → 09–15 nov.) e mantém 7 cards de dia.
+  - `/calendario`: ordem preservada = Calendário Acadêmico → Programação Semanal → grade mensal; `Semana anterior` alterna 16–22 nov. → 09–15 nov. e mantém 7 cards de dia.
   - Clippit: sem `Copiloto Impatrack`, sem `Online`, sem rodapé de atalhos/modelo; balão do assistente com `background-color: rgb(248, 250, 252)` e borda `rgb(226, 232, 240)`; envio de mensagem retorna a resposta de fallback (sem `DEEPSEEK_API_KEY` no ambiente de verificação).
 - [x] 5.4 Greps do plano sem resultados: nenhum `Antigravity|antigravity|Gemini|gemini|oh-my-pi|.omp` em `backend/apps/assistant`/`frontend/src/components/clippit`; nenhum `DeepSeek|deepseek|DEEPSEEK|v4` em `frontend/src`; nenhum `amber|orange|yellow` em `frontend/src/components/clippit`.
