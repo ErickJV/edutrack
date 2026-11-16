@@ -26,8 +26,6 @@ class AssistantChatResponseSerializer(serializers.Serializer):
 
 
 class AssistantStatusSerializer(serializers.Serializer):
-    configured = serializers.BooleanField(help_text="Indica se há credenciais ativas do Antigravity.")
-    mode = serializers.CharField(
-        help_text="Modo de credenciais ativo (env_token, env_refresh, custom_token, unconfigured)."
+    configured = serializers.BooleanField(
+        help_text="Indica se o assistente está configurado no servidor."
     )
-    model = serializers.CharField(help_text="Modelo de IA utilizado (ex: gemini-3.8-flash).")

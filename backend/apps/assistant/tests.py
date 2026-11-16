@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -13,8 +13,8 @@ from apps.academic.models import (
     StudentSubject,
     Subject,
 )
-from apps.assistant.antigravity import AntigravityClient, load_omp_antigravity_credentials
 from apps.assistant.context import format_academic_context_for_prompt, get_student_academic_context
+from apps.assistant.deepseek import DeepSeekClient
 from apps.catalog.models import Course, CourseOffering
 
 User = get_user_model()
@@ -143,63 +143,45 @@ class AssistantContextAndChatTestCase(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["student"]["email"], "aluno1@edutrack.com")
 
+    @override_settings(DEEPSEEK_API_KEY="")
     def test_assistant_status_api_endpoint(self):
-        """Endpoint GET /api/v1/assistant/status retorna o status de configuração."""
+        """Endpoint GET /api/v1/assistant/status retorna apenas se está configurado."""
         resp = self.client1.get("/api/v1/assistant/status")
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {"configured": False})
+
+    @override_settings(DEEPSEEK_API_KEY="")
+    @patch("apps.assistant.deepseek.requests.post")
+    def test_assistant_chat_unconfigured_fallback(self, mock_post):
+        """Sem chave configurada, responde educadamente sem chamar o serviço externo."""
+        self.assertFalse(DeepSeekClient().get_status()["configured"])
+
+        resp = self.client1.post(
+            "/api/v1/assistant/chat",
+            {"message": "O que devo estudar hoje?"},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
         data = resp.json()
-        self.assertIn("configured", data)
-        self.assertIn("mode", data)
-        self.assertIn("model", data)
+        self.assertIn("Clippit", data["reply"])
+        self.assertEqual(data["animation"], "alert")
+        mock_post.assert_not_called()
 
-    @patch("apps.assistant.antigravity.load_omp_antigravity_credentials")
-    def test_assistant_chat_unconfigured_fallback(self, mock_omp):
-        """Quando não há credenciais no omp ou .env, responde educadamente com mensagem do Clippit."""
-        mock_omp.return_value = None
-        client = AntigravityClient()
-        client.omp_creds = None
-        client.env_access_token = ""
-        client.refresh_token = ""
-        client.gemini_api_key = ""
-
-        with patch("apps.assistant.views.AntigravityClient") as mock_client_cls:
-            mock_client_cls.return_value = client
-            resp = self.client1.post(
-                "/api/v1/assistant/chat",
-                {"message": "O que devo estudar hoje?"},
-                format="json",
-            )
-            self.assertEqual(resp.status_code, 200)
-            data = resp.json()
-            self.assertIn("Clippit", data["reply"])
-            self.assertEqual(data["animation"], "alert")
-
-    @patch("apps.assistant.antigravity.requests.post")
-    @patch("apps.assistant.antigravity.load_omp_antigravity_credentials")
-    def test_assistant_chat_with_omp_credentials(self, mock_omp, mock_post):
-        """Quando credenciais são encontradas no .omp, chama o Antigravity automaticamente sem header."""
-        mock_omp.return_value = {
-            "access_token": "mock-omp-token-abc",
-            "project_id": "aicode-consumers",
-            "refresh_token": "mock-refresh",
-            "expires": 1799999999,
-        }
-
+    @override_settings(DEEPSEEK_API_KEY="test-key", DEEPSEEK_MODEL="deepseek-v4-flash")
+    @patch("apps.assistant.deepseek.requests.post")
+    def test_assistant_chat_with_deepseek_api_key(self, mock_post):
+        """Com chave configurada, envia o contexto ao endpoint compatível com OpenAI."""
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "response": {
-                "candidates": [
-                    {
-                        "content": {
-                            "parts": [
-                                {"thought": True, "text": "pensando..."},
-                                {"text": "Olá! Notei que você tem tarefas de Banco de Dados para entregar."},
-                            ]
-                        }
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "Olá! Notei que você tem tarefas de Banco de Dados para entregar.",
                     }
-                ]
-            }
+                }
+            ]
         }
         mock_post.return_value = mock_response
 
@@ -207,18 +189,31 @@ class AssistantContextAndChatTestCase(TestCase):
             "/api/v1/assistant/chat",
             {
                 "message": "Quais tarefas eu tenho pendentes?",
-                "history": [],
+                "history": [
+                    {
+                        "role": "user",
+                        "content": "Quais tarefas eu tenho pendentes?",
+                    }
+                ],
             },
             format="json",
         )
         self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertIn("Banco de Dados", data["reply"])
-        self.assertEqual(data["animation"], "wave")
+        self.assertIn("Banco de Dados", resp.json()["reply"])
+        self.assertEqual(resp.json()["animation"], "wave")
 
-        # Verifica cabeçalhos e payload enviados ao endpoint
         args, kwargs = mock_post.call_args
-        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer mock-omp-token-abc")
-        self.assertIn("antigravity", kwargs["headers"]["User-Agent"])
-        self.assertEqual(kwargs["json"]["project"], "aicode-consumers")
-        self.assertIn("contents", kwargs["json"]["request"])
+        self.assertEqual(args[0], "https://api.deepseek.com/chat/completions")
+        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer test-key")
+        self.assertEqual(kwargs["json"]["model"], "deepseek-v4-flash")
+        self.assertEqual(kwargs["json"]["messages"][0]["role"], "system")
+        self.assertIn("Banco de Dados", kwargs["json"]["messages"][0]["content"])
+        user_messages = [
+            message
+            for message in kwargs["json"]["messages"]
+            if message["role"] == "user"
+        ]
+        self.assertEqual(
+            user_messages,
+            [{"role": "user", "content": "Quais tarefas eu tenho pendentes?"}],
+        )

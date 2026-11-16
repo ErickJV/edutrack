@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from apps.academic.permissions import IsAuthenticatedOr401
 from apps.accounts.authentication import BrowserSessionAuthentication
 
-from .antigravity import AntigravityClient
+from .deepseek import DeepSeekClient
 from .context import format_academic_context_for_prompt, get_student_academic_context
 from .serializers import (
     AssistantChatRequestSerializer,
@@ -19,7 +19,7 @@ from .serializers import (
 
 class AssistantChatView(APIView):
     """
-    Endpoint para envio de mensagens para o assistente Clippit com Gemini 3.8 Flash.
+    Endpoint para envio de mensagens para o assistente Clippit.
     Injeta no prompt exclusivamente o contexto acadêmico do usuário autenticado.
     """
 
@@ -30,7 +30,7 @@ class AssistantChatView(APIView):
         request=AssistantChatRequestSerializer,
         responses={200: AssistantChatResponseSerializer},
         summary="Conversar com o assistente Clippit",
-        description="Envia mensagem para o Clippit, que processa a dúvida com o contexto acadêmico do aluno via Gemini 3.8 Flash.",
+        description="Envia mensagem para o Clippit, que processa a dúvida com o contexto acadêmico do aluno.",
     )
     def post(self, request, *args, **kwargs):
         serializer = AssistantChatRequestSerializer(data=request.data)
@@ -39,14 +39,11 @@ class AssistantChatView(APIView):
         user_message = serializer.validated_data["message"]
         history = serializer.validated_data.get("history", [])
 
-        # Token customizado opcional fornecido no header pelo frontend
-        custom_token = request.headers.get("X-Antigravity-Token")
-
         # Contexto estritamente isolado do estudante autenticado
         academic_context = get_student_academic_context(request.user)
         academic_context_md = format_academic_context_for_prompt(academic_context)
 
-        client = AntigravityClient(custom_token=custom_token)
+        client = DeepSeekClient()
         response_data = client.generate_chat_response(
             user_message=user_message,
             conversation_history=history,
@@ -78,7 +75,7 @@ class AssistantContextView(APIView):
 
 class AssistantStatusView(APIView):
     """
-    Verifica o status da conexão e configuração com o Google Antigravity OAuth.
+    Verifica o status de configuração do assistente no servidor.
     """
 
     authentication_classes = [BrowserSessionAuthentication]
@@ -86,12 +83,11 @@ class AssistantStatusView(APIView):
 
     @extend_schema(
         responses={200: AssistantStatusSerializer},
-        summary="Status de configuração do Antigravity",
-        description="Verifica se o backend possui credenciais ativas do Antigravity para o modelo Gemini 3.8 Flash.",
+        summary="Status de configuração do assistente",
+        description="Verifica se o backend possui a chave de acesso do assistente configurada.",
     )
     def get(self, request, *args, **kwargs):
-        custom_token = request.headers.get("X-Antigravity-Token")
-        client = AntigravityClient(custom_token=custom_token)
+        client = DeepSeekClient()
         status_data = client.get_status()
         serializer = AssistantStatusSerializer(data=status_data)
         serializer.is_valid(raise_exception=True)

@@ -53,18 +53,18 @@ export const ClippitFloatingWidget: React.FC<ClippitFloatingWidgetProps> = ({
             <div className="flex justify-between items-start mb-1">
               <div className="flex items-center space-x-1">
                 <span className="text-xs">📎</span>
-                <span className="font-bold text-xs text-amber-950 dark:text-amber-200">Clippit</span>
+                <span className="font-bold text-xs text-[#0d3950] dark:text-white">Clippit</span>
               </div>
               <button
                 onClick={handleDismissBalloon}
-                className="text-amber-700/60 hover:text-amber-950 dark:text-amber-400/60 dark:hover:text-amber-200 text-xs ml-1 p-0.5 rounded-md hover:bg-amber-200/50 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-500 dark:hover:text-white dark:hover:bg-[#041019] text-xs ml-1 p-0.5 rounded-md transition-colors cursor-pointer"
                 title="Fechar dica"
                 aria-label="Fechar balão"
               >
                 <X className="size-3" />
               </button>
             </div>
-            <p className="leading-snug text-xs text-slate-800 dark:text-amber-100">{greetingText}</p>
+            <p className="leading-snug text-xs text-slate-700 dark:text-slate-200">{greetingText}</p>
           </div>
         )}
 

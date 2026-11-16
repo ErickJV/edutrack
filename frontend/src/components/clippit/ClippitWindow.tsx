@@ -38,7 +38,7 @@ function renderRetroMarkdown(content: string): React.ReactNode {
       return (
         <h4
           key={idx}
-          className="font-bold text-xs uppercase tracking-wider mt-2.5 mb-1 text-[#0d3950] dark:text-[#a8d5e5] border-b border-amber-200/50 dark:border-amber-800/40 pb-0.5"
+          className="font-bold text-xs uppercase tracking-wider mt-2.5 mb-1 text-[#0d3950] dark:text-[#a8d5e5] border-b border-slate-200/70 dark:border-[#005063]/30 pb-0.5"
         >
           {line.replace('### ', '')}
         </h4>
@@ -49,7 +49,7 @@ function renderRetroMarkdown(content: string): React.ReactNode {
       return (
         <h3
           key={idx}
-          className="font-extrabold text-sm text-[#0d3950] dark:text-[#a8d5e5] mt-2.5 mb-1 border-b border-amber-200/50 dark:border-amber-800/40 pb-0.5"
+          className="font-extrabold text-sm text-[#0d3950] dark:text-[#a8d5e5] mt-2.5 mb-1 border-b border-slate-200/70 dark:border-[#005063]/30 pb-0.5"
         >
           {line.replace('## ', '')}
         </h3>
@@ -60,7 +60,7 @@ function renderRetroMarkdown(content: string): React.ReactNode {
       const itemText = line.trim().substring(2);
       return (
         <div key={idx} className="flex items-start space-x-2 ml-1 my-1">
-          <span className="text-amber-500 font-bold leading-relaxed shrink-0">•</span>
+          <span className="text-[#006768] dark:text-cyan-300 font-bold leading-relaxed shrink-0">•</span>
           <span className="leading-relaxed">{parseInlineFormatting(itemText)}</span>
         </div>
       );
@@ -70,7 +70,7 @@ function renderRetroMarkdown(content: string): React.ReactNode {
     if (numberedMatch) {
       return (
         <div key={idx} className="flex items-start space-x-2 ml-1 my-1">
-          <span className="text-amber-600 dark:text-amber-400 font-bold text-xs leading-relaxed shrink-0">
+          <span className="text-[#006768] dark:text-cyan-300 font-bold text-xs leading-relaxed shrink-0">
             {numberedMatch[1]}.
           </span>
           <span className="leading-relaxed">{parseInlineFormatting(numberedMatch[2])}</span>
@@ -126,7 +126,7 @@ function parseInlineFormatting(text: string): React.ReactNode {
       parts.push(
         <code
           key={keyIndex++}
-          className="bg-amber-100/80 dark:bg-amber-900/40 text-amber-950 dark:text-amber-200 text-[11px] px-1.5 py-0.5 rounded-md font-mono border border-amber-200/60 dark:border-amber-800/60"
+          className="bg-slate-100 dark:bg-[#041019] text-[#0d3950] dark:text-slate-100 text-[11px] px-1.5 py-0.5 rounded-md font-mono border border-slate-200/80 dark:border-[#005063]/40"
         >
           {firstMatch.match[1]}
         </code>
@@ -192,7 +192,7 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
       const errorText = err instanceof Error ? err.message : 'Falha na comunicação com o assistente.';
       const errorMsg: AssistantChatMessage = {
         role: 'assistant',
-        content: `⚠️ **Ops! Não consegui processar a resposta:**\n${errorText}\n\nVerifique se o seu ambiente possui credenciais ativas do Antigravity ou oh-my-pi (.omp).`,
+        content: `⚠️ **Ops! Não consegui processar a resposta:**\n${errorText}\n\nVerifique sua conexão e tente novamente.`,
         animation: 'alert',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -232,15 +232,10 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
       {/* Barra de Título Moderna com Feeling Nostálgico */}
       <div className="bg-gradient-to-r from-[#005063] via-[#0d3950] to-[#1e3a8a] text-white px-4 py-2.5 flex items-center justify-between select-none border-b border-white/10 shrink-0">
         <div className="flex items-center space-x-2">
-          <span className="flex items-center justify-center size-6 rounded-lg bg-white/15 text-amber-300 text-xs shadow-2xs">
+          <span className="flex items-center justify-center size-6 rounded-lg bg-white/15 text-white/80 text-xs shadow-2xs">
             📎
           </span>
-          <div className="flex items-center space-x-1.5">
-            <span className="font-bold tracking-tight text-sm">Clippit AI</span>
-            <span className="bg-white/15 text-white/90 text-[10px] px-2 py-0.5 rounded-full font-medium tracking-wide">
-              Copiloto Impatrack
-            </span>
-          </div>
+          <span className="font-bold tracking-tight text-sm">Clippit AI</span>
         </div>
         <div className="flex items-center space-x-1.5">
           {onMinimize && (
@@ -272,7 +267,7 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
             onClick={handleClippyClick}
             title="Clique para ver animações do Clippit!"
           >
-            <div className="size-13 rounded-2xl bg-gradient-to-br from-amber-100/80 to-amber-50/30 dark:from-amber-950/40 dark:to-slate-800/40 p-1 flex items-center justify-center border border-amber-200/60 dark:border-amber-700/40 shadow-xs group-hover:scale-105 active:scale-95 transition-transform">
+            <div className="size-13 rounded-2xl bg-white dark:bg-[#041019] p-1 flex items-center justify-center border border-slate-200/90 dark:border-[#005063]/40 shadow-xs group-hover:scale-105 active:scale-95 transition-transform">
               <ClippitAnimation
                 animation={currentAnimation}
                 size={48}
@@ -281,15 +276,9 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
             </div>
           </div>
           <div>
-            <div className="flex items-center space-x-1.5">
-              <span className="font-bold text-xs text-slate-800 dark:text-white">Assistente de Estudos</span>
-              <span className="flex items-center space-x-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/50 px-1.5 py-0.2 rounded-full">
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Online</span>
-              </span>
-            </div>
+            <span className="font-bold text-xs text-slate-800 dark:text-white">Assistente de Estudos</span>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              {isLoading ? 'Pensando com Gemini 3.8...' : 'Pronto para tirar dúvidas e organizar sua rotina'}
+              {isLoading ? 'Organizando sua resposta...' : 'Pronto para tirar dúvidas e organizar sua rotina'}
             </p>
           </div>
         </div>
@@ -310,7 +299,7 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
             key={action.label}
             onClick={() => handleSendMessage(action.label)}
             disabled={isLoading}
-            className="inline-flex items-center space-x-1 text-[11px] font-medium py-1 px-2.5 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs hover:bg-amber-50 hover:text-amber-900 hover:border-amber-300 dark:hover:bg-amber-950/30 dark:hover:text-amber-200 dark:hover:border-amber-700/60 transition-all whitespace-nowrap disabled:opacity-50 active:scale-95 cursor-pointer"
+            className="inline-flex items-center space-x-1 text-[11px] font-medium py-1 px-2.5 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs hover:bg-[#005063]/5 hover:text-[#0d3950] hover:border-[#005063]/40 dark:hover:bg-[#005063]/20 dark:hover:text-white dark:hover:border-[#005063] transition-all whitespace-nowrap disabled:opacity-50 active:scale-95 cursor-pointer"
           >
             <span>{action.icon}</span>
             <span>{action.label}</span>
@@ -333,7 +322,7 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
                 }`}
               >
                 {isAssistant && (
-                  <div className="flex items-center space-x-1.5 text-[10px] font-bold text-amber-800 dark:text-amber-400 mb-1.5 pb-1 border-b border-amber-200/40 dark:border-amber-800/40">
+                  <div className="flex items-center space-x-1.5 text-[10px] font-bold text-[#0d3950] dark:text-cyan-300 mb-1.5 pb-1 border-b border-slate-200/70 dark:border-[#005063]/40">
                     <span>📎</span>
                     <span>Clippit</span>
                   </div>
@@ -342,7 +331,7 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
                 {msg.timestamp && (
                   <div
                     className={`text-[9px] mt-1 text-right ${
-                      isAssistant ? 'text-amber-800/50 dark:text-amber-200/40' : 'text-white/60'
+                      isAssistant ? 'text-slate-400 dark:text-slate-500' : 'text-white/60'
                     }`}
                   >
                     {msg.timestamp}
@@ -354,8 +343,8 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
         })}
         {isLoading && (
           <div className="flex items-center space-x-2 clippy-bubble-assistant p-3 max-w-[78%]">
-            <span className="size-2 rounded-full bg-amber-500 animate-ping" />
-            <span className="text-[11px] text-amber-900 dark:text-amber-200 italic">
+            <span className="size-2 rounded-full bg-[#006768] animate-ping" />
+            <span className="text-[11px] text-slate-600 dark:text-slate-300 italic">
               Clippit está consultando seus dados acadêmicos...
             </span>
           </div>
@@ -384,10 +373,6 @@ export const ClippitWindow: React.FC<ClippitWindowProps> = ({ isOpen, onClose, o
           >
             <Send className="size-4" />
           </button>
-        </div>
-        <div className="flex items-center justify-between mt-1.5 px-1 text-[10px] text-slate-400 dark:text-slate-500">
-          <span>💡 Enter para enviar • Shift+Enter para nova linha</span>
-          <span className="font-mono">Gemini 3.8 Flash</span>
         </div>
       </div>
     </div>

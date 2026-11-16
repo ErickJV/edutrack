@@ -6,7 +6,7 @@ export function Brand({ light = false }: { light?: boolean }) {
   return (
     <Link
       to="/"
-      className={`inline-flex items-center rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 ${
+      className={`inline-flex items-center gap-2.5 rounded-xl sm:gap-3 focus-visible:outline-2 focus-visible:outline-offset-4 ${
         light ? 'focus-visible:outline-white' : 'focus-visible:outline-[#005063]'
       }`}
       aria-label="Impatrack Início"
@@ -39,6 +39,13 @@ export function Brand({ light = false }: { light?: boolean }) {
         <polygon points="36,12 20,36 30,36 26,52 44,28 32,28" fill="#ffffff" />
         <circle cx="13.6" cy="27.1" r="3.2" fill="#2dd4bf" />
       </svg>
+      <span
+        className={`font-montserrat text-xl font-extrabold tracking-tight sm:text-2xl ${
+          light ? 'text-white' : 'text-[#0d3950] dark:text-white'
+        }`}
+      >
+        Impatrack
+      </span>
     </Link>
   )
 }

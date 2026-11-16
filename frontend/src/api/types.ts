@@ -469,12 +469,6 @@ export type AssistantChatResponse = {
   timestamp: string
 }
 
-export type AssistantStatus = {
-  configured: boolean
-  mode: string
-  model: string
-}
-
 export type AssistantStudentContext = {
   generated_at: string
   student: {
