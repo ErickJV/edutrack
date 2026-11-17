@@ -6,6 +6,7 @@ from .views import (
     AcademicReadingDetailView,
     AcademicReadingListCreateView,
     AcademicReadingLogPagesView,
+    AcademicReportGenerateView,
     AcademicTaskDetailView,
     AcademicTaskListCreateView,
     AcademicTaskToggleCompleteView,
@@ -164,5 +165,6 @@ urlpatterns = [
     path("study-documents/<uuid:pk>/file", StudyDocumentFileServeView.as_view(), name="study-document-file"),
     path("study-documents/<uuid:pk>/ai-analyze", StudyDocumentAIAnalyzeView.as_view(), name="study-document-ai-analyze"),
     path("study-documents/<uuid:pk>/quiz", StudyDocumentQuizView.as_view(), name="study-document-quiz"),
+    path("reports/generate", AcademicReportGenerateView.as_view(), name="academic-report-generate"),
 ]
 

@@ -200,16 +200,42 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
         )
         status_param = self.request.query_params.get("status")
         if status_param == "all":
-            return queryset
-        if status_param in StudentSubject.Status.values:
+            filtered = queryset
+        elif status_param in StudentSubject.Status.values:
             filtered = queryset.filter(status=status_param)
             if status_param == StudentSubject.Status.ACTIVE and current_sem:
                 filtered = filtered.filter(subject__semester=current_sem)
-            return filtered
-        active_filtered = queryset.filter(status=StudentSubject.Status.ACTIVE)
-        if current_sem:
-            active_filtered = active_filtered.filter(subject__semester=current_sem)
-        return active_filtered
+        else:
+            filtered = queryset.filter(status=StudentSubject.Status.ACTIVE)
+            if current_sem:
+                filtered = filtered.filter(subject__semester=current_sem)
+
+        search_param = (
+            self.request.query_params.get("search")
+            or self.request.query_params.get("q")
+            or ""
+        ).strip()
+        if search_param:
+            filtered = filtered.filter(
+                models.Q(subject__name__icontains=search_param)
+                | models.Q(subject__code__icontains=search_param)
+                | models.Q(professor_name__icontains=search_param)
+            )
+
+        overdue_param = (
+            self.request.query_params.get("has_overdue_tasks")
+            or self.request.query_params.get("overdue")
+            or ""
+        ).lower()
+        if overdue_param in ("true", "1", "yes"):
+            now = timezone.now()
+            filtered = filtered.filter(
+                tasks__due_date__lt=now,
+            ).exclude(
+                tasks__status=AcademicTask.Status.COMPLETED,
+            ).distinct()
+
+        return filtered
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -231,7 +257,7 @@ class StudentSubjectListCreateView(generics.ListCreateAPIView):
         return Response(output.data, status=201)
 
 
-class StudentSubjectDetailView(generics.RetrieveUpdateAPIView):
+class StudentSubjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticatedOr401,)
 
     def get_queryset(self):
@@ -252,6 +278,10 @@ class StudentSubjectDetailView(generics.RetrieveUpdateAPIView):
         output = StudentSubjectSerializer(instance)
         return Response(output.data)
 
+    def perform_destroy(self, instance: StudentSubject):
+        instance.status = StudentSubject.Status.DROPPED
+        instance.save(update_fields=("status", "updated_at"))
+
 
 class AcademicTaskMixin:
     def get_base_queryset(self: Any):
@@ -270,6 +300,26 @@ class AcademicTaskMixin:
         status = self.request.query_params.get("status")
         if status:
             queryset = queryset.filter(status=status)
+        search_param = (
+            self.request.query_params.get("search")
+            or self.request.query_params.get("q")
+            or ""
+        ).strip()
+        if search_param:
+            queryset = queryset.filter(
+                models.Q(title__icontains=search_param)
+                | models.Q(description__icontains=search_param)
+                | models.Q(student_subject__subject__name__icontains=search_param)
+            )
+        overdue_param = (
+            self.request.query_params.get("overdue")
+            or self.request.query_params.get("has_overdue_tasks")
+            or ""
+        ).lower()
+        if overdue_param in ("true", "1", "yes"):
+            queryset = queryset.filter(due_date__lt=timezone.now()).exclude(
+                status=AcademicTask.Status.COMPLETED
+            )
         return queryset.order_by("due_date", "created_at")
 
     def get_object(self: Any):
@@ -3197,6 +3247,102 @@ class CalendarPdfConfirmView(generics.GenericAPIView):
             },
             status=drf_status.HTTP_201_CREATED,
         )
+
+
+class AcademicReportGenerateView(generics.GenericAPIView):
+    permission_classes = (IsAuthenticatedOr401,)
+    pagination_class = None
+
+    def get(self, request, *args, **kwargs):
+        from django.http import HttpResponse
+        from .reports import render_academic_report_pdf
+
+        user = cast(User, request.user)
+        current_sem = _get_user_current_semester(user)
+        enrollments_qs = (
+            StudentSubject.objects.select_related("subject", "subject__course")
+            .filter(user=user, status=StudentSubject.Status.ACTIVE, subject__active=True)
+            .order_by("subject__semester", "subject__name")
+        )
+        if current_sem:
+            enrollments_qs = enrollments_qs.filter(subject__semester=current_sem)
+        enrollments = list(enrollments_qs)
+
+        subjects_payload = []
+        total_tasks = 0
+        completed_tasks = 0
+        for item in enrollments:
+            t_count = item.tasks.count()
+            c_count = item.tasks.filter(status=AcademicTask.Status.COMPLETED).count()
+            total_tasks += t_count
+            completed_tasks += c_count
+            subjects_payload.append(
+                {
+                    "name": item.subject.name,
+                    "workload_hours": item.effective_workload_hours,
+                    "total_tasks": t_count,
+                    "completed_tasks": c_count,
+                    "progress_percent": item.progress_percent,
+                }
+            )
+
+        tasks_qs = (
+            AcademicTask.objects.select_related("student_subject__subject")
+            .filter(user=user)
+            .exclude(student_subject__status=StudentSubject.Status.DROPPED)
+            .order_by("due_date", "created_at")[:12]
+        )
+        tasks_payload = [
+            {
+                "title": t.title,
+                "subject_name": (
+                    t.student_subject.subject.name if t.student_subject else "Geral"
+                ),
+                "due_date": t.due_date.strftime("%d/%m/%Y") if t.due_date else "-",
+                "status_label": (
+                    "Concluida"
+                    if t.status == AcademicTask.Status.COMPLETED
+                    else "Em andamento"
+                    if t.status == AcademicTask.Status.IN_PROGRESS
+                    else "Pendente"
+                ),
+            }
+            for t in tasks_qs
+        ]
+
+        total_hours = sum(s["workload_hours"] for s in subjects_payload)
+        weighted = (
+            round(
+                sum(s["progress_percent"] * s["workload_hours"] for s in subjects_payload)
+                / total_hours
+            )
+            if total_hours
+            else 0
+        )
+        course_name = (
+            user.course_offering.course.name
+            if user.course_offering_id and user.course_offering
+            else "Graduacao Impacta"
+        )
+        report_data = {
+            "student_name": getattr(user, "full_name", "") or user.email.split("@")[0],
+            "student_email": user.email,
+            "course_name": course_name,
+            "semester_label": f"{current_sem or 2}o Semestre",
+            "generated_at": timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M"),
+            "subjects_count": len(subjects_payload),
+            "total_tasks_count": total_tasks,
+            "completed_tasks_count": completed_tasks,
+            "pending_tasks_count": max(0, total_tasks - completed_tasks),
+            "weighted_progress_percent": weighted,
+            "subjects": subjects_payload,
+            "tasks": tasks_payload,
+        }
+        pdf_bytes = render_academic_report_pdf(report_data)
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = 'inline; filename="relatorio-desempenho-edutrack.pdf"'
+        return response
+
 
 
 
