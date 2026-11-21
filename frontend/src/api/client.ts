@@ -339,6 +339,10 @@ export async function updateStudentSubject(
   })
 }
 
+export async function deleteStudentSubject(id: string): Promise<void> {
+  await request(`/api/v1/student-subjects/${id}`, { method: 'DELETE' }, [204])
+}
+
 export async function listProfessors(includeArchived = false): Promise<Professor[]> {
   const query = includeArchived ? '?include_archived=true' : ''
   return request<Professor[]>(`/api/v1/professors${query}`)

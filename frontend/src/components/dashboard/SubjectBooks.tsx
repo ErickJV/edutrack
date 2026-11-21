@@ -90,7 +90,7 @@ export function SubjectBooks({
           </Link>
         </div>
       ) : (
-        <div className="mt-4 -mx-1 flex gap-4 overflow-x-auto px-1 pt-1 pb-2 [scrollbar-width:thin] sm:gap-6">
+        <div className="books-scroll-container mt-4 -mx-1 flex gap-4 px-1 pt-1 pb-2 sm:gap-6">
           {subjects.map((subject, index) => {
             const percent = Math.max(0, Math.min(100, subject.progress_percent))
             const workload = subject.custom_workload_hours ?? subject.subject.workload_hours

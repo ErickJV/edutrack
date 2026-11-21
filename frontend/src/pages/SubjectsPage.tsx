@@ -1,8 +1,8 @@
-import { ClipboardList, LoaderCircle, Plus } from 'lucide-react'
+import { ClipboardList, LoaderCircle, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { PerspectiveBook } from '@/components/perspective-book'
-import { listStudentSubjects } from '../api/client'
+import { deleteStudentSubject, listStudentSubjects } from '../api/client'
 import type { StudentSubject } from '../api/types'
 import { SemesterSelectionModal } from '../components/SemesterSelectionModal'
 import { SubjectEditModal } from '../components/SubjectEditModal'
@@ -16,8 +16,11 @@ export function SubjectsPage() {
   const [activeSubjects, setActiveSubjects] = useState<StudentSubject[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingSubject, setEditingSubject] = useState<StudentSubject | null>(null)
+  const [subjectToDelete, setSubjectToDelete] = useState<StudentSubject | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -57,6 +60,29 @@ export function SubjectsPage() {
     [activeSubjects],
   )
 
+  async function handleConfirmDeleteSubject() {
+    if (!subjectToDelete || deleting) return
+    setDeleting(true)
+    setError('')
+    setSuccessMessage('')
+    try {
+      const targetId = subjectToDelete.id
+      const targetName = subjectToDelete.subject.name
+      await deleteStudentSubject(targetId)
+      setActiveSubjects((current) => current.filter((item) => item.id !== targetId))
+      setSubjectToDelete(null)
+      setSuccessMessage(`Disciplina "${targetName}" excluída com sucesso.`)
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : 'Não foi possível excluir a disciplina. Tente novamente.',
+      )
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div>
       <MotionPresence open={loading}>
@@ -88,7 +114,7 @@ export function SubjectsPage() {
             aria-label="Livros das disciplinas ativas"
             className="w-full"
           >
-            <div className="w-full overflow-x-auto py-4 [scrollbar-width:thin]">
+            <div className="books-scroll-container w-full py-4">
               <div
                 className={`flex min-w-full items-center gap-6 px-2 sm:gap-8 lg:gap-10 ${
                   activeSubjects.length === 1
@@ -129,7 +155,13 @@ export function SubjectsPage() {
 
         {error ? (
           <div className="mt-6">
-            <Alert>{error}</Alert>
+            <Alert tone="error">{error}</Alert>
+          </div>
+        ) : null}
+
+        {successMessage ? (
+          <div className="mt-6">
+            <Alert tone="success">{successMessage}</Alert>
           </div>
         ) : null}
 
@@ -229,6 +261,15 @@ export function SubjectsPage() {
                       >
                         Editar
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setSubjectToDelete(item)}
+                        aria-label={`Excluir disciplina ${item.subject.name}`}
+                        title="Excluir disciplina"
+                        className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-rose-500/40 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+                      >
+                        <Trash2 size={15} aria-hidden="true" />
+                      </button>
                     </div>
                   </div>
                   <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true">
@@ -260,6 +301,58 @@ export function SubjectsPage() {
           )}
         </section>
       </div>
+
+      {/* Modal de confirmação de exclusão de disciplina */}
+      {subjectToDelete ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+          role="presentation"
+          onClick={() => {
+            if (!deleting) setSubjectToDelete(null)
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-subject-modal-title"
+            aria-describedby="delete-subject-modal-desc"
+            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3
+              id="delete-subject-modal-title"
+              className="text-lg font-black tracking-tight text-[#0d3950] dark:text-white"
+            >
+              Excluir disciplina?
+            </h3>
+            <p
+              id="delete-subject-modal-desc"
+              className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300"
+            >
+              Tem certeza de que deseja excluir esta disciplina? Essa ação poderá afetar os
+              registros e acompanhamentos vinculados a ela.
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setSubjectToDelete(null)}
+                className="min-h-10 rounded-xl border border-slate-300 px-4 text-xs font-bold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#041019]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => void handleConfirmDeleteSubject()}
+                className="inline-flex min-h-10 items-center justify-center rounded-xl bg-rose-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+              >
+                {deleting ? 'Excluindo...' : 'Excluir disciplina'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <SemesterSelectionModal
         open={modalOpen}
