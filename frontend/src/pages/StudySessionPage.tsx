@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BookOpen, FileText, LogOut, Plus, Sparkles } from 'lucide-react'
+import { BookOpen, FileText, Plus, Sparkles } from 'lucide-react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import {
   createAcademicReading,
@@ -22,9 +22,6 @@ import type {
   StudentSubject,
   StudyMethodologyKey,
 } from '../api/types'
-import { useAuth } from '../auth/AuthContext'
-import { AppNavigation } from '../components/AppNavigation'
-import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
 import { LogPagesModal } from '../components/LogPagesModal'
 import { MethodologySelector } from '../components/MethodologySelector'
@@ -33,11 +30,9 @@ import { ReadingCard } from '../components/ReadingCard'
 import { ReadingModal } from '../components/ReadingModal'
 import { ReadingStreakTracker } from '../components/ReadingStreakTracker'
 import { StudyNotesWorkspace } from '../components/StudyNotesWorkspace'
-import { ThemeToggle } from '../components/ThemeToggle'
 import { calculateReadingSummary } from '../utils/readingStats'
 
 export function StudySessionPage() {
-  const { signOut } = useAuth()
   const params = useParams<{ taskId?: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const taskIdFromQuery = params.taskId || searchParams.get('taskId') || ''
@@ -56,7 +51,6 @@ export function StudySessionPage() {
   const [pendingTemplate, setPendingTemplate] = useState<string | null>(null)
   const [, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [leaving, setLeaving] = useState(false)
 
   // Modals for readings
   const [readingModalOpen, setReadingModalOpen] = useState(false)
@@ -225,40 +219,9 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
     setActiveTab('workspace')
   }
 
-  async function leave() {
-    setLeaving(true)
-    try {
-      await signOut()
-    } finally {
-      setLeaving(false)
-    }
-  }
-
   return (
-    <main className="flex min-h-dvh flex-col bg-[#dce6ef] text-[#0d3950] transition-colors dark:bg-[#040f17] dark:text-slate-50">
+    <div className="flex flex-1 flex-col">
       {/* Cabeçalho Padrão Limpo (igual às demais telas) */}
-      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <Brand />
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <button
-                type="button"
-                onClick={() => void leave()}
-                disabled={leaving}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200/80 bg-white px-4 py-2 text-sm font-bold text-[#0d3950] transition hover:bg-slate-50 disabled:opacity-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-100 dark:hover:bg-[#0d3950]/40"
-              >
-                <LogOut className="size-4" aria-hidden="true" />
-                <span className="hidden sm:inline">{leaving ? 'Saindo...' : 'Sair'}</span>
-              </button>
-            </div>
-          </div>
-          <div className="mt-4">
-            <AppNavigation />
-          </div>
-        </div>
-      </header>
 
       {/* Container Full-Width e Full-Height para Anotações ocuparem o máximo possível da tela */}
       <div className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-4 px-2 py-3 sm:px-4 sm:py-4">
@@ -437,6 +400,6 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
         }}
         onLog={handleLogCustomPages}
       />
-    </main>
+    </div>
   )
 }

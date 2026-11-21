@@ -1,13 +1,4 @@
-import {
-  BookOpen,
-  Calendar as CalendarIcon,
-  Clock3,
-  FilterX,
-  ListTodo,
-  LoaderCircle,
-  Plus,
-  Trash2,
-} from 'lucide-react'
+import { BookOpen, Calendar as CalendarIcon, Clock3, FilterX, LoaderCircle, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -27,14 +18,11 @@ import type {
   AcademicTaskStatus,
   StudentSubject,
 } from '../api/types'
-import { AppNavigation } from '../components/AppNavigation'
-import { Brand } from '../components/Brand'
 import { Alert, PageLoader } from '../components/Feedback'
 import { MotionPresence } from '../components/MotionPresence'
 import { Input, Select } from '../components/FormControls'
 import { MetricValue } from '../components/MetricValue'
 import { TaskFormModal } from '../components/TaskFormModal'
-import { ThemeToggle } from '../components/ThemeToggle'
 
 const STATUS_LABELS: Record<'all' | AcademicTaskStatus, string> = {
   all: 'Todos',
@@ -319,38 +307,31 @@ export function TasksPage() {
   }
 
   return (
-    <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
+    <div>
       <MotionPresence open={loading}>
         <PageLoader />
       </MotionPresence>
-      <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <Brand />
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <button
-                type="button"
-                onClick={openCreate}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 text-sm font-bold text-white transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
-              >
-                <Plus size={16} aria-hidden="true" />
-                <span className="hidden sm:inline">Nova tarefa</span>
-                <span className="sm:hidden">Nova</span>
-              </button>
-              <span className="hidden min-h-11 items-center gap-2 rounded-xl border border-slate-200/80 bg-white/70 px-4 text-sm font-bold text-[#0d3950] sm:inline-flex dark:border-[#005063]/30 dark:bg-[#081a26]/70 dark:text-slate-200">
-                <ListTodo size={18} aria-hidden="true" />
-                Gestão de tarefas
-              </span>
-            </div>
-          </div>
-          <div className="mt-4">
-            <AppNavigation />
-          </div>
-        </div>
-      </header>
 
       <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-[#0d3950] sm:text-3xl dark:text-white">
+              Tarefas e entregas
+            </h1>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              Cadastre, acompanhe e conclua suas entregas acadêmicas.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+          >
+            <Plus size={16} aria-hidden="true" />
+            Nova tarefa
+          </button>
+        </div>
+
         {error ? (
           <div className="mb-6">
             <Alert>{error}</Alert>
@@ -760,6 +741,6 @@ export function TasksPage() {
         }}
         onSaved={handleSaved}
       />
-    </main>
+    </div>
   )
 }

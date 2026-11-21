@@ -1,285 +1,367 @@
-import { BookOpenCheck, Clock3, GraduationCap, LogOut } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import {
+  BookOpenCheck,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  Layers,
+  ListTodo,
+  Sparkles,
+  TriangleAlert,
+} from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+
+import {
+  getDashboardSummary,
+  listAcademicTasks,
+  listCalendarItems,
+  listFlashcards,
+  listStudentSubjects,
+  toggleAcademicTaskComplete,
+} from '../api/client'
+import type { AcademicTask, CalendarItem, DashboardSummary, Flashcard, StudentSubject } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
-import { getDashboardSummary, listStudentSubjects } from '../api/client'
-import type { DashboardSummary, StudentSubject } from '../api/types'
-import { AppNavigation } from '../components/AppNavigation'
-import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
-import { MetricValue } from '../components/MetricValue'
-import { ThemeToggle } from '../components/ThemeToggle'
-import { clearExitTransition, runExitTransition } from '../utils/motion'
-
-function formatDueLabel(value: string | null): { label: string; urgent: boolean } {
-  if (!value) return { label: 'Sem prazo definido', urgent: false }
-  const due = new Date(value)
-  if (Number.isNaN(due.getTime())) return { label: 'Sem prazo definido', urgent: false }
-
-  const hoursRemaining = Math.ceil((due.getTime() - Date.now()) / 3_600_000)
-  if (hoursRemaining <= 0) return { label: 'Vence hoje', urgent: true }
-  if (hoursRemaining < 24) return { label: `Em ${hoursRemaining} hora${hoursRemaining === 1 ? '' : 's'}`, urgent: hoursRemaining < 48 }
-
-  const daysRemaining = Math.ceil(hoursRemaining / 24)
-  return { label: `Em ${daysRemaining} dia${daysRemaining === 1 ? '' : 's'}`, urgent: hoursRemaining < 48 }
-}
+import { FocusCard } from '../components/dashboard/FocusCard'
+import { MetricCard } from '../components/dashboard/MetricCard'
+import { MiniCalendar } from '../components/dashboard/MiniCalendar'
+import { SubjectProgress } from '../components/dashboard/SubjectProgress'
+import { UpcomingTasks } from '../components/dashboard/UpcomingTasks'
+import { WeeklyActivity } from '../components/dashboard/WeeklyActivity'
+import { toLocalDateKey } from '../utils/calendar'
+import {
+  buildWeekLoad,
+  formatLongDate,
+  formatMinutes,
+  getGreeting,
+  getWeekDays,
+} from '../utils/dashboard'
 
 export function HomePage() {
-  const { user, signOut } = useAuth()
-  const [leaving, setLeaving] = useState(false)
+  const { user } = useAuth()
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
-  const [activeSubjects, setActiveSubjects] = useState<StudentSubject[]>([])
-  const [summaryLoading, setSummaryLoading] = useState(true)
-  const [summaryError, setSummaryError] = useState('')
+  const [subjects, setSubjects] = useState<StudentSubject[]>([])
+  const [tasks, setTasks] = useState<AcademicTask[]>([])
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([])
+  const [weekItems, setWeekItems] = useState<CalendarItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [partialError, setPartialError] = useState('')
+  const [calendarError, setCalendarError] = useState(false)
+  const [busyTaskId, setBusyTaskId] = useState<string | null>(null)
+  const [selectedDateKey, setSelectedDateKey] = useState(() => toLocalDateKey(new Date()))
+  const [reloadKey, setReloadKey] = useState(0)
+
   const firstName = user?.full_name.trim().split(/\s+/)[0] || 'estudante'
 
   useEffect(() => {
     let alive = true
+    const weekDays = getWeekDays(new Date())
+
     async function loadDashboard() {
-      setSummaryLoading(true)
-      setSummaryError('')
-      try {
-        const [summaryResponse, subjectsResponse] = await Promise.all([getDashboardSummary(), listStudentSubjects()])
-        if (!alive) return
-        setSummary(summaryResponse)
-        setActiveSubjects(subjectsResponse)
-      } catch {
-        if (alive) setSummaryError('Não foi possível carregar suas métricas agora.')
-      } finally {
-        if (alive) setSummaryLoading(false)
+      setLoading(true)
+      setError('')
+      setPartialError('')
+      setCalendarError(false)
+
+      const [summaryResult, subjectsResult, tasksResult, flashcardsResult, calendarResult] =
+        await Promise.allSettled([
+          getDashboardSummary(),
+          listStudentSubjects(),
+          listAcademicTasks(),
+          listFlashcards(),
+          listCalendarItems({
+            from: new Date(
+              weekDays[0].getFullYear(),
+              weekDays[0].getMonth(),
+              weekDays[0].getDate(),
+              0,
+              0,
+              0,
+            ).toISOString(),
+            to: new Date(
+              weekDays[6].getFullYear(),
+              weekDays[6].getMonth(),
+              weekDays[6].getDate(),
+              23,
+              59,
+              59,
+            ).toISOString(),
+          }),
+        ])
+
+      if (!alive) return
+
+      if (summaryResult.status === 'fulfilled') setSummary(summaryResult.value)
+      else setError('Não foi possível carregar o resumo do seu dia.')
+
+      if (subjectsResult.status === 'fulfilled') {
+        setSubjects(subjectsResult.value.filter((item) => item.status === 'active'))
+      } else {
+        setPartialError('Não foi possível carregar suas disciplinas.')
       }
+
+      if (tasksResult.status === 'fulfilled') setTasks(tasksResult.value)
+      else setPartialError('Não foi possível carregar suas tarefas.')
+
+      if (flashcardsResult.status === 'fulfilled') setFlashcards(flashcardsResult.value)
+
+      if (calendarResult.status === 'fulfilled') setWeekItems(calendarResult.value)
+      else setCalendarError(true)
+
+      setLoading(false)
     }
-    loadDashboard()
+
+    void loadDashboard()
     return () => {
       alive = false
     }
-  }, [])
+  }, [reloadKey])
 
-  async function leave() {
-    setLeaving(true)
-    await runExitTransition()
+  const pendingTasks = useMemo(
+    () =>
+      tasks
+        .filter((task) => task.status !== 'completed')
+        .sort((a, b) => {
+          const aTime = a.due_date ? new Date(a.due_date).getTime() : Number.POSITIVE_INFINITY
+          const bTime = b.due_date ? new Date(b.due_date).getTime() : Number.POSITIVE_INFINITY
+          return aTime - bTime
+        }),
+    [tasks],
+  )
+
+  const nextTask =
+    summary?.upcoming_tasks.find((task) => task.status !== 'completed') ?? pendingTasks[0] ?? null
+  const dueFlashcards = flashcards.filter((card) => card.is_due).length
+  const weekLoads = useMemo(
+    () => buildWeekLoad(getWeekDays(new Date()), weekItems, tasks),
+    [weekItems, tasks],
+  )
+
+  const retry = useCallback(() => setReloadKey((value) => value + 1), [])
+
+  async function handleToggleTask(id: string) {
+    setBusyTaskId(id)
+    setPartialError('')
     try {
-      await signOut()
+      const updated = await toggleAcademicTaskComplete(id)
+      setTasks((current) => current.map((task) => (task.id === updated.id ? updated : task)))
+      try {
+        setSummary(await getDashboardSummary())
+      } catch {
+        setPartialError('Resumo atualizado parcialmente. Recarregue para sincronizar.')
+      }
     } catch {
-      clearExitTransition()
+      setPartialError('Não foi possível concluir a tarefa.')
     } finally {
-      setLeaving(false)
+      setBusyTaskId(null)
     }
   }
 
+  const summaryValue = summary ?? null
+
   return (
-    <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
-      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-        <div className="mx-auto max-w-6xl px-5 py-4 sm:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <Brand />
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <button
-                type="button"
-                aria-label="Sair"
-                onClick={() => void leave()}
-                disabled={leaving}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-[#0d3950]/80 transition hover:bg-slate-100 hover:text-[#0d3950] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] disabled:opacity-50 dark:text-slate-300 dark:hover:bg-[#041019] dark:hover:text-white dark:focus-visible:outline-[#006768]"
-              >
-                <LogOut size={18} aria-hidden="true" />
-                <span className="hidden sm:inline">{leaving ? 'Saindo…' : 'Sair'}</span>
-              </button>
-            </div>
-          </div>
-          <div className="mt-4">
-            <AppNavigation />
-          </div>
+    <div className="mx-auto w-full max-w-[1600px] px-4 pt-5 pb-12 sm:px-6 lg:px-8 lg:pt-8">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[11px] font-bold tracking-[0.18em] text-muted">
+            {formatLongDate(new Date())}
+          </p>
+          <h1 className="mt-1 text-2xl font-black tracking-tight text-ink sm:text-3xl">
+            {getGreeting()}, {firstName}{' '}
+            <span aria-hidden="true" className="inline-block">
+              👋
+            </span>
+          </h1>
+          <p className="mt-1.5 text-sm text-muted">
+            Seu dia, suas entregas e seu ritmo em um só lugar.
+          </p>
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-5 py-9 sm:px-8 sm:py-14">
-        <section className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]" aria-labelledby="upcoming-tasks">
+      {!loading && summaryValue?.subjects_count === 0 ? (
+        <section className="mt-6 overflow-hidden rounded-[26px] border border-accent/40 bg-accent/15 p-5 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="grid size-11 place-items-center rounded-2xl bg-[#0d3950]/10 text-[#0d3950] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
-                <Clock3 size={22} aria-hidden="true" />
-              </div>
+            <div>
+              <p className="text-[11px] font-bold tracking-[0.16em] text-ink/60 uppercase">
+                Primeiros passos
+              </p>
+              <h2 className="mt-1 text-xl font-black tracking-tight text-ink">
+                Vamos montar seu semestre
+              </h2>
+              <p className="mt-1 text-sm text-ink/70">
+                Selecione suas disciplinas para liberar o calendário e o progresso.
+              </p>
+            </div>
+            <Link
+              to="/disciplinas"
+              className="press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+            >
+              <BookOpenCheck size={17} aria-hidden="true" />
+              Configurar disciplinas
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      {error ? (
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex-1">
+            <Alert>{error}</Alert>
+          </div>
+          <button
+            type="button"
+            onClick={retry}
+            className="press inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface px-4 text-sm font-bold text-ink transition hover:border-accent"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      ) : null}
+
+      {partialError ? (
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+          <TriangleAlert size={15} aria-hidden="true" className="shrink-0" />
+          <span className="flex-1">{partialError}</span>
+          <button
+            type="button"
+            onClick={retry}
+            className="font-bold underline decoration-2 underline-offset-2"
+          >
+            Recarregar
+          </button>
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-12">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:col-span-8 2xl:grid-cols-4">
+          <MetricCard
+            label="Disciplinas ativas"
+            value={summaryValue?.subjects_count ?? 0}
+            detail={`${subjects.length} ${subjects.length === 1 ? 'matéria ativa' : 'matérias ativas'} neste semestre`}
+            icon={BookOpenCheck}
+            tone="lilac"
+            to="/disciplinas"
+            loading={loading}
+          />
+          <MetricCard
+            label="Tarefas pendentes"
+            value={summaryValue?.pending_tasks_count ?? 0}
+            detail={`${summaryValue?.completed_tasks_count ?? 0} concluídas até agora`}
+            icon={ListTodo}
+            tone="sky"
+            to="/tarefas"
+            loading={loading}
+          />
+          <MetricCard
+            label="Tarefas vencidas"
+            value={summaryValue?.overdue_tasks_count ?? 0}
+            detail={
+              (summaryValue?.overdue_tasks_count ?? 0) > 0
+                ? 'Priorize estas entregas hoje'
+                : 'Nenhuma atrasada'
+            }
+            icon={TriangleAlert}
+            tone="rose"
+            alert={(summaryValue?.overdue_tasks_count ?? 0) > 0}
+            to="/tarefas"
+            loading={loading}
+          />
+          <MetricCard
+            label="Progresso ponderado"
+            value={summaryValue?.weighted_progress_percent ?? 0}
+            suffix="%"
+            detail={`${formatMinutes(summaryValue?.actual_minutes_total ?? 0)} de ${formatMinutes(summaryValue?.planned_minutes_total ?? 0)}`}
+            icon={Clock3}
+            tone="mint"
+            loading={loading}
+          />
+        </div>
+
+        <div className="min-w-0 xl:col-span-4">
+          <FocusCard
+            task={nextTask}
+            subjectsCount={summaryValue?.subjects_count ?? 0}
+            loading={loading}
+          />
+        </div>
+
+        <WeeklyActivity
+          className="min-w-0 xl:col-span-7"
+          loads={weekLoads}
+          selectedKey={selectedDateKey}
+          onSelectDay={setSelectedDateKey}
+          loading={loading}
+          error={calendarError}
+          onRetry={retry}
+        />
+
+        <MiniCalendar
+          className="min-w-0 xl:col-span-5"
+          selectedDateKey={selectedDateKey}
+          onSelectDate={setSelectedDateKey}
+        />
+
+        <SubjectProgress className="min-w-0 xl:col-span-7" subjects={subjects} loading={loading} />
+
+        <div className="grid min-w-0 gap-4 xl:col-span-5">
+          <UpcomingTasks
+            tasks={tasks}
+            loading={loading}
+            busyId={busyTaskId}
+            onToggle={(id) => void handleToggleTask(id)}
+            onRetry={retry}
+            error={partialError.length > 0}
+          />
+
+          <section className="dashboard-card p-5 sm:p-6" aria-labelledby="review-card">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">Próximas entregas</p>
-                <h1 id="upcoming-tasks" className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-white">Itens urgentes das próximas 48 horas</h1>
+                <h2 id="review-card" className="text-base font-black tracking-tight text-ink">
+                  Revisões pendentes
+                </h2>
+                <p className="mt-0.5 text-xs text-muted">Repetição espaçada</p>
               </div>
+              <span className="grid size-10 place-items-center rounded-2xl bg-pastel-mint">
+                <Layers size={18} aria-hidden="true" className="text-ink/70" />
+              </span>
             </div>
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-              Olá, <span className="font-bold text-[#0d3950] dark:text-white">{firstName}</span>.
+
+            <p className="mt-4 text-3xl leading-none font-black tracking-tight text-ink">
+              {dueFlashcards}
             </p>
-          </div>
-
-          {summaryLoading ? (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {Array.from({ length: 2 }).map((_, index) => (
-                <article key={index} className="card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
-                  <div className="skeleton-shimmer h-4 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="skeleton-shimmer mt-4 h-6 w-48 rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="skeleton-shimmer mt-3 h-3 w-32 rounded-full bg-slate-200 dark:bg-slate-800" />
-                </article>
-              ))}
-            </div>
-          ) : summary && summary.upcoming_tasks.length === 0 ? (
-            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-6 text-sm text-slate-600 dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-300">
-              Nenhuma entrega urgente encontrada no momento.
+            <p className="mt-2 text-xs text-muted">
+              {dueFlashcards === 0
+                ? 'Nenhum card vencido'
+                : `${dueFlashcards} ${dueFlashcards === 1 ? 'card para revisar' : 'cards para revisar'} hoje`}
             </p>
-          ) : (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {(summary?.upcoming_tasks ?? []).map((task, index) => {
-                const due = formatDueLabel(task.due_date)
-                return (
-                  <article
-                    key={task.id}
-                    className={`stagger-item card-lift rounded-3xl border p-5 shadow-sm ${due.urgent ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200/80 bg-slate-50/80 dark:border-[#005063]/20 dark:bg-[#041019]'}`}
-                    style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{task.subject_name}</p>
-                        <h3 className="mt-1 text-lg font-black tracking-tight text-[#0d3950] dark:text-white">{task.title}</h3>
-                      </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${due.urgent ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300' : 'bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/40 dark:text-[#a8d5e5]'}`}>
-                        {due.urgent ? 'Menos de 48h' : 'Próxima'}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{due.label}</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-500 dark:text-slate-400">{task.subject_semester}º semestre · {task.estimated_minutes} min estimados</p>
-                  </article>
-                )
-              })}
-            </div>
-          )}
-        </section>
 
-        {summaryError ? <div className="mt-6"><Alert>{summaryError}</Alert></div> : null}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                to="/flashcards"
+                className="press inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-3.5 text-xs font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+              >
+                <Sparkles size={15} aria-hidden="true" />
+                Revisar agora
+              </Link>
+              <Link
+                to="/calendario"
+                className="press inline-flex min-h-10 items-center gap-2 rounded-xl border border-line px-3.5 text-xs font-bold text-ink transition hover:border-accent"
+              >
+                <CalendarDays size={15} aria-hidden="true" />
+                Calendário
+              </Link>
+            </div>
 
-        <section className="mt-6 rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]" aria-labelledby="dashboard-summary">
-          <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-2xl bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
-              <GraduationCap size={22} aria-hidden="true" />
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">Painel acadêmico</p>
-              <h2 id="dashboard-summary" className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-white">Métricas ativas da sua rotina</h2>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {summaryLoading ? (
-              Array.from({ length: 6 }).map((_, index) => (
-                <article key={index} className="card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
-                  <div className="skeleton-shimmer h-4 w-28 rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="skeleton-shimmer mt-4 h-9 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="skeleton-shimmer mt-3 h-3 w-36 rounded-full bg-slate-200 dark:bg-slate-800" />
-                </article>
-              ))
-            ) : (
-              <>
-                <article
-                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
-                  style={{ animationDelay: '0ms' }}
-                >
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Disciplinas ativas</p>
-                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={summary?.subjects_count ?? 0} /></p>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Matérias acompanhadas no período atual.</p>
-                </article>
-                <article
-                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
-                  style={{ animationDelay: '45ms' }}
-                >
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas pendentes</p>
-                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={summary?.pending_tasks_count ?? 0} /></p>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Próximas entregas e revisões em aberto.</p>
-                </article>
-                <article
-                  className={`stagger-item card-lift rounded-3xl border p-5 shadow-sm ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200/80 bg-slate-50/80 dark:border-[#005063]/20 dark:bg-[#041019]'}`}
-                  style={{ animationDelay: '90ms' }}
-                >
-                  <p className={`text-sm font-semibold ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-slate-500 dark:text-slate-400'}`}>Tarefas vencidas</p>
-                  <p className={`mt-2 text-3xl font-black ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-[#0d3950] dark:text-white'}`}><MetricValue value={summary?.overdue_tasks_count ?? 0} /></p>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Itens com prazo expirado não concluídos.</p>
-                </article>
-                <article
-                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
-                  style={{ animationDelay: '135ms' }}
-                >
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas concluídas</p>
-                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={summary?.completed_tasks_count ?? 0} /></p>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Itens já finalizados na sua rotina.</p>
-                </article>
-                <article
-                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
-                  style={{ animationDelay: '180ms' }}
-                >
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Progresso ponderado</p>
-                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={summary?.weighted_progress_percent ?? 0} suffix="%" /></p>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Desempenho geral das disciplinas ativas.</p>
-                </article>
-                <article
-                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
-                  style={{ animationDelay: '225ms' }}
-                >
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tempo de estudo</p>
-                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={summary?.actual_minutes_total ?? 0} suffix=" min" /></p>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                    Planejado {summary?.planned_minutes_total ?? 0} min
-                  </p>
-                </article>
-              </>
-            )}
-          </div>
-        </section>
-
-        <section className="mt-6 rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]" aria-labelledby="progress-subjects">
-          <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-2xl bg-[#006768]/10 text-[#006768] dark:bg-[#006768]/30 dark:text-[#a8d5e5]">
-              <BookOpenCheck size={22} aria-hidden="true" />
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#006768] dark:text-[#a8d5e5]">Desempenho por disciplina</p>
-              <h2 id="progress-subjects" className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-white">Gráfico de progresso por disciplina</h2>
-            </div>
-          </div>
-
-          {activeSubjects.length === 0 ? (
-            <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-6 text-sm text-slate-600 dark:border-[#005063]/30 dark:bg-[#041019] dark:text-slate-300">
-              Nenhuma disciplina ativa encontrada para exibir o gráfico.
-            </p>
-          ) : (
-            <div className="mt-6 grid gap-4 xl:grid-cols-2">
-              {activeSubjects.map((subject, index) => (
-                <article
-                  key={subject.id}
-                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
-                  style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{subject.subject.semester}º semestre</p>
-                      <h3 className="mt-1 text-lg font-black tracking-tight text-[#0d3950] dark:text-white">{subject.subject.name}</h3>
-                    </div>
-                    <span className="rounded-full bg-[#005063]/10 px-3 py-1 text-xs font-bold text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">{subject.progress_percent}%</span>
-                  </div>
-                  <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                    <div
-                      className="bar-grow h-full rounded-full bg-[#006768] dark:bg-[#005063]"
-                      style={{ width: `${subject.progress_percent}%` }}
-                      role="progressbar"
-                      aria-label={`${subject.subject.name}: ${subject.progress_percent}% concluído`}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={subject.progress_percent}
-                    />
-                  </div>
-                  <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                    {subject.progress_percent}% concluído · {subject.professor_name || 'Professor não definido'}
-                  </p>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
+            {!loading ? (
+              <p className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+                <CheckCircle2 size={13} aria-hidden="true" className="text-emerald-500" />
+                {pendingTasks.length} {pendingTasks.length === 1 ? 'entrega aberta' : 'entregas abertas'} no total
+              </p>
+            ) : null}
+          </section>
+        </div>
       </div>
-    </main>
+    </div>
   )
 }

@@ -1,20 +1,16 @@
-import { GraduationCap, LogOut, Mail, RefreshCw, User as UserIcon } from 'lucide-react'
+import { GraduationCap, Mail, RefreshCw, User as UserIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { ApiError, listCourseOfferings, updateProfile } from '../api/client'
 import type { CourseOffering } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
-import { AppNavigation } from '../components/AppNavigation'
 import { AccountPrivacySection } from '../components/account/AccountPrivacySection'
 import { AccountSecuritySection } from '../components/account/AccountSecuritySection'
-import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
 import { Input, PrimaryButton, Select } from '../components/FormControls'
-import { ThemeToggle } from '../components/ThemeToggle'
 
 export function ProfilePage() {
-  const { user, setUser, signOut } = useAuth()
-  const [leaving, setLeaving] = useState(false)
+  const { user, setUser } = useAuth()
   const [offerings, setOfferings] = useState<CourseOffering[]>([])
   const [fullName, setFullName] = useState(user?.full_name || '')
   const [selectedCourseSlug, setSelectedCourseSlug] = useState(
@@ -104,15 +100,6 @@ export function ProfilePage() {
     }
   }
 
-  async function leave() {
-    setLeaving(true)
-    try {
-      await signOut()
-    } finally {
-      setLeaving(false)
-    }
-  }
-
   const hasChanges =
     fullName.trim() !== (user?.full_name || '').trim() ||
     (resolvedOfferingId !== '' && resolvedOfferingId !== user?.course_offering?.id)
@@ -150,30 +137,7 @@ export function ProfilePage() {
   }
 
   return (
-    <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
-      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-        <div className="mx-auto max-w-6xl px-5 py-4 sm:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <Brand />
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <button
-                type="button"
-                aria-label="Sair"
-                onClick={() => void leave()}
-                disabled={leaving}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-[#0d3950]/80 transition hover:bg-slate-100 hover:text-[#0d3950] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] disabled:opacity-50 dark:text-slate-300 dark:hover:bg-[#041019] dark:hover:text-white dark:focus-visible:outline-[#006768]"
-              >
-                <LogOut size={18} aria-hidden="true" />
-                <span className="hidden sm:inline">{leaving ? 'Saindo…' : 'Sair'}</span>
-              </button>
-            </div>
-          </div>
-          <div className="mt-4">
-            <AppNavigation />
-          </div>
-        </div>
-      </header>
+    <div>
 
       <div className="mx-auto max-w-6xl space-y-6 px-5 py-9 sm:px-8 sm:py-14">
         <section
@@ -327,6 +291,6 @@ export function ProfilePage() {
         <AccountSecuritySection />
         <AccountPrivacySection />
       </div>
-    </main>
+    </div>
   )
 }

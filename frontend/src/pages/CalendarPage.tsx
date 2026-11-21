@@ -1,22 +1,4 @@
-import {
-  AlertTriangle,
-  BookOpen,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Edit3,
-  FileUp,
-  GraduationCap,
-  ListTodo,
-  LogOut,
-  MapPin,
-  Plus,
-  RefreshCw,
-  Sparkles,
-  Trash2,
-  X,
-} from 'lucide-react'
+import { AlertTriangle, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Clock, Edit3, FileUp, GraduationCap, ListTodo, MapPin, Plus, RefreshCw, Sparkles, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -45,161 +27,23 @@ import type {
   ExtractedCalendarAssessment,
   StudentSubject,
 } from '../api/types'
-import { useAuth } from '../auth/AuthContext'
-import { AppNavigation } from '../components/AppNavigation'
-import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
 import { MotionPresence } from '../components/MotionPresence'
+import {
+  buildMonthCells,
+  formatShortTime,
+  formatTimeRange,
+  getCategoryMeta,
+  itemToDateKey,
+  MONTH_NAMES,
+  parseDateKey,
+  toLocalDateKey,
+  WEEKDAYS_FULL,
+  WEEKDAYS_SHORT,
+} from '../utils/calendar'
 import { Input, PrimaryButton, Select } from '../components/FormControls'
-import { ThemeToggle } from '../components/ThemeToggle'
-
-const WEEKDAYS_FULL = [
-  'Segunda',
-  'Terça',
-  'Quarta',
-  'Quinta',
-  'Sexta',
-  'Sábado',
-  'Domingo',
-]
-const WEEKDAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
-const MONTH_NAMES = [
-  'Janeiro',
-  'Fevereiro',
-  'Março',
-  'Abril',
-  'Maio',
-  'Junho',
-  'Julho',
-  'Agosto',
-  'Setembro',
-  'Outubro',
-  'Novembro',
-  'Dezembro',
-]
-
-function toLocalDateKey(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function parseDateKey(key: string): Date {
-  const [y, m, d] = key.split('-').map(Number)
-  if (!y || !m || !d) return new Date()
-  return new Date(y, m - 1, d)
-}
-
-function itemToDateKey(item: CalendarItem): string {
-  const parsed = new Date(item.starts_at)
-  if (Number.isNaN(parsed.getTime())) {
-    return item.starts_at.slice(0, 10)
-  }
-  return toLocalDateKey(parsed)
-}
-
-function formatShortTime(item: CalendarItem): string {
-  if (item.all_day) return 'Dia todo'
-  const start = new Date(item.starts_at)
-  if (Number.isNaN(start.getTime())) return ''
-  return start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-}
-
-function formatTimeRange(item: CalendarItem): string {
-  if (item.all_day) return 'Dia inteiro'
-  const start = new Date(item.starts_at)
-  if (Number.isNaN(start.getTime())) return ''
-  const startStr = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  if (!item.ends_at || item.ends_at === item.starts_at) return startStr
-  const end = new Date(item.ends_at)
-  if (Number.isNaN(end.getTime())) return startStr
-  const endStr = end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `${startStr} – ${endStr}`
-}
-
-function getCategoryMeta(item: CalendarItem) {
-  if (item.source_type === 'class') {
-    return {
-      label: 'Aula',
-      shortLabel: 'Aula',
-      originLabel: 'Disciplinas',
-      originLink: '/disciplinas',
-      cardClass: item.cancelled
-        ? 'border-l-4 border-l-slate-400 border-slate-200 bg-slate-100/80 text-slate-500 line-through dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400'
-        : 'border-l-4 border-l-emerald-500 border-emerald-500/25 bg-emerald-500/10 text-emerald-950 dark:text-emerald-100',
-      dotClass: 'bg-emerald-500',
-      badgeClass: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30',
-    }
-  }
-  if (item.source_type === 'reading') {
-    return {
-      label: 'Anotações & Leitura',
-      shortLabel: 'Leitura',
-      originLabel: 'Anotações',
-      originLink: '/estudo',
-      cardClass:
-        'border-l-4 border-l-cyan-500 border-cyan-500/25 bg-cyan-500/10 text-cyan-950 dark:text-cyan-100',
-      dotClass: 'bg-cyan-500',
-      badgeClass: 'bg-cyan-500/15 text-cyan-800 dark:text-cyan-300 border-cyan-500/30',
-    }
-  }
-  const isDone = item.task_status === 'completed'
-  if (item.kind === 'exam') {
-    return {
-      label: isDone ? 'Prova concluída' : 'Prova | Avaliação',
-      shortLabel: isDone ? 'Prova ✓' : 'Prova',
-      originLabel: 'Tarefas',
-      originLink: '/tarefas',
-      cardClass: isDone
-        ? 'border-l-4 border-l-emerald-500 border-emerald-500/25 bg-emerald-500/10 text-emerald-900 line-through dark:text-emerald-200/80'
-        : 'border-l-4 border-l-rose-500 border-rose-500/25 bg-rose-500/10 text-rose-950 dark:text-rose-100',
-      dotClass: isDone ? 'bg-emerald-500' : 'bg-rose-500',
-      badgeClass: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30',
-    }
-  }
-  if (item.kind === 'assignment') {
-    return {
-      label: isDone ? 'Trabalho concluído' : 'Trabalho | Projeto',
-      shortLabel: isDone ? 'Trabalho ✓' : 'Trabalho',
-      originLabel: 'Tarefas',
-      originLink: '/tarefas',
-      cardClass: isDone
-        ? 'border-l-4 border-l-emerald-500 border-emerald-500/25 bg-emerald-500/10 text-emerald-900 line-through dark:text-emerald-200/80'
-        : 'border-l-4 border-l-violet-500 border-violet-500/25 bg-violet-500/10 text-violet-950 dark:text-violet-100',
-      dotClass: isDone ? 'bg-emerald-500' : 'bg-violet-500',
-      badgeClass: 'bg-violet-500/15 text-violet-800 dark:text-violet-300 border-violet-500/30',
-    }
-  }
-  if (item.source_type === 'task' || item.kind === 'task') {
-    return {
-      label: isDone ? 'Tarefa concluída' : 'Tarefa | Entrega',
-      shortLabel: isDone ? 'Concluída' : 'Tarefa',
-      originLabel: 'Tarefas',
-      originLink: '/tarefas',
-      cardClass: isDone
-        ? 'border-l-4 border-l-emerald-500 border-emerald-500/25 bg-emerald-500/10 text-emerald-900 line-through dark:text-emerald-200/80'
-        : 'border-l-4 border-l-amber-500 border-amber-500/25 bg-amber-500/10 text-amber-950 dark:text-amber-100',
-      dotClass: isDone ? 'bg-emerald-500' : 'bg-amber-500',
-      badgeClass: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
-    }
-  }
-  return {
-    label: isDone ? 'Atividade concluída' : 'Estudo | Atividade',
-    shortLabel: isDone ? 'Atividade ✓' : 'Atividade',
-    originLabel: 'Tarefas',
-    originLink: '/tarefas',
-    cardClass: isDone
-      ? 'border-l-4 border-l-emerald-500 border-emerald-500/25 bg-emerald-500/10 text-emerald-900 line-through dark:text-emerald-200/80'
-      : 'border-l-4 border-l-sky-500 border-sky-500/25 bg-sky-500/10 text-sky-950 dark:text-sky-100',
-    dotClass: isDone ? 'bg-emerald-500' : 'bg-sky-500',
-    badgeClass: 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border-sky-500/30',
-  }
-}
 
 export function CalendarPage() {
-  const { signOut } = useAuth()
-  const [leaving, setLeaving] = useState(false)
 
   const today = useMemo(() => new Date(), [])
   const [currentMonth, setCurrentMonth] = useState(
@@ -244,46 +88,7 @@ export function CalendarPage() {
   >([])
   const [pdfError, setPdfError] = useState('')
 
-  // Calcula as células da grade mensal (Segunda a Domingo) cobrindo todas as semanas do mês
-  const calendarDays = useMemo(() => {
-    const year = currentMonth.getFullYear()
-    const month = currentMonth.getMonth()
-    const firstDayOfMonth = new Date(year, month, 1)
-    const lastDayOfMonth = new Date(year, month + 1, 0)
-
-    const startOffset = (firstDayOfMonth.getDay() + 6) % 7
-    const totalDaysInMonth = lastDayOfMonth.getDate()
-    const totalCells = Math.ceil((startOffset + totalDaysInMonth) / 7) * 7
-    const gridStart = new Date(year, month, 1 - startOffset)
-
-    const cells: Array<{
-      date: Date
-      key: string
-      isCurrentMonth: boolean
-      isToday: boolean
-      weekdayShort: string
-      weekdayFull: string
-    }> = []
-    const todayKey = toLocalDateKey(new Date())
-    for (let i = 0; i < totalCells; i++) {
-      const cellDate = new Date(
-        gridStart.getFullYear(),
-        gridStart.getMonth(),
-        gridStart.getDate() + i,
-      )
-      const key = toLocalDateKey(cellDate)
-      const wdIdx = (cellDate.getDay() + 6) % 7
-      cells.push({
-        date: cellDate,
-        key,
-        isCurrentMonth: cellDate.getMonth() === month,
-        isToday: key === todayKey,
-        weekdayShort: WEEKDAYS_SHORT[wdIdx],
-        weekdayFull: WEEKDAYS_FULL[wdIdx],
-      })
-    }
-    return cells
-  }, [currentMonth])
+  const calendarDays = useMemo(() => buildMonthCells(currentMonth), [currentMonth])
 
   const loadCalendarData = useCallback(async () => {
     setLoading(true)
@@ -442,15 +247,6 @@ export function CalendarPage() {
     }
     return { classes, tasks, readings, events }
   }, [items, currentMonth])
-
-  async function leave() {
-    setLeaving(true)
-    try {
-      await signOut()
-    } finally {
-      setLeaving(false)
-    }
-  }
 
   function handlePrevMonth() {
     setCurrentMonth((prev) => {
@@ -863,30 +659,7 @@ export function CalendarPage() {
   }
 
   return (
-    <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
-      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <Brand />
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <button
-                type="button"
-                aria-label="Sair"
-                onClick={() => void leave()}
-                disabled={leaving}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-4 py-2 text-sm font-bold text-[#0d3950] transition hover:bg-slate-50 disabled:opacity-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-100 dark:hover:bg-[#0d3950]/40"
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">{leaving ? 'Saindo...' : 'Sair'}</span>
-              </button>
-            </div>
-          </div>
-          <div className="mt-4">
-            <AppNavigation />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-full">
 
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-10">
         {/* 1. BLOCO PRINCIPAL: CALENDÁRIO ACADÊMICO */}
@@ -2026,6 +1799,6 @@ export function CalendarPage() {
           </div>
         </div>
       </MotionPresence>
-    </main>
+    </div>
   )
 }

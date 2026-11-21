@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { GuestRoute, ProfileCompletionRoute, ProtectedRoute } from './auth/RouteGuards'
+import { AppLayout } from './components/layout/AppLayout'
 import { RouteTransition } from './components/RouteTransition'
 import { AuthSliderPage } from './pages/AuthSliderPage'
 import { CalendarPage } from './pages/CalendarPage'
@@ -34,14 +35,16 @@ export function App() {
           <Route path="/completar-perfil" element={<ProfileCompletionPage />} />
         </Route>
         <Route element={<ProtectedRoute />}>
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/disciplinas" element={<SubjectsPage />} />
-          <Route path="/tarefas" element={<TasksPage />} />
-          <Route path="/estudo" element={<StudySessionPage />} />
-          <Route path="/estudo/:taskId" element={<StudySessionPage />} />
-          <Route path="/calendario" element={<CalendarPage />} />
-          <Route path="/flashcards" element={<FlashcardsPage />} />
-          <Route path="/perfil" element={<ProfilePage />} />
+          <Route element={<AppLayout />}>
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/disciplinas" element={<SubjectsPage />} />
+            <Route path="/tarefas" element={<TasksPage />} />
+            <Route path="/estudo" element={<StudySessionPage />} />
+            <Route path="/estudo/:taskId" element={<StudySessionPage />} />
+            <Route path="/calendario" element={<CalendarPage />} />
+            <Route path="/flashcards" element={<FlashcardsPage />} />
+            <Route path="/perfil" element={<ProfilePage />} />
+          </Route>
         </Route>
         <Route path="/termos" element={<LegalPage kind="terms" />} />
         <Route path="/privacidade" element={<LegalPage kind="privacy" />} />

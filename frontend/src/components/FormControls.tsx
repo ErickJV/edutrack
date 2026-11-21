@@ -102,7 +102,7 @@ export function PrimaryButton({
     <button
       {...props}
       disabled={loading || props.disabled}
-      className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#006768] px-5 font-montserrat text-base font-bold text-white shadow-md transition-all hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006768] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 font-montserrat text-base font-bold text-accent-ink shadow-md transition-all hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     >
       {loading ? <LoaderCircle size={18} className="animate-spin" aria-hidden="true" /> : null}
       {children}

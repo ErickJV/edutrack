@@ -15,9 +15,7 @@ export function RouteTransition({ children }: { children: ReactNode }) {
   return (
     <>
       <div key={`veil-${transitionKey}`} aria-hidden="true" className="route-veil" />
-      <div key={transitionKey} className="page-enter">
-        {children}
-      </div>
+      <div className="page-enter">{children}</div>
     </>
   )
 }

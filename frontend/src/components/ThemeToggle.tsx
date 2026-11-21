@@ -11,14 +11,22 @@ const THEME_OPTIONS: Array<{
   { value: 'system', label: 'Sistema', icon: Monitor },
 ]
 
-export function ThemeToggle({ className = '' }: { className?: string }) {
+export function ThemeToggle({
+  className = '',
+  compact = false,
+}: {
+  className?: string
+  compact?: boolean
+}) {
   const { preference, resolvedTheme, setPreference } = useTheme()
 
   return (
     <div
       role="radiogroup"
       aria-label="Preferência de tema de aparência"
-      className={`inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white/90 p-1 shadow-md shadow-slate-400/20 backdrop-blur-md dark:border-[#005063]/60 dark:bg-[#091e2b]/90 dark:shadow-black/60 ${className}`}
+      className={`inline-flex items-center rounded-full border border-line bg-surface/90 shadow-xs backdrop-blur-md ${
+        compact ? 'gap-0.5 p-0.5' : 'gap-1 p-1'
+      } ${className}`}
     >
       {THEME_OPTIONS.map((option) => {
         const Icon = option.icon
@@ -30,15 +38,17 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
             role="radio"
             aria-checked={isSelected}
             onClick={() => setPreference(option.value)}
-            className={`press grid size-8 place-items-center rounded-full transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#006768] ${
+            className={`press grid place-items-center rounded-full transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--ink)] ${
+              compact ? 'size-7' : 'size-8'
+            } ${
               isSelected
-                ? 'bg-[#006768] text-white shadow-xs'
-                : 'text-slate-500 hover:text-[#0d3950] dark:text-white/60 dark:hover:text-white'
+                ? 'bg-accent text-accent-ink shadow-xs'
+                : 'text-muted hover:text-ink'
             }`}
             title={`Tema ${option.label} (atualmente ${resolvedTheme === 'dark' ? 'escuro' : 'claro'})`}
             aria-label={`Tema ${option.label}`}
           >
-            <Icon size={15} strokeWidth={2.2} aria-hidden="true" />
+            <Icon size={compact ? 13 : 15} strokeWidth={2.2} aria-hidden="true" />
           </button>
         )
       })}

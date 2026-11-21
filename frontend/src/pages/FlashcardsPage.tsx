@@ -1,18 +1,4 @@
-import {
-  Brain,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Edit3,
-  Layers,
-  Lightbulb,
-  LogOut,
-  Play,
-  Plus,
-  RotateCw,
-  Trash2,
-  X,
-} from 'lucide-react'
+import { Brain, CheckCircle2, ChevronLeft, ChevronRight, Edit3, Layers, Lightbulb, Play, Plus, RotateCw, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
@@ -25,12 +11,8 @@ import {
   updateFlashcard,
 } from '../api/client'
 import type { Flashcard, FlashcardRating, StudentSubject } from '../api/types'
-import { useAuth } from '../auth/AuthContext'
-import { AppNavigation } from '../components/AppNavigation'
-import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
 import { MotionPresence } from '../components/MotionPresence'
-import { ThemeToggle } from '../components/ThemeToggle'
 
 type DeckSummary = {
   deckName: string
@@ -65,8 +47,6 @@ function predictNextIntervalLabel(card: Flashcard, rating: FlashcardRating): str
 }
 
 export function FlashcardsPage() {
-  const { signOut } = useAuth()
-  const [leaving, setLeaving] = useState(false)
 
   const [cards, setCards] = useState<Flashcard[]>([])
   const [subjects, setSubjects] = useState<StudentSubject[]>([])
@@ -219,15 +199,6 @@ export function FlashcardsPage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [modalOpen, activeCard, isFlipped, handleRating])
 
-  async function leave() {
-    setLeaving(true)
-    try {
-      await signOut()
-    } finally {
-      setLeaving(false)
-    }
-  }
-
   function openCreateModal() {
     setEditingCard(null)
     const defaultSubj = subjects[0]
@@ -311,30 +282,7 @@ export function FlashcardsPage() {
   }
 
   return (
-    <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
-      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <Brand />
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <button
-                type="button"
-                aria-label="Sair"
-                onClick={() => void leave()}
-                disabled={leaving}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-4 py-2 text-sm font-bold text-[#0d3950] transition hover:bg-slate-50 disabled:opacity-50 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-100 dark:hover:bg-[#0d3950]/40"
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">{leaving ? 'Saindo...' : 'Sair'}</span>
-              </button>
-            </div>
-          </div>
-          <div className="mt-4">
-            <AppNavigation />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-full">
 
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-10">
         {/* Cabeçalho Principal Alinhado */}
@@ -1043,6 +991,6 @@ export function FlashcardsPage() {
           </div>
         </div>
       </MotionPresence>
-    </main>
+    </div>
   )
 }
