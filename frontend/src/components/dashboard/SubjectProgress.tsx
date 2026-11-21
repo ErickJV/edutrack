@@ -26,17 +26,17 @@ export function SubjectProgress({
   }, [])
 
   return (
-    <section className={`dashboard-card p-5 sm:p-6 ${className}`} aria-labelledby="subject-progress">
+    <section className={`dashboard-card p-4 sm:p-5 ${className}`} aria-labelledby="subject-progress">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h2 id="subject-progress" className="text-base font-black tracking-tight text-ink">
+          <h2 id="subject-progress" className="text-[15px] font-black tracking-tight text-ink">
             Disciplinas em andamento
           </h2>
-          <p className="mt-0.5 text-xs text-muted">Progresso por matéria</p>
+          <p className="mt-0.5 text-[11px] text-muted">Progresso por matéria</p>
         </div>
         <Link
           to="/disciplinas"
-          className="inline-flex items-center gap-1 text-xs font-bold text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-accent-strong"
+          className="inline-flex items-center gap-1 text-[11px] font-bold text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-accent-strong"
         >
           Ver disciplinas
           <ArrowRight size={13} aria-hidden="true" />
@@ -72,27 +72,27 @@ export function SubjectProgress({
               <li key={subject.id}>
                 <Link
                   to="/disciplinas"
-                  className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+                  className="flex items-center gap-2.5 rounded-xl p-1.5 transition hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
                 >
                   <span
-                    className={`grid size-10 shrink-0 place-items-center rounded-xl ${TONES[index % TONES.length]}`}
+                    className={`grid size-8 shrink-0 place-items-center rounded-lg ${TONES[index % TONES.length]}`}
                     aria-hidden="true"
                   >
-                    <span className="text-xs font-black text-ink/70">
+                    <span className="text-[10px] font-black text-ink/70">
                       {subject.subject.semester}º
                     </span>
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold text-ink">
+                    <span className="block truncate text-[13px] font-bold text-ink">
                       {subject.subject.name}
                     </span>
-                    <span className="block truncate text-xs text-muted">
+                    <span className="block truncate text-[11px] text-muted">
                       {subject.display_professor_name || subject.professor_name || 'Professor não definido'}
                       {workload ? ` · ${workload}h` : ''}
                     </span>
                   </span>
-                  <span className="relative grid size-11 shrink-0 place-items-center">
-                    <svg viewBox="0 0 40 40" className="size-11 -rotate-90" aria-hidden="true">
+                  <span className="relative grid size-9 shrink-0 place-items-center">
+                    <svg viewBox="0 0 40 40" className="size-9 -rotate-90" aria-hidden="true">
                       <circle
                         cx="20"
                         cy="20"
@@ -114,7 +114,7 @@ export function SubjectProgress({
                         className="ring-progress"
                       />
                     </svg>
-                    <span className="absolute text-[10px] font-black text-ink">
+                    <span className="absolute text-[9px] font-black text-ink">
                       <MetricValue value={pct} suffix="%" />
                     </span>
                   </span>

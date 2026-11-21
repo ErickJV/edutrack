@@ -20,16 +20,16 @@ export function Topbar({
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-canvas/80 backdrop-blur-xl">
-      <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <div className="flex h-14 items-center gap-2.5 px-4 sm:px-6 lg:px-7">
         <button
           type="button"
           onClick={onOpenMenu}
           aria-label="Abrir menu"
           aria-controls={MOBILE_SIDEBAR_ID}
           aria-expanded={menuOpen}
-          className="press grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-surface text-ink transition hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)] lg:hidden"
+          className="press grid size-9 shrink-0 place-items-center rounded-lg border border-line bg-surface text-ink transition hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)] lg:hidden"
         >
-          <Menu size={19} aria-hidden="true" />
+          <Menu size={17} aria-hidden="true" />
         </button>
 
         <div className="lg:hidden">
@@ -37,10 +37,10 @@ export function Topbar({
         </div>
 
         <div className="hidden min-w-0 lg:block">
-          <h1 className="truncate text-lg leading-tight font-black tracking-tight text-ink">
+          <h1 className="truncate text-[15px] leading-tight font-black tracking-tight text-ink">
             {getPageTitle(pathname)}
           </h1>
-          <p className="mt-0.5 text-[11px] font-bold tracking-[0.14em] text-muted">
+          <p className="mt-0.5 text-[10px] font-bold tracking-[0.12em] text-muted">
             {formatLongDate(new Date())}
           </p>
         </div>
@@ -51,7 +51,7 @@ export function Topbar({
             to="/perfil"
             aria-label="Abrir perfil"
             title={user?.full_name || 'Perfil'}
-            className="press grid size-9 place-items-center rounded-full bg-accent text-xs font-black text-accent-ink ring-2 ring-transparent transition hover:ring-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+            className="press grid size-8 place-items-center rounded-full bg-accent text-[11px] font-black text-accent-ink ring-2 ring-transparent transition hover:ring-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
           >
             {initials}
           </Link>

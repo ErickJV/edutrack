@@ -101,13 +101,13 @@ export function MiniCalendar({
   }
 
   return (
-    <section className={`dashboard-card flex flex-col p-5 sm:p-6 ${className}`} aria-labelledby="mini-calendar">
+    <section className={`dashboard-card flex flex-col p-4 sm:p-5 ${className}`} aria-labelledby="mini-calendar">
       <header className="flex items-center justify-between gap-2">
         <div>
-          <h2 id="mini-calendar" className="text-base font-black tracking-tight text-ink">
+          <h2 id="mini-calendar" className="text-[15px] font-black tracking-tight text-ink">
             Calendário
           </h2>
-          <p className="mt-0.5 text-xs text-muted">
+          <p className="mt-0.5 text-[11px] text-muted">
             {MONTH_NAMES[viewMonth.getMonth()]} de {viewMonth.getFullYear()}
           </p>
         </div>
@@ -116,7 +116,7 @@ export function MiniCalendar({
             type="button"
             onClick={() => shiftMonth(-1)}
             aria-label="Mês anterior"
-            className="press grid size-8 place-items-center rounded-lg border border-line text-muted transition hover:border-accent hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+            className="press grid size-7 place-items-center rounded-lg border border-line text-muted transition hover:border-accent hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
           >
             <ChevronLeft size={15} aria-hidden="true" />
           </button>
@@ -124,14 +124,14 @@ export function MiniCalendar({
             type="button"
             onClick={() => shiftMonth(1)}
             aria-label="Próximo mês"
-            className="press grid size-8 place-items-center rounded-lg border border-line text-muted transition hover:border-accent hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+            className="press grid size-7 place-items-center rounded-lg border border-line text-muted transition hover:border-accent hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
           >
             <ChevronRight size={15} aria-hidden="true" />
           </button>
         </div>
       </header>
 
-      <div className="mt-4 grid grid-cols-7 gap-1" aria-hidden="true">
+      <div className="mt-3 grid grid-cols-7 gap-1" aria-hidden="true">
         {WEEKDAYS_SHORT.map((label) => (
           <span
             key={label}
@@ -153,7 +153,7 @@ export function MiniCalendar({
               onClick={() => onSelectDate(cell.key)}
               aria-pressed={selected}
               aria-label={`${cell.weekdayFull}, ${cell.date.getDate()} de ${MONTH_NAMES[cell.date.getMonth()]}, ${dayItems.length} ${dayItems.length === 1 ? 'compromisso' : 'compromissos'}`}
-              className={`relative flex min-h-9 flex-col items-center justify-center rounded-lg text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--ink)] ${
+              className={`relative flex min-h-8 flex-col items-center justify-center rounded-lg text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--ink)] ${
                 selected
                   ? 'bg-accent text-accent-ink'
                   : cell.isCurrentMonth
@@ -182,8 +182,8 @@ export function MiniCalendar({
         })}
       </div>
 
-      <div className="mt-4 border-t border-line pt-3">
-        <p className="text-[11px] font-bold tracking-[0.14em] text-muted uppercase">
+      <div className="mt-3 border-t border-line pt-2.5">
+        <p className="text-[10px] font-bold tracking-[0.14em] text-muted uppercase">
           {parseDateKey(selectedDateKey).toLocaleDateString('pt-BR', {
             weekday: 'long',
             day: '2-digit',
@@ -198,7 +198,7 @@ export function MiniCalendar({
             ))}
           </div>
         ) : agenda.length === 0 ? (
-          <p className="mt-2 text-xs text-muted">Nenhum compromisso neste dia.</p>
+          <p className="mt-2 text-[11px] text-muted">Nenhum compromisso neste dia.</p>
         ) : (
           <ul className="mt-2 space-y-1.5">
             {agenda.slice(0, 4).map((item) => {
@@ -212,11 +212,11 @@ export function MiniCalendar({
                   <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${meta.dotClass}`} />
                   <div className="min-w-0">
                     <p
-                      className={`truncate text-xs font-bold text-ink ${done ? 'line-through' : ''}`}
+                      className={`truncate text-[11px] font-bold text-ink ${done ? 'line-through' : ''}`}
                     >
                       {item.title}
                     </p>
-                    <p className="truncate text-[11px] text-muted">
+                    <p className="truncate text-[10px] text-muted">
                       {formatTimeRange(item)}
                       {item.subject_name ? ` · ${item.subject_name}` : ''}
                     </p>
@@ -241,7 +241,7 @@ export function MiniCalendar({
         ) : (
           <Link
             to="/calendario"
-            className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-accent-strong"
+            className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-bold text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-accent-strong"
           >
             Abrir calendário
           </Link>

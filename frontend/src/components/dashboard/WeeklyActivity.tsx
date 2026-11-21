@@ -21,21 +21,21 @@ export function WeeklyActivity({
   const peak = Math.max(...loads.map((day) => day.minutes), 120)
 
   return (
-    <section className={`dashboard-card p-5 sm:p-6 ${className}`} aria-labelledby="weekly-load">
+    <section className={`dashboard-card flex flex-col p-4 sm:p-5 ${className}`} aria-labelledby="weekly-load">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h2 id="weekly-load" className="text-base font-black tracking-tight text-ink">
+          <h2 id="weekly-load" className="text-[15px] font-black tracking-tight text-ink">
             Carga da semana
           </h2>
-          <p className="mt-0.5 text-xs text-muted">Aulas e entregas planejadas</p>
+          <p className="mt-0.5 text-[11px] text-muted">Aulas e entregas planejadas</p>
         </div>
-        <span className="rounded-full bg-pastel-sky px-3 py-1 text-xs font-bold text-ink">
+        <span className="rounded-full bg-pastel-sky px-2.5 py-1 text-[11px] font-bold text-ink">
           {formatMinutes(total)}
         </span>
       </header>
 
       {loading ? (
-        <div className="mt-6 flex h-40 items-end gap-2" aria-hidden="true">
+        <div className="mt-4 flex max-h-56 min-h-32 flex-1 items-end gap-2" aria-hidden="true">
           {Array.from({ length: 7 }).map((_, index) => (
             <div
               key={index}
@@ -45,7 +45,7 @@ export function WeeklyActivity({
           ))}
         </div>
       ) : (
-        <div className="mt-6 flex h-40 items-end gap-1.5 sm:gap-2">
+        <div className="mt-4 flex max-h-56 min-h-32 flex-1 items-end gap-1.5 sm:gap-2">
           {loads.map((day, index) => {
             const pct = day.minutes === 0 ? 0 : Math.max(4, Math.round((day.minutes / peak) * 100))
             const selected = day.key === selectedKey
@@ -54,7 +54,7 @@ export function WeeklyActivity({
                 ? 'bg-line'
                 : day.isToday
                   ? 'bg-accent'
-                  : 'bg-ink/80 dark:bg-ink/70'
+                  : 'bg-ink/20 hover:bg-ink/30 dark:bg-ink/70'
             return (
               <button
                 key={day.key}
@@ -65,7 +65,7 @@ export function WeeklyActivity({
                 className="group relative flex h-full flex-1 flex-col justify-end rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
               >
                 <span
-                  className="pointer-events-none absolute -top-1 left-1/2 z-10 -translate-x-1/2 translate-y-1 rounded-lg bg-sidebar px-2 py-1 text-[10px] font-bold whitespace-nowrap text-white opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
+                  className="pointer-events-none absolute -top-1 left-1/2 z-10 -translate-x-1/2 translate-y-1 rounded-lg bg-sidebar px-2 py-1 text-[9px] font-bold whitespace-nowrap text-white opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
                   role="presentation"
                 >
                   {formatMinutes(day.minutes)}
@@ -89,7 +89,7 @@ export function WeeklyActivity({
         {loads.map((day) => (
           <span
             key={day.key}
-            className={`flex-1 text-center text-[10px] font-bold uppercase ${
+            className={`flex-1 text-center text-[9px] font-bold uppercase ${
               day.key === selectedKey ? 'text-ink' : 'text-muted'
             }`}
           >

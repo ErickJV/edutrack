@@ -161,41 +161,41 @@ export function HomePage() {
   const summaryValue = summary ?? null
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-4 pt-5 pb-12 sm:px-6 lg:px-8 lg:pt-8">
+    <div className="mx-auto w-full max-w-[1360px] px-4 pt-4 pb-8 sm:px-6 lg:px-7 lg:pt-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[11px] font-bold tracking-[0.18em] text-muted">
+          <p className="text-[10px] font-bold tracking-[0.16em] text-muted">
             {formatLongDate(new Date())}
           </p>
-          <h1 className="mt-1 text-2xl font-black tracking-tight text-ink sm:text-3xl">
+          <h1 className="mt-1 text-xl font-black tracking-tight text-ink sm:text-2xl">
             {getGreeting()}, {firstName}{' '}
             <span aria-hidden="true" className="inline-block">
               👋
             </span>
           </h1>
-          <p className="mt-1.5 text-sm text-muted">
+          <p className="mt-1 text-[13px] text-muted">
             Seu dia, suas entregas e seu ritmo em um só lugar.
           </p>
         </div>
       </header>
 
       {!loading && summaryValue?.subjects_count === 0 ? (
-        <section className="mt-6 overflow-hidden rounded-[26px] border border-accent/40 bg-accent/15 p-5 sm:p-6">
+        <section className="mt-4 overflow-hidden rounded-[20px] border border-accent/40 bg-accent/15 p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[11px] font-bold tracking-[0.16em] text-ink/60 uppercase">
                 Primeiros passos
               </p>
-              <h2 className="mt-1 text-xl font-black tracking-tight text-ink">
+              <h2 className="mt-1 text-lg font-black tracking-tight text-ink">
                 Vamos montar seu semestre
               </h2>
-              <p className="mt-1 text-sm text-ink/70">
+              <p className="mt-1 text-[13px] text-ink/70">
                 Selecione suas disciplinas para liberar o calendário e o progresso.
               </p>
             </div>
             <Link
               to="/disciplinas"
-              className="press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+              className="press inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg bg-accent px-3 text-[13px] font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
             >
               <BookOpenCheck size={17} aria-hidden="true" />
               Configurar disciplinas
@@ -220,7 +220,7 @@ export function HomePage() {
       ) : null}
 
       {partialError ? (
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+        <div className="mt-3 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
           <TriangleAlert size={15} aria-hidden="true" className="shrink-0" />
           <span className="flex-1">{partialError}</span>
           <button
@@ -233,8 +233,8 @@ export function HomePage() {
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-12">
-        <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:col-span-8 2xl:grid-cols-4">
+      <div className="mt-3 grid gap-3 xl:grid-cols-12">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:col-span-8 2xl:grid-cols-4">
           <MetricCard
             label="Disciplinas ativas"
             value={summaryValue?.subjects_count ?? 0}
@@ -304,7 +304,7 @@ export function HomePage() {
 
         <SubjectProgress className="min-w-0 xl:col-span-7" subjects={subjects} loading={loading} />
 
-        <div className="grid min-w-0 gap-4 xl:col-span-5">
+        <div className="grid min-w-0 gap-3 xl:col-span-5">
           <UpcomingTasks
             tasks={tasks}
             loading={loading}
@@ -314,47 +314,47 @@ export function HomePage() {
             error={partialError.length > 0}
           />
 
-          <section className="dashboard-card p-5 sm:p-6" aria-labelledby="review-card">
+          <section className="dashboard-card p-4 sm:p-5" aria-labelledby="review-card">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 id="review-card" className="text-base font-black tracking-tight text-ink">
+                <h2 id="review-card" className="text-[15px] font-black tracking-tight text-ink">
                   Revisões pendentes
                 </h2>
-                <p className="mt-0.5 text-xs text-muted">Repetição espaçada</p>
+                <p className="mt-0.5 text-[11px] text-muted">Repetição espaçada</p>
               </div>
-              <span className="grid size-10 place-items-center rounded-2xl bg-pastel-mint">
-                <Layers size={18} aria-hidden="true" className="text-ink/70" />
+              <span className="grid size-8 place-items-center rounded-xl bg-pastel-mint">
+                <Layers size={15} aria-hidden="true" className="text-ink/70" />
               </span>
             </div>
 
-            <p className="mt-4 text-3xl leading-none font-black tracking-tight text-ink">
+            <p className="mt-3 text-2xl leading-none font-black tracking-tight text-ink">
               {dueFlashcards}
             </p>
-            <p className="mt-2 text-xs text-muted">
+            <p className="mt-1.5 text-[11px] text-muted">
               {dueFlashcards === 0
                 ? 'Nenhum card vencido'
                 : `${dueFlashcards} ${dueFlashcards === 1 ? 'card para revisar' : 'cards para revisar'} hoje`}
             </p>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Link
                 to="/flashcards"
-                className="press inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-3.5 text-xs font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+                className="press inline-flex min-h-9 items-center gap-2 rounded-lg bg-accent px-3 text-[11px] font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
               >
-                <Sparkles size={15} aria-hidden="true" />
+                <Sparkles size={13} aria-hidden="true" />
                 Revisar agora
               </Link>
               <Link
                 to="/calendario"
-                className="press inline-flex min-h-10 items-center gap-2 rounded-xl border border-line px-3.5 text-xs font-bold text-ink transition hover:border-accent"
+                className="press inline-flex min-h-9 items-center gap-2 rounded-lg border border-line px-3 text-[11px] font-bold text-ink transition hover:border-accent"
               >
-                <CalendarDays size={15} aria-hidden="true" />
+                <CalendarDays size={13} aria-hidden="true" />
                 Calendário
               </Link>
             </div>
 
             {!loading ? (
-              <p className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+              <p className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-muted">
                 <CheckCircle2 size={13} aria-hidden="true" className="text-emerald-500" />
                 {pendingTasks.length} {pendingTasks.length === 1 ? 'entrega aberta' : 'entregas abertas'} no total
               </p>

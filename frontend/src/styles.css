@@ -875,7 +875,7 @@ html.dark .app-shell {
   min-width: 0;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 26px;
+  border-radius: 20px;
   box-shadow:
     0 1px 2px rgba(16, 24, 40, 0.04),
     0 18px 40px -28px rgba(16, 24, 40, 0.25);
@@ -887,7 +887,7 @@ html.dark .app-shell {
 
 @media (hover: hover) {
   .dashboard-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     border-color: color-mix(in oklab, var(--accent) 55%, var(--line));
     box-shadow:
       0 2px 4px rgba(16, 24, 40, 0.05),
@@ -905,10 +905,14 @@ html.dark .dashboard-card {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(16, 26, 51, 0.1) 1px, transparent 1px);
   background-size: 18px 18px;
   mask-image: radial-gradient(82% 82% at 100% 0%, #000 0%, transparent 74%);
   -webkit-mask-image: radial-gradient(82% 82% at 100% 0%, #000 0%, transparent 74%);
+}
+
+html.dark .hero-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px);
 }
 
 .hero-blob {
@@ -965,7 +969,7 @@ html.dark .dashboard-card {
 
 #app-sidebar .brand-word,
 #app-sidebar-mobile .brand-word {
-  font-size: 1.02rem;
+  font-size: 0.95rem;
   letter-spacing: 0.07em;
 }
 

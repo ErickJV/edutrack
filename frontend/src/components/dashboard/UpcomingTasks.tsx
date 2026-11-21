@@ -45,17 +45,17 @@ export function UpcomingTasks({
     .slice(0, 4)
 
   return (
-    <section className={`dashboard-card p-5 sm:p-6 ${className}`} aria-labelledby="upcoming-tasks">
+    <section className={`dashboard-card p-4 sm:p-5 ${className}`} aria-labelledby="upcoming-tasks">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h2 id="upcoming-tasks" className="text-base font-black tracking-tight text-ink">
+          <h2 id="upcoming-tasks" className="text-[15px] font-black tracking-tight text-ink">
             Próximas entregas
           </h2>
-          <p className="mt-0.5 text-xs text-muted">Conclua direto daqui</p>
+          <p className="mt-0.5 text-[11px] text-muted">Conclua direto daqui</p>
         </div>
         <Link
           to="/tarefas"
-          className="inline-flex items-center gap-1 text-xs font-bold text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-accent-strong"
+          className="inline-flex items-center gap-1 text-[11px] font-bold text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-accent-strong"
         >
           Ver todas
           <ArrowRight size={13} aria-hidden="true" />
@@ -92,20 +92,20 @@ export function UpcomingTasks({
             return (
               <li
                 key={task.id}
-                className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-surface-2"
+                className="flex items-center gap-2.5 rounded-xl p-1.5 transition hover:bg-surface-2"
               >
                 <span
-                  className={`grid size-10 shrink-0 place-items-center rounded-xl ${CATEGORY_TONE[category] ?? CATEGORY_TONE.task}`}
+                  className={`grid size-8 shrink-0 place-items-center rounded-lg ${CATEGORY_TONE[category] ?? CATEGORY_TONE.task}`}
                   aria-hidden="true"
                 >
-                  <Icon size={17} className="text-ink/70" />
+                  <Icon size={15} className="text-ink/70" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-ink">{task.title}</p>
-                  <p className="truncate text-xs text-muted">{task.subject_name || 'Geral'}</p>
+                  <p className="truncate text-[13px] font-bold text-ink">{task.title}</p>
+                  <p className="truncate text-[11px] text-muted">{task.subject_name || 'Geral'}</p>
                 </div>
                 <span
-                  className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold whitespace-nowrap ${badgeTone}`}
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold whitespace-nowrap ${badgeTone}`}
                 >
                   {due.label}
                 </span>
@@ -114,12 +114,12 @@ export function UpcomingTasks({
                   onClick={() => onToggle(task.id)}
                   disabled={busyId === task.id}
                   aria-label={`Concluir ${task.title}`}
-                  className="press grid size-9 shrink-0 place-items-center rounded-xl border border-line text-muted transition hover:border-accent hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)] disabled:opacity-50"
+                  className="press grid size-8 shrink-0 place-items-center rounded-lg border border-line text-muted transition hover:border-accent hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)] disabled:opacity-50"
                 >
                   {busyId === task.id ? (
-                    <LoaderCircle size={16} className="animate-spin" aria-hidden="true" />
+                    <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />
                   ) : (
-                    <Check size={16} aria-hidden="true" />
+                    <Check size={14} aria-hidden="true" />
                   )}
                 </button>
               </li>
