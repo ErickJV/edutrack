@@ -31,7 +31,7 @@ const PX = 2
 const HALF = (W - 36) / 2
 const DAY = 1440
 const MAX_POMODORO_SECONDS = 120 * 60
-const MIN_POMODORO_SECONDS = 60
+const MIN_POMODORO_SECONDS = 1
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
 const wrap = (m: number) => ((m % DAY) + DAY) % DAY
@@ -78,7 +78,7 @@ function formatPomodoroTime(seconds: number) {
 }
 
 export function Scrub({
-  step = '15',
+  step = '1',
   momentum = 50,
   format = '12h',
   corner = 20,
@@ -94,10 +94,10 @@ export function Scrub({
   const [pos, setPos] = useState(start)
   const p = useRef({ x: start, v: 0, to: start })
   const raf = useRef(0)
-  const knobs = useRef({ step: Number(step) || 15, momentum })
-  knobs.current = { step: Number(step) || 15, momentum }
+  const knobs = useRef({ step: Number(step) || 1, momentum })
+  knobs.current = { step: Number(step) || 1, momentum }
   const ruler = useRef<HTMLDivElement>(null)
-  const lastStep = useRef(Math.floor(start / (Number(step) || 15)))
+  const lastStep = useRef(Math.floor(start / (Number(step) || 1)))
 
   const hear = (x: number) => {
     const s = knobs.current.step
@@ -382,11 +382,12 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
   const still = stillness()
   const initialSeconds = settings.focusMinutes * 60
   const [pos, setPos] = useState(initialSeconds)
+  const [customTotalSeconds, setCustomTotalSeconds] = useState<number | null>(null)
   const p = useRef({ x: initialSeconds, v: 0, to: initialSeconds })
   const raf = useRef(0)
-  const knobs = useRef({ step: 60, momentum: 50 })
+  const knobs = useRef({ step: 1, momentum: 50 })
   const ruler = useRef<HTMLDivElement>(null)
-  const lastStep = useRef(Math.floor(initialSeconds / 60))
+  const lastStep = useRef(Math.floor(initialSeconds))
   const drag = useRef<null | { x: number; t: number; v: number; k: number }>(null)
 
   const hear = (x: number) => {
@@ -396,40 +397,20 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
     lastStep.current = k
   }
 
-  const applyDurationFromRuler = useCallback(
-    (rawSeconds: number, commitToSettings = false) => {
-      const clampedSecs = clamp(Math.round(rawSeconds), MIN_POMODORO_SECONDS, MAX_POMODORO_SECONDS)
-      setSecondsRemaining(clampedSecs)
-      if (commitToSettings) {
-        const mins = Math.max(1, Math.round(clampedSecs / 60))
-        setSettings((prev) => {
-          const updated: PomodoroSettings = {
-            ...prev,
-            focusMinutes: mode === 'focus' ? clamp(mins, 1, 120) : prev.focusMinutes,
-            shortBreakMinutes:
-              mode === 'short_break' ? clamp(mins, 1, 60) : prev.shortBreakMinutes,
-            longBreakMinutes: mode === 'long_break' ? clamp(mins, 1, 90) : prev.longBreakMinutes,
-          }
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-          } catch {
-            /* ignore storage quota */
-          }
-          return updated
-        })
-      }
-    },
-    [mode],
-  )
+  const applyDurationFromRuler = useCallback((rawSeconds: number) => {
+    const clampedSecs = clamp(Math.round(rawSeconds), MIN_POMODORO_SECONDS, MAX_POMODORO_SECONDS)
+    setSecondsRemaining(clampedSecs)
+    setCustomTotalSeconds(clampedSecs)
+  }, [])
 
   const setRulerPos = useCallback(
-    (x: number, syncTimer = false, commitSettings = false) => {
+    (x: number, syncTimer = false) => {
       const clamped = clamp(x, 0, MAX_POMODORO_SECONDS)
       p.current.x = clamped
       hear(clamped)
       setPos(clamped)
       if (syncTimer) {
-        applyDurationFromRuler(clamped, commitSettings)
+        applyDurationFromRuler(clamped)
       }
     },
     [applyDurationFromRuler],
@@ -447,11 +428,11 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
         const x = c.x + c.v * dt
         if (Math.abs(c.to - x) < 0.01 && Math.abs(c.v) < 0.01) {
           c.v = 0
-          setRulerPos(c.to, syncTimerWhileMoving, syncTimerWhileMoving)
+          setRulerPos(c.to, syncTimerWhileMoving)
           raf.current = 0
           return
         }
-        setRulerPos(x, syncTimerWhileMoving, false)
+        setRulerPos(x, syncTimerWhileMoving)
         raf.current = requestAnimationFrame(tick)
       }
       raf.current = requestAnimationFrame(tick)
@@ -474,7 +455,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
       p.current.v = v
       if (still) {
         p.current.v = 0
-        setRulerPos(target, syncTimerWhileMoving, syncTimerWhileMoving)
+        setRulerPos(target, syncTimerWhileMoving)
         return
       }
       runSpring(syncTimerWhileMoving)
@@ -505,7 +486,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
     g.v = g.v * 0.5 + (dm / dt) * 0.5
     g.x = e.clientX
     g.t = now
-    setRulerPos(clamp(p.current.x + dm, MIN_POMODORO_SECONDS, MAX_POMODORO_SECONDS), true, false)
+    setRulerPos(clamp(p.current.x + dm, MIN_POMODORO_SECONDS, MAX_POMODORO_SECONDS), true)
   }
 
   const onUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -541,7 +522,6 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
       setRulerPos(
         clamp(p.current.x + e.deltaX / PX, MIN_POMODORO_SECONDS, MAX_POMODORO_SECONDS),
         true,
-        false,
       )
       clearTimeout(idle)
       idle = window.setTimeout(() => {
@@ -561,7 +541,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
     }
   }, [goTo, setRulerPos])
 
-  const totalSeconds = useMemo(() => {
+  const modeDefaultSeconds = useMemo(() => {
     switch (mode) {
       case 'focus':
         return settings.focusMinutes * 60
@@ -572,12 +552,15 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
     }
   }, [mode, settings])
 
+  const totalSeconds = customTotalSeconds ?? modeDefaultSeconds
+
   // Switch mode helper
   const switchMode = useCallback(
     (newMode: PomodoroMode, customSettings?: PomodoroSettings) => {
       const activeSettings = customSettings || settings
       setIsRunning(false)
       setMode(newMode)
+      setCustomTotalSeconds(null)
       let nextSecs = activeSettings.focusMinutes * 60
       if (newMode === 'short_break') nextSecs = activeSettings.shortBreakMinutes * 60
       if (newMode === 'long_break') nextSecs = activeSettings.longBreakMinutes * 60
@@ -818,15 +801,16 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
             tabIndex={0}
             aria-label="Ajustar tempo arrastando a régua"
             aria-valuetext={`${time} ${mer}`}
-            aria-valuenow={Math.round(displaySeconds / 60)}
-            aria-valuemin={1}
-            aria-valuemax={120}
+            aria-valuenow={displaySeconds}
+            aria-valuemin={MIN_POMODORO_SECONDS}
+            aria-valuemax={MAX_POMODORO_SECONDS}
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
             onPointerCancel={onUp}
             onKeyDown={(e) => {
-              const d = e.key === 'ArrowRight' ? s : e.key === 'ArrowLeft' ? -s : 0
+              const stepSize = e.shiftKey ? 15 : s
+              const d = e.key === 'ArrowRight' ? stepSize : e.key === 'ArrowLeft' ? -stepSize : 0
               if (!d) return
               e.preventDefault()
               setIsRunning(false)
