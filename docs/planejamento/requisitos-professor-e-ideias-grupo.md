@@ -8,7 +8,7 @@ As sugestões do grupo abaixo são um backlog de ideias, não funcionalidades im
 
 ## Adaptações e decisões conhecidas
 
-- O usuário informou que o professor liberou as tecnologias: manter Django, React/TypeScript e MSSQL. FlutterFlow, Xano, XanoScript, JWT/Xano e Gemini Code Assist constam da especificação original, mas não devem provocar migração da stack ou da sessão Django existente.
+- O usuário informou que o professor liberou as tecnologias: manter Django, React/TypeScript e MSSQL. FlutterFlow, Xano, XanoScript e JWT/Xano constam da especificação original, mas não devem provocar migração da stack ou da sessão Django existente.
 - O usuário informou que o professor aceitou a seleção de curso com disciplinas obtidas do catálogo Impacta em lugar de cadastro manual obrigatório. O catálogo é compartilhado; dados pessoais da disciplina pertencem ao aluno.
 - O público implementado continua restrito a alunos Impacta. O público mais amplo do documento não autoriza remover a restrição institucional.
 - O usuário quer progresso de aulas ocorridas / aulas totais, com frequência separada. O professor descreveu progresso por tarefas concluídas. Preservar ambos com nomes distintos permite atender às duas finalidades; não afirmar que o professor já aprovou eliminar o indicador por tarefas.

@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<title>Entrega 16 Tarefas - Advanced Low Code</title>
+<style>
+@page { size: A4; margin: 13mm 11mm 14mm; }
+* { box-sizing: border-box; }
+html { font-size: 10.5pt; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #0f172a;
+  line-height: 1.4;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+h1, h2, h3, h4 { color: #0f172a; line-height: 1.2; margin: 0 0 6px; }
+h1 { font-size: 22pt; }
+h2 { font-size: 15pt; margin-top: 4px; }
+h3 { font-size: 11.5pt; margin-top: 14px; }
+h4 { font-size: 10.5pt; margin-top: 12px; }
+p { margin: 0 0 8px; orphans: 2; widows: 2; }
+ul, ol { margin: 0 0 10px; padding-left: 18px; }
+li { margin-bottom: 3px; orphans: 2; widows: 2; }
+code {
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: 8.8pt;
+  background: #f1f5f9;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+a { color: #0f766e; text-decoration: none; word-break: break-all; }
+.small { font-size: 9pt; color: #64748b; }
+.muted { color: #64748b; }
+
+/* Capa */
+.cover { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; }
+.cover .brand { font-size: 12pt; letter-spacing: .18em; text-transform: uppercase; color: #0f766e; font-weight: 700; }
+.cover h1 { font-size: 30pt; margin-top: 10mm; }
+.cover .subtitle { font-size: 13pt; color: #0f172a; margin-top: 4mm; font-weight: 600; }
+.cover .rule { height: 3px; background: #0f766e; width: 46mm; margin: 8mm 0; }
+.cover dl { margin: 0; }
+.cover dt { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .12em; color: #64748b; margin-top: 5mm; }
+.cover dd { margin: 2px 0 0; font-size: 12pt; font-weight: 600; }
+.cover footer { font-size: 8.5pt; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 4mm; }
+
+/* Secoes */
+section { break-before: page; }
+section.plain { break-before: page; }
+.task-head { border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-bottom: 10px; }
+.task-head .kicker { font-size: 9pt; color: #0f766e; font-weight: 700; }
+.modulo { font-size: 8.5pt; color: #64748b; margin-top: 3px; }
+
+figure { margin: 10px 0; break-inside: avoid; }
+figure img { max-width: 100%; max-height: 67mm; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 6px; display: block; }
+figcaption { font-size: 8.5pt; color: #64748b; margin-top: 4px; }
+figcaption b { color: #0f172a; }
+
+table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 9pt; }
+tr { break-inside: avoid; }
+thead { display: table-header-group; }
+th, td { border: 1px solid #e2e8f0; padding: 4px 6px; text-align: left; vertical-align: top; }
+th { background: #f1f5f9; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .04em; color: #475569; }
+tbody tr:nth-child(even) td { background: #fafbfc; }
+.status { font-weight: 700; white-space: nowrap; }
+.status.ok { color: #047857; }
+.status.equiv { color: #b45309; }
+.status.partial { color: #b91c1c; }
+.status.na { color: #475569; }
+
+pre.term {
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: 7pt;
+  line-height: 1.3;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 8px 0 12px;
+  break-inside: avoid;
+}
+pre.doc {
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: 7.2pt;
+  line-height: 1.4;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  margin: 8px 0 12px;
+}
+.label { font-size: 8pt; text-transform: uppercase; letter-spacing: .1em; color: #64748b; margin-top: 10px; }
+
+.nota {
+  border-left: 3px solid #b45309;
+  background: #fffbeb;
+  padding: 8px 10px;
+  border-radius: 0 6px 6px 0;
+  margin: 10px 0 4px;
+  font-size: 9pt;
+}
+.nota b { color: #92400e; }
+
+.toc { columns: 2; column-gap: 10mm; font-size: 10pt; }
+.toc div { break-inside: avoid; margin-bottom: 3px; }
+.toc .num { color: #0f766e; font-weight: 700; display: inline-block; width: 18mm; }
+
+.callout { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 6px; padding: 10px 12px; font-size: 9pt; }
+</style></head><body>
+<div class="cover">
+<div><div class="brand">EduTrack / Impatrack</div>
+<h1>Portfólio de evidências</h1>
+<div class="subtitle">Innovation Lab: Desenvolvimento Avançado No/Low Code &mdash; 16 tarefas</div>
+<div class="rule"></div>
+<p class="small">Documento produzido a partir do repositório e do ambiente local de desenvolvimento, com capturas reais de execução.</p></div>
+<div><dl>
+<dt>Estudante</dt><dd>Erick Jonathan Vasquez Pereira</dd>
+<dt>RA</dt><dd>2601617</dd>
+<dt>Turma</dt><dd>CC 2A</dd>
+<dt>Data</dt><dd>19/11/2026</dd>
+<dt>Repositório</dt><dd><a href="https://github.com/ErickJV/edutrack">https://github.com/ErickJV/edutrack</a></dd>
+</dl></div>
+<footer>As telas de Xano e FlutterFlow não foram reproduzidas nem simuladas. Onde a tarefa cita essas ferramentas, o capítulo apresenta o equivalente implementado neste projeto e registra a adaptação.</footer>
+</div>
+<section class="plain">
+<h2>Sobre este documento</h2>
+<p>Este portfólio reúne as 16 tarefas da disciplina em um único documento. Cada capítulo retoma o objetivo original da tarefa, lista o que foi efetivamente entregue, apresenta evidências capturadas do repositório e do sistema em execução e fecha com a tabela de critérios e, quando necessário, uma nota de adaptação.</p>
+<p>As dezesseis tarefas escritas originalmente para Xano e FlutterFlow foram atendidas com a stack realmente usada no projeto: monorepo Django + React, versionado no GitHub, com especificação em OpenSpec. Nenhuma captura de tela foi simulada, desenhada ou editada; as imagens vêm de execução local do sistema, do editor, do navegador e do GitHub.</p>
+<h3>Stack do projeto</h3><table><thead><tr><th style="width:24%">Camada</th><th>Tecnologia</th></tr></thead><tbody>
+<tr><td>Backend</td><td>Python 3.14.10 (venv do projeto) + Django 5.2.17</td></tr>
+<tr><td>API</td><td>Django REST Framework 3.18.0 + drf-spectacular (OpenAPI 3.0)</td></tr>
+<tr><td>Banco</td><td>PostgreSQL 16 em produção; SQLite via DB_ENGINE=sqlite na execução local</td></tr>
+<tr><td>Frontend</td><td>React 19.2.8 + TypeScript 7.0.2 + Vite 8.3.8</td></tr>
+<tr><td>Estilo</td><td>Tailwind CSS 4.3.3 + Lucide React 1.37.0</td></tr>
+<tr><td>Especificações</td><td>OpenSpec 1.14.3 (spec-driven)</td></tr>
+<tr><td>Ferramentas</td><td>Git 2.56.0, Node 26.13.1, npm 11.20.0, VS Code 1.146.0</td></tr>
+</tbody></table>
+<h3>Legenda de status</h3>
+<table><thead><tr><th style="width:32%">Status</th><th>Significado</th></tr></thead><tbody><tr><td><span class="status ok">Atendido</span></td><td>O critério foi cumprido com a mesma ferramenta ou equivalente direto, com evidência no documento.</td></tr><tr><td><span class="status equiv">Atendido por equivalente</span></td><td>O objetivo foi cumprido com ferramenta diferente da citada na tarefa original.</td></tr><tr><td><span class="status partial">Parcial</span></td><td>Parte do critério está cumprida; a pendência está descrita no capítulo.</td></tr><tr><td><span class="status na">Não aplicável</span></td><td>A ferramenta citada não é usada no projeto; o equivalente está documentado.</td></tr></tbody></table>
+<div class="callout"><b>Escopo das capturas.</b> Todas as telas internas foram capturadas com um usuário de demonstração local (dados próprios, sem dados de outros estudantes). O relatório em PDF exibido no capítulo 15 foi gerado na hora para esse usuário; o artefato versionado no repositório pertence a outro estudante e aparece apenas como prova de existência. As extensões Gemini Code Assist e XanoScript não estão instaladas neste ambiente.</div>
+</section>
+<section class="toc-page">
+<h2>Sumário</h2>
+<div class="toc">
+<div><span class="num">01</span>Primeiro contato com Git e GitHub</div>
+<div><span class="num">02</span>VS Code, Node.js e assistência de IA</div>
+<div><span class="num">03</span>OpenSpec e especificação antes do código</div>
+<div><span class="num">04</span>Backend como código, não como plataforma</div>
+<div><span class="num">05</span>Branches e pull request</div>
+<div><span class="num">06</span>Pesquisa de referências visuais</div>
+<div><span class="num">07</span>Configuração do frontend e identidade visual</div>
+<div><span class="num">08</span>Primeira proposta no OpenSpec</div>
+<div><span class="num">09</span>Páginas e assets do aplicativo</div>
+<div><span class="num">10</span>AGENTS.md: regras duráveis do projeto</div>
+<div><span class="num">11</span>Tabela de tarefas acadêmicas</div>
+<div><span class="num">12</span>Script Python de cálculo de progresso</div>
+<div><span class="num">13</span>CRUD de disciplinas com baixa lógica</div>
+<div><span class="num">14</span>Busca e filtros combinados</div>
+<div><span class="num">15</span>Relatório de desempenho em PDF</div>
+<div><span class="num">16</span>Auditoria final e entrega</div>
+<div><span class="num">A</span>Apêndice A &mdash; AGENTS.md integral</div>
+<div><span class="num">B</span>Apêndice B &mdash; Inventário OpenSpec</div>
+<div><span class="num">C</span>Apêndice C &mdash; Endpoints da API</div>
+<div><span class="num">D</span>Apêndice D &mdash; Links</div>
+</div>
+<div class="callout" style="margin-top:14px">A numeração das figuras é contínua ao longo do documento. Blocos com fundo escuro são saídas literais de terminal, copiadas da execução, sem edição de conteúdo.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 01</div><h2>Primeiro contato com Git e GitHub</h2><div class="modulo">Módulo: Ferramentas e versionamento</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Configurar o Git na máquina, criar a conta no GitHub e publicar o primeiro repositório do projeto da disciplina.</p>
+<h3>O que foi entregue</h3><ul>
+<li>Git 2.56.0.windows.2 instalado e configurado com identidade institucional (<code>Erick Jonathan</code> / <code>erick.jonathan@aluno.impacta.edu.br</code>).</li>
+<li>Repositório público <code>ErickJV/edutrack</code> com README, Makefile, .env.example e as pastas <code>backend/</code>, <code>frontend/</code>, <code>openspec/</code>, <code>docs/</code> e <code>scripts/</code>.</li>
+<li>Histórico real de 110 commits entre o primeiro (<code>2e55d66</code>, 2026-09-01) e o último (<code>aa94981</code>, 2026-11-17).</li>
+<li>Branch principal única (<code>main</code>) sincronizada com <code>origin/main</code>.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/ide/t01-git.png" alt="Git configurado no terminal integrado do VS Code, com versão, identidade, log e branch"><figcaption><b>Figura 1</b> &mdash; Git configurado no terminal integrado do VS Code, com versão, identidade, log e branch. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<figure><img src="assets/github/t01-repo.png" alt="Repositório público ErickJV/edutrack: 110 commits, branch main e contribuidores"><figcaption><b>Figura 2</b> &mdash; Repositório público ErickJV/edutrack: 110 commits, branch main e contribuidores. <span class="muted">Fonte: GitHub.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Saída literal do terminal — configuração e histórico local</div><pre class="term">$ git --version
+git version 2.56.0.windows.2
+$ git config --global user.name
+Erick Jonathan
+$ git config --global user.email
+erick.jonathan@aluno.impacta.edu.br
+$ git log --oneline -15
+aa94981 feat(academic,docs): filtros de busca em disciplinas, relatorio de desempenho em PDF e documentacao do projeto (#56)
+cc03975 revert(calendario): mantém Programação Semanal antes da grade mensal
+9e25fd3 style(clippit): restaura fins de linha LF nos arquivos tocados
+2f87a5e feat(clippit): chave DeepSeek no servidor, marca Impatrack e calendário reordenado
+198cedb update: brand and icons
+fdaff9e chore(openspec): arquivar changes concluídos
+51d8e28 docs(openspec): archive perfil-configuracoes-e-dependabot
+7c40c51 feat(profile): add account settings, data export and deletion
+3d70f8c Merge pull request #52 from ErickJV/dependabot/pip/backend/gunicorn-27.0.1
+6f1f84e Merge pull request #50 from ErickJV/dependabot/pip/backend/django-allauth-65.22.1
+e51b899 Merge pull request #51 from ErickJV/dependabot/pip/backend/ruff-0.17.5
+864c4e4 build(deps-dev): bump ruff from 0.16.6 to 0.17.5 in /backend
+77b605e Merge pull request #48 from ErickJV/dependabot/pip/backend/mypy-2.4.1
+483f0ea build(deps-dev): bump mypy from 1.18.2 to 2.4.1 in /backend
+845a4cc Merge pull request #53 from ErickJV/dependabot/npm_and_yarn/frontend/vite-8.3.8
+$ git branch -a
+* main
+  remotes/origin/HEAD -&gt; origin/main
+  remotes/origin/main</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Git instalado e com identidade configurada</td><td>git --version 2.56.0.windows.2 e git config --global com e-mail institucional</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Conta no GitHub com repositório do projeto</td><td>Repositório público ErickJV/edutrack</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Primeiro commit publicado com push</td><td>2e55d66 em 2026-09-01, visível no histórico da branch main</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>README descrevendo o projeto</td><td>README.md com stack, funcionalidades e comandos de execução</td><td><span class="status ok">Atendido</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original pedia um repositório novo e vazio para o primeiro contato. Aqui o repositório já evoluiu para o EduTrack completo; o primeiro commit continua no histórico e pode ser inspecionado com git log --reverse.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 02</div><h2>VS Code, Node.js e assistência de IA</h2><div class="modulo">Módulo: Ambiente de desenvolvimento</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Instalar o VS Code, o Node.js e as extensões de apoio, habilitando assistência de IA no editor para acelerar o desenvolvimento.</p>
+<h3>O que foi entregue</h3><ul>
+<li>VS Code 1.146.0 com o monorepo aberto e o terminal integrado ativo.</li>
+<li>Node.js v26.13.1 e npm 11.20.0 disponíveis na linha de comando.</li>
+<li>Extensões instaladas: Python, Pylance, Python Envs, C/C++, CMake Tools, Java (pacote completo), Gradle e Maven.</li>
+<li>Assistência de código usada por agente de linha de comando sobre o repositório, com as regras de <code>AGENTS.md</code> e o contrato de <code>openspec/config.yaml</code>.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/ide/t02-node.png" alt="Versões de Node, npm, VS Code e a lista real de extensões instaladas"><figcaption><b>Figura 3</b> &mdash; Versões de Node, npm, VS Code e a lista real de extensões instaladas. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<figure><img src="assets/ide/t02-vscode-explorer.png" alt="Explorer do projeto com frontend/package.json (React 19.2.8, Vite 8.3.8, Tailwind 4.3.3)"><figcaption><b>Figura 4</b> &mdash; Explorer do projeto com frontend/package.json (React 19.2.8, Vite 8.3.8, Tailwind 4.3.3). <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Saída literal do terminal — Node, npm, VS Code e extensões</div><pre class="term">$ node --version
+v26.13.1
+$ npm --version
+11.20.0
+$ code --version
+1.146.0
+69047191fc427f2f92828279aae1d90d8eeda7ab
+x64
+$ code --list-extensions
+ms-python.debugpy
+ms-python.python
+ms-python.vscode-pylance
+ms-python.vscode-python-envs
+ms-vscode.cmake-tools
+ms-vscode.cpp-devtools
+ms-vscode.cpptools
+ms-vscode.cpptools-extension-pack
+ms-vscode.cpptools-themes
+redhat.java
+vscjava.vscode-gradle
+vscjava.vscode-java-debug
+vscjava.vscode-java-dependency
+vscjava.vscode-java-pack
+vscjava.vscode-java-test
+vscjava.vscode-maven</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>VS Code instalado e em uso</td><td>code --version 1.146.0 e captura do editor com o projeto aberto</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Node.js instalado</td><td>node --version v26.13.1 e npm 11.20.0</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Extensões de linguagem instaladas</td><td>code --list-extensions lista Python, Pylance, C/C++ e Java</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Assistência de IA no fluxo de trabalho</td><td>Uso de agente/CLI sobre o repositório com AGENTS.md e OpenSpec</td><td><span class="status equiv">Atendido por equivalente</span></td></tr>
+<tr><td>Extensões Gemini Code Assist e XanoScript</td><td>Não constam na lista de extensões instaladas; não foram usadas</td><td><span class="status na">Não aplicável</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original cita Gemini Code Assist e XanoScript. Nenhuma das duas extensões está instalada neste ambiente — a lista completa de extensões está na saída do terminal — e o projeto não usa Xano. A assistência de IA foi feita por agente de linha de comando com contexto do repositório.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 03</div><h2>OpenSpec e especificação antes do código</h2><div class="modulo">Módulo: Processo orientado a especificação</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Instalar e configurar o OpenSpec no repositório, criando a estrutura de especificações que orienta cada mudança antes da implementação.</p>
+<h3>O que foi entregue</h3><ul>
+<li>OpenSpec 1.14.3 instalado; estrutura <code>openspec/config.yaml</code>, <code>openspec/specs/</code> e <code>openspec/changes/</code> versionada no repositório.</li>
+<li>23 mudanças concluídas em <code>openspec/changes/archive/</code> e 6 em andamento em <code>openspec/changes/</code>.</li>
+<li><code>AGENTS.md</code> na raiz descrevendo o fluxo Explorar → Propor → Implementar → Arquivar.</li>
+<li><code>openspec validate --all</code> executado sobre o repositório inteiro: 23 itens aprovados, 0 falhas.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/ide/t03-openspec.png" alt="Versão do OpenSpec, changes em andamento e contagem real de propostas arquivadas"><figcaption><b>Figura 5</b> &mdash; Versão do OpenSpec, changes em andamento e contagem real de propostas arquivadas. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<figure><img src="assets/ide/t03-vscode-openspec.png" alt="Estrutura openspec/: archive com propostas, changes em andamento e config.yaml"><figcaption><b>Figura 6</b> &mdash; Estrutura openspec/: archive com propostas, changes em andamento e config.yaml. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Saída literal do terminal — versão, changes e contagem</div><pre class="term">$ openspec --version
+1.14.3
+$ openspec list
+Changes:
+  deepseek-llm-module                 ✓ Complete    1d ago
+  impatrack-clippit-refresh           ✓ Complete    1d ago
+  personalizar-rotina-academica       18/36 tasks   2d ago
+  completar-requisitos-academicos     0/28 tasks    2d ago
+  acompanhar-boletim-configuravel     0/23 tasks    21d ago
+  student-profile-tab                 0/6 tasks     22d ago
+$ find openspec -maxdepth 2 -type f
+openspec/config.yaml
+openspec/specs/.gitkeep
+$ ls openspec/changes/archive | grep -v &#x27;^\.&#x27; | wc -l
+23</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>OpenSpec instalado</td><td>openspec --version 1.14.3</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Estrutura de especificações criada</td><td>openspec/{changes,specs,config.yaml} versionados</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Especificações validadas</td><td>openspec validate --all: 23 aprovados, 0 falhas</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Documento de contexto para agentes</td><td>AGENTS.md na raiz com o fluxo OpenSpec</td><td><span class="status equiv">Atendido por equivalente</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original espera <code>openspec/AGENTS.md</code> e <code>openspec/project.md</code>, arquivos das versões iniciais do OpenSpec. A versão 1.14.3 organiza o contexto em <code>openspec/config.yaml</code> e mantém o documento de diretrizes em <code>AGENTS.md</code> na raiz. O equivalente está presente e validado.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 04</div><h2>Backend como código, não como plataforma</h2><div class="modulo">Módulo: Modelagem e versionamento do backend</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Modelar as tabelas do sistema em uma ferramenta de backend e manter essa definição versionada, em vez de configurá-la apenas por interface.</p>
+<h3>O que foi entregue</h3><ul>
+<li>Modelos declarados em <code>backend/apps/academic/models.py</code> (Subject, StudentSubject, AcademicTask, AcademicEvent, StudyNote, Flashcard) e versionados com o projeto.</li>
+<li>14 migrações aplicadas no app <code>academic</code>, de <code>0001_initial</code> a <code>0014_rename_summary_ai_studydocument_analysis_cache_and_more</code>.</li>
+<li>Contrato de API exposto em <code>/api/v1/</code> e documentado via OpenAPI em <code>/api/schema/</code> e <code>/api/docs/</code>.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/ide/t11-vscode-model.png" alt="models.py: classe AcademicTask com status, categoria e chaves estrangeiras"><figcaption><b>Figura 7</b> &mdash; models.py: classe AcademicTask com status, categoria e chaves estrangeiras. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Saída literal do terminal — migrações do app academic</div><pre class="term">$ python manage.py showmigrations academic
+academic
+ [X] 0001_initial
+ [X] 0002_seed_curriculum
+ [X] 0003_sync_impacta_official_curriculum
+ [X] 0004_studentsubject_custom_workload_hours
+ [X] 0005_professor_studentsubject_professor
+ [X] 0006_migrate_legacy_professor_names
+ [X] 0007_academicevent_academicterm_and_more
+ [X] 0008_studyfolder_studynote
+ [X] 0009_academicreading_studynote_reading_readinglog
+ [X] 0010_classoccurrence_attendance_and_origin
+ [X] 0011_flashcard
+ [X] 0012_academictask_all_day_academictask_category_and_more
+ [X] 0013_studydocument_studyquiz_studydocumentpage
+ [X] 0014_rename_summary_ai_studydocument_analysis_cache_and_more</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Tabelas definidas de forma declarativa</td><td>models.py com as classes de domínio acadêmico</td><td><span class="status equiv">Atendido por equivalente</span></td></tr>
+<tr><td>Definição versionada no Git</td><td>models.py e apps/academic/migrations/ no repositório</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Histórico de evolução do schema</td><td>showmigrations academic com 0001 a 0014 aplicadas</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Ferramenta Xano</td><td>Projeto não usa Xano; o backend é Django + DRF</td><td><span class="status na">Não aplicável</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original pede as tabelas no Xano, que é uma plataforma no-code. O projeto usa Django, onde a definição das tabelas é código Python versionado e o schema evolui por migrações. O efeito de «backend como código» é mais forte: toda a modelagem está no Git.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 05</div><h2>Branches e pull request</h2><div class="modulo">Módulo: Fluxo de colaboração</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Trabalhar em branch separada e integrar a <code>main</code> por pull request revisado, mantendo histórico verificável.</p>
+<h3>O que foi entregue</h3><ul>
+<li>PR #56 mergeado em 2026-11-17: filtros de busca em disciplinas, relatório de desempenho em PDF e documentação do projeto.</li>
+<li>PR com 10 arquivos alterados (+1.014 / -8) e 2 commits: <code>c962e9c</code> (busca, script de progresso e relatório) e <code>d30cecb</code> (AGENTS.md e referências).</li>
+<li>Histórico da <code>main</code> com PRs de dependências e merges rastreáveis; localmente apenas a branch <code>main</code> é mantida.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/github/t05-pr56.png" alt="PR #56 com o selo Merged, autor, branch de origem e resumo das alterações"><figcaption><b>Figura 8</b> &mdash; PR #56 com o selo Merged, autor, branch de origem e resumo das alterações. <span class="muted">Fonte: GitHub.</span></figcaption></figure>
+<figure><img src="assets/github/t05-pr56-files.png" alt="Aba Files changed do PR #56: 10 arquivos, incluindo models, views, reports.py e AGENTS.md"><figcaption><b>Figura 9</b> &mdash; Aba Files changed do PR #56: 10 arquivos, incluindo models, views, reports.py e AGENTS.md. <span class="muted">Fonte: GitHub.</span></figcaption></figure>
+<figure><img src="assets/github/t16-pulls.png" alt="Lista de pull requests: 23 fechados/mergeados, PR #56 no topo"><figcaption><b>Figura 10</b> &mdash; Lista de pull requests: 23 fechados/mergeados, PR #56 no topo. <span class="muted">Fonte: GitHub.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Saída literal do terminal — branches e merges recentes</div><pre class="term">$ git log --merges --oneline -10
+3d70f8c Merge pull request #52 from ErickJV/dependabot/pip/backend/gunicorn-27.0.1
+6f1f84e Merge pull request #50 from ErickJV/dependabot/pip/backend/django-allauth-65.22.1
+e51b899 Merge pull request #51 from ErickJV/dependabot/pip/backend/ruff-0.17.5
+77b605e Merge pull request #48 from ErickJV/dependabot/pip/backend/mypy-2.4.1
+845a4cc Merge pull request #53 from ErickJV/dependabot/npm_and_yarn/frontend/vite-8.3.8
+7d219f7 Merge pull request #49 from ErickJV/dependabot/pip/backend/djangorestframework-stubs-3.18.2
+ad71161 Merge pull request #54 from ErickJV/dependabot/npm_and_yarn/frontend/babel/preset-typescript-8.0.7
+9ac8a6e Merge pull request #55 from ErickJV/dependabot/npm_and_yarn/frontend/globals-17.14.0
+ffe81fd Merge pull request #47 from KarinyAlves/main
+4d2819a Merge branch &#x27;main&#x27; of https://github.com/ErickJV/edutrack
+$ git log --oneline -5
+aa94981 feat(academic,docs): filtros de busca em disciplinas, relatorio de desempenho em PDF e documentacao do projeto (#56)
+cc03975 revert(calendario): mantém Programação Semanal antes da grade mensal
+9e25fd3 style(clippit): restaura fins de linha LF nos arquivos tocados
+2f87a5e feat(clippit): chave DeepSeek no servidor, marca Impatrack e calendário reordenado
+198cedb update: brand and icons</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Mudança feita fora da main e integrada por PR</td><td>PR #56 com branch de origem KarinyAlves/main</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>PR revisado e mergeado</td><td>Selo Merged em 2026-11-17 atribuído a ErickJV</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Histórico limpo e verificável</td><td>git log --merges mostra os merges de PRs na main</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Branch release/final-delivery</td><td>Não existe no repositório; a entrega é feita fora do Git</td><td><span class="status partial">Parcial</span></td></tr>
+</tbody></table>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 06</div><h2>Pesquisa de referências visuais</h2><div class="modulo">Módulo: Pesquisa e repertório</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Pesquisar referências de interface para o app e registrar o que cada uma ensina, antes de desenhar telas.</p>
+<h3>O que foi entregue</h3><ul>
+<li><code>docs/pesquisa/referencias.md</code> com três referências analisadas: Notion (dashboard acadêmico), TickTick/Todoist (gestão de tarefas) e AnkiWeb/RemNote (repetição espaçada).</li>
+<li>Para cada referência: categoria, link público, pontos positivos, pontos negativos e o que foi aplicado no EduTrack.</li>
+<li>Decisões derivadas: hierarquia tipográfica, indicadores de urgência em 48 horas e Pomodoro.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/github/t06-referencias.png" alt="referencias.md no GitHub, com as seções da primeira referência analisada"><figcaption><b>Figura 11</b> &mdash; referencias.md no GitHub, com as seções da primeira referência analisada. <span class="muted">Fonte: GitHub.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Referências registradas no documento</div><pre class="doc">docs/pesquisa/referencias.md<br>1. Notion — Student &amp; Academic Dashboard Template<br>   https://www.notion.so/templates/category/school<br>2. TickTick / Todoist — Academic &amp; Task Planner<br>   https://todoist.com/templates/category/education<br>3. AnkiWeb / RemNote — Spaced Repetition &amp; Flashcards</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Pesquisa registrada em documento</td><td>docs/pesquisa/referencias.md com 3 referências</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Análise crítica (positivos e negativos)</td><td>Cada referência tem as duas listas preenchidas</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Aplicação prática no produto</td><td>Seção «Aplicação no EduTrack» em cada referência</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Dois templates Figma</td><td>Não foram usados; a pesquisa foi feita em produtos públicos</td><td><span class="status na">Não aplicável</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original pede dois templates prontos de Figma. O repositório não contém arquivos Figma: a pesquisa foi feita nos produtos de referência e ficou registrada em Markdown.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 07</div><h2>Configuração do frontend e identidade visual</h2><div class="modulo">Módulo: Frontend</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Configurar o projeto de frontend, tema e navegação, com as telas principais conectadas ao backend.</p>
+<h3>O que foi entregue</h3><ul>
+<li>Frontend React 19.2.8 + TypeScript + Vite 8.3.8 com Tailwind CSS 4.3.3 e Lucide React.</li>
+<li>Tema teal/slate com alternância claro/escuro/sistema, tipografia própria e componentes reutilizados (Brand, AppNavigation, ThemeToggle).</li>
+<li>Tela de login institucional, cadastro, conclusão de perfil e as sete páginas internas.</li>
+<li>Aplicação publicada em <code>https://impatrack.dev</code>, consumindo a API em <code>/api/v1/</code>.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/app/t07-login.png" alt="Tela de entrada com identidade Impatrack e formulário institucional"><figcaption><b>Figura 12</b> &mdash; Tela de entrada com identidade Impatrack e formulário institucional. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/app/t07-home.png" alt="Página inicial com navegação principal e itens urgentes das próximas 48 horas"><figcaption><b>Figura 13</b> &mdash; Página inicial com navegação principal e itens urgentes das próximas 48 horas. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/app/t07-home-metricas.png" alt="Painel acadêmico da home: disciplinas, tarefas, progresso ponderado e tempo de estudo"><figcaption><b>Figura 14</b> &mdash; Painel acadêmico da home: disciplinas, tarefas, progresso ponderado e tempo de estudo. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Dependências reais do frontend</div><pre class="doc">&quot;name&quot;: &quot;edutrack-frontend&quot;<br>&quot;dependencies&quot;: {<br>  &quot;@tailwindcss/vite&quot;: &quot;4.3.3&quot;,<br>  &quot;lucide-react&quot;: &quot;1.37.0&quot;,<br>  &quot;react&quot;: &quot;19.2.8&quot;,<br>  &quot;react-dom&quot;: &quot;19.2.8&quot;,<br>  &quot;react-router-dom&quot;: &quot;7.18.3&quot;,<br>  &quot;tailwindcss&quot;: &quot;4.3.3&quot;<br>},<br>&quot;devDependencies&quot;: {<br>  &quot;typescript&quot;: &quot;7.0.2&quot;,<br>  &quot;vite&quot;: &quot;8.3.8&quot;<br>}</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Projeto de frontend configurado</td><td>package.json com React 19.2.8, Vite 8.3.8 e Tailwind 4.3.3</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Tema e identidade aplicados</td><td>Capturas de login e home com a marca e as cores do produto</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Navegação entre as telas</td><td>Barra com Início, Calendário, Tarefas, Anotações, Flashcards, Disciplinas e Perfil</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Integração com o backend</td><td>Consumo de /api/v1/ com sessão autenticada</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Ferramenta FlutterFlow</td><td>Frontend implementado em React; FlutterFlow não foi usado</td><td><span class="status na">Não aplicável</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original usa FlutterFlow. Neste projeto o frontend é código React com Vite, o que permite versionar componentes e reaproveitar a mesma API já usada no restante do sistema. Os objetivos de configuração de projeto, tema e navegação estão cumpridos.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 08</div><h2>Primeira proposta no OpenSpec</h2><div class="modulo">Módulo: Especificação</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Escrever a primeira proposta de mudança no OpenSpec, descrevendo problema, escopo e impacto antes de implementar.</p>
+<h3>O que foi entregue</h3><ul>
+<li>Proposta <code>2026-11-16-gestao-academica-e-estudos</code> com <code>proposal.md</code>, <code>design.md</code>, <code>tasks.md</code>, <code>specs/</code> e <code>.openspec.yaml</code>.</li>
+<li>Estrutura da proposta em Why / What Changes / Capabilities / Impact, com capacidades novas e modificadas explicitadas.</li>
+<li>Proposta arquivada após conclusão, junto das outras 22 concluídas.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/github/t08-proposal.png" alt="Pasta da proposta arquivada no GitHub: proposal.md, design.md, tasks.md e specs"><figcaption><b>Figura 15</b> &mdash; Pasta da proposta arquivada no GitHub: proposal.md, design.md, tasks.md e specs. <span class="muted">Fonte: GitHub.</span></figcaption></figure>
+<figure><img src="assets/ide/t08-vscode-proposal.png" alt="proposal.md aberto no editor com as seções Why, What Changes, Capabilities e Impact"><figcaption><b>Figura 16</b> &mdash; proposal.md aberto no editor com as seções Why, What Changes, Capabilities e Impact. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Proposta criada no local correto</td><td>openspec/changes/archive/2026-11-16-gestao-academica-e-estudos</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Problema e escopo descritos</td><td>Seções Why e What Changes preenchidas</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Capacidades e impacto declarados</td><td>Seções Capabilities e Impact com módulos e riscos</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Proposta validada pela ferramenta</td><td>openspec validate --all aprovando os 23 itens</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Comando /openspec:proposal</td><td>Proposta escrita pelo CLI/agente, não por slash command do editor</td><td><span class="status equiv">Atendido por equivalente</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original descreve o comando de barra <code>/openspec:proposal</code> em um editor com essa extensão. Aqui a proposta foi escrita por CLI/agente seguindo o mesmo formato de artefatos, e validada com <code>openspec validate</code>.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 09</div><h2>Páginas e assets do aplicativo</h2><div class="modulo">Módulo: Interface</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Construir as páginas principais do aplicativo, com assets organizados e navegação consistente entre elas.</p>
+<h3>O que foi entregue</h3><ul>
+<li>Sete páginas implementadas: Início, Calendário, Tarefas, Anotações, Flashcards, Disciplinas e Perfil.</li>
+<li>Barra de navegação fixa com a ordem padronizada e Perfil alinhado à direita.</li>
+<li>Assets em <code>frontend/public/</code>: favicon, ícone da marca, imagem do Clippit e a galeria de 11 prints de CRUD.</li>
+<li>Layout responsivo mobile-first a partir de 360px, com tema claro e escuro.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/app/t09-disciplinas.png" alt="Disciplinas: cinco matérias ativas, média de progresso e carga horária"><figcaption><b>Figura 17</b> &mdash; Disciplinas: cinco matérias ativas, média de progresso e carga horária. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/app/t09-tarefas.png" alt="Tarefas: formulário rápido, contadores e filtros por disciplina e status"><figcaption><b>Figura 18</b> &mdash; Tarefas: formulário rápido, contadores e filtros por disciplina e status. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/app/t09-calendario.png" alt="Calendário acadêmico com programação semanal e ações rápidas"><figcaption><b>Figura 19</b> &mdash; Calendário acadêmico com programação semanal e ações rápidas. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/app/t09-estudo.png" alt="Anotações: cadernos, editor com pauta e ferramentas de formatação"><figcaption><b>Figura 20</b> &mdash; Anotações: cadernos, editor com pauta e ferramentas de formatação. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/app/t09-flashcards.png" alt="Flashcards: repetição espaçada, seis cards e virar cartão em 3D"><figcaption><b>Figura 21</b> &mdash; Flashcards: repetição espaçada, seis cards e virar cartão em 3D. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/app/t09-perfil.png" alt="Perfil: dados pessoais e acadêmicos editáveis"><figcaption><b>Figura 22</b> &mdash; Perfil: dados pessoais e acadêmicos editáveis. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/github/t13-prints.png" alt="frontend/public/prints com as 11 capturas de CRUD versionadas"><figcaption><b>Figura 23</b> &mdash; frontend/public/prints com as 11 capturas de CRUD versionadas. <span class="muted">Fonte: GitHub.</span></figcaption></figure>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Páginas principais criadas</td><td>Sete rotas implementadas e capturadas em execução</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Navegação entre páginas</td><td>AppNavigation presente em todas as telas internas</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Assets organizados</td><td>frontend/public/ com favicon, marca, clippit e prints</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Pasta assets/ na raiz do projeto</td><td>Não existe; os assets ficam em frontend/public/</td><td><span class="status equiv">Atendido por equivalente</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original pede uma pasta <code>assets/</code> na raiz do app. Neste projeto os assets estáticos do frontend ficam em <code>frontend/public/</code>, que é o diretório servido pelo Vite — mesmo papel, local diferente.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 10</div><h2>AGENTS.md: regras duráveis do projeto</h2><div class="modulo">Módulo: Governança técnica</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Documentar em AGENTS.md as regras que qualquer agente ou pessoa deve seguir no repositório: arquitetura, segurança, contratos e fluxo de trabalho.</p>
+<h3>O que foi entregue</h3><ul>
+<li><code>AGENTS.md</code> na raiz com cinco seções: visão geral e arquitetura, regras de domínio e segurança, contratos de API e rotas, fluxo OpenSpec e convenções de Git/validação.</li>
+<li>Regra de isolamento por usuário (<code>filter(user=request.user)</code>) e proibição de SQL concatenado, com validação de upload por assinatura binária.</li>
+<li>Convenção de commits em Conventional Commits em português e comandos de verificação do backend, frontend e scripts.</li>
+<li>Conteúdo integral reproduzido no Apêndice A deste documento.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/ide/t10-vscode-agents.png" alt="AGENTS.md no editor: seções de segurança, contratos de API e fluxo OpenSpec"><figcaption><b>Figura 24</b> &mdash; AGENTS.md no editor: seções de segurança, contratos de API e fluxo OpenSpec. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<figure><img src="assets/github/t10-agents.png" alt="AGENTS.md renderizado no GitHub em 63 linhas"><figcaption><b>Figura 25</b> &mdash; AGENTS.md renderizado no GitHub em 63 linhas. <span class="muted">Fonte: GitHub.</span></figcaption></figure>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Arquivo AGENTS.md na raiz</td><td>AGENTS.md versionado e referenciado no README</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Regras de segurança explícitas</td><td>Seção 2 com isolamento por usuário, SQLi e autenticação</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Contratos de API documentados</td><td>Seção 3 com os endpoints de /api/v1/</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Fluxo de trabalho e validação</td><td>Seção 4 (OpenSpec) e seção 5 (Git e comandos)</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Teste do arquivo com chat Gemini</td><td>Não executado; não há extensão Gemini neste ambiente</td><td><span class="status partial">Parcial</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original propõe validar o arquivo conversando com um assistente no editor. A validação aqui foi prática: as regras foram aplicadas no código do repositório — por exemplo, o filtro por usuário nas views — e verificadas por testes automatizados.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 11</div><h2>Tabela de tarefas acadêmicas</h2><div class="modulo">Módulo: Modelagem de dados</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Criar a tabela de tarefas acadêmicas com os campos necessários para prazo, status e tempo gasto, e expor o CRUD correspondente.</p>
+<h3>O que foi entregue</h3><ul>
+<li>Modelo <code>AcademicTask</code> com <code>user</code>, <code>student_subject</code>, <code>title</code>, <code>description</code>, <code>due_date</code>, <code>status</code>, <code>estimated_minutes</code>, <code>actual_minutes</code>, <code>completed_at</code>, <code>category</code> e <code>all_day</code>.</li>
+<li>Migração <code>0012_academictask_all_day_academictask_category_and_more</code> aplicada.</li>
+<li>CRUD em <code>/api/v1/tasks</code> e <code>/api/v1/tasks/{id}</code>, com ação <code>toggle-complete</code>.</li>
+<li>Tarefa registrada no Django Admin, com evidência pela API e pela galeria de prints.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/ide/t11-vscode-model.png" alt="AcademicTask: status (pendente, em andamento, concluída), categoria e relações"><figcaption><b>Figura 26</b> &mdash; AcademicTask: status (pendente, em andamento, concluída), categoria e relações. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<figure><img src="assets/prints/crud_tasks_post.png" alt="POST /api/v1/tasks criando uma tarefa (201 Created)"><figcaption><b>Figura 27</b> &mdash; POST /api/v1/tasks criando uma tarefa (201 Created). <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/prints/crud_tasks_get.png" alt="GET /api/v1/tasks listando as tarefas do estudante (200 OK)"><figcaption><b>Figura 28</b> &mdash; GET /api/v1/tasks listando as tarefas do estudante (200 OK). <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/prints/crud_tasks_patch.png" alt="PATCH /api/v1/tasks/{id} atualizando uma tarefa"><figcaption><b>Figura 29</b> &mdash; PATCH /api/v1/tasks/{id} atualizando uma tarefa. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/prints/crud_tasks_delete.png" alt="DELETE /api/v1/tasks/{id} removendo uma tarefa"><figcaption><b>Figura 30</b> &mdash; DELETE /api/v1/tasks/{id} removendo uma tarefa. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Saída literal do terminal — migrações do app</div><pre class="term">$ python manage.py showmigrations academic
+academic
+ [X] 0001_initial
+ [X] 0002_seed_curriculum
+ [X] 0003_sync_impacta_official_curriculum
+ [X] 0004_studentsubject_custom_workload_hours
+ [X] 0005_professor_studentsubject_professor
+ [X] 0006_migrate_legacy_professor_names
+ [X] 0007_academicevent_academicterm_and_more
+ [X] 0008_studyfolder_studynote
+ [X] 0009_academicreading_studynote_reading_readinglog
+ [X] 0010_classoccurrence_attendance_and_origin
+ [X] 0011_flashcard
+ [X] 0012_academictask_all_day_academictask_category_and_more
+ [X] 0013_studydocument_studyquiz_studydocumentpage
+ [X] 0014_rename_summary_ai_studydocument_analysis_cache_and_more</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Tabela de tarefas criada</td><td>Modelo AcademicTask com migração 0012 aplicada</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Campos de prazo, status e tempo</td><td>due_date, status, estimated_minutes, actual_minutes, completed_at</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>CRUD disponível</td><td>GET/POST/PUT/PATCH/DELETE em /api/v1/tasks</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Registro visível no admin</td><td>AcademicTask registrada no admin; a folha de estilo do admin é bloqueada pelo CSP do projeto (middleware default-src 'none')</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Ferramenta Xano</td><td>Tabela modelada em Django ORM</td><td><span class="status na">Não aplicável</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original cria a tabela no Xano. Aqui a mesma estrutura é um modelo Django com migração versionada. A interface do Django Admin responde 200, mas nesta execução o cabeçalho <code>Content-Security-Policy: default-src 'none'</code> de <code>edutrack/middleware.py</code> bloqueia os assets do admin; por isso a evidência do CRUD vem da API e da galeria de prints.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 12</div><h2>Script Python de cálculo de progresso</h2><div class="modulo">Módulo: Automação e lógica</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Escrever um script Python que calcule o progresso acadêmico por disciplina, tratando casos limite como ausência de tarefas.</p>
+<h3>O que foi entregue</h3><ul>
+<li><code>scripts/calculate_progress.py</code> com <code>calculate_task_progress</code>, que devolve total, concluídas, pendentes e percentual.</li>
+<li>Guarda de divisão por zero: quando <code>total == 0</code>, o progresso é 0.0.</li>
+<li><code>calculate_weighted_progress</code>, que pondera o progresso pela carga horária de cada disciplina.</li>
+<li>Saída em tabela formatada por disciplina, com total geral e progresso ponderado.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/ide/t12-vscode-script.png" alt="calculate_progress.py: normalização de entradas, guarda de divisão por zero e retorno estruturado"><figcaption><b>Figura 31</b> &mdash; calculate_progress.py: normalização de entradas, guarda de divisão por zero e retorno estruturado. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Saída literal do terminal — execução do script</div><pre class="term">$ python ../scripts/calculate_progress.py
+==========================================================================
+EDUTRACK - RELATORIO DE PROGRESSO DE TAREFAS POR DISCIPLINA
+==========================================================================
+Disciplina                               |   CH | Concl./Total | Progresso
+--------------------------------------------------------------------------
+Agile Software Development               |  80h |          4/5 |     80.0%
+Data Governance                          |  80h |          3/4 |     75.0%
+Distributed Systems &amp; Cloud Computing    |  80h |          4/6 |     66.7%
+Inovacao Lab - No/Low Code               |  40h |          7/8 |     87.5%
+Artificial Intelligence Fundamentals     |  80h |          0/0 |      0.0%
+--------------------------------------------------------------------------
+Total Geral de Tarefas : 18/23 concluidas (78.3%)
+Progresso Ponderado CH : 59.0%
+==========================================================================
+
+$ DJANGO_SETTINGS_MODULE=edutrack.settings python ../scripts/calculate_progress.py
+==========================================================================
+EDUTRACK - RELATORIO DE PROGRESSO DE TAREFAS POR DISCIPLINA
+==========================================================================
+Disciplina                               |   CH | Concl./Total | Progresso
+--------------------------------------------------------------------------
+AI &amp; Machine Learning                    |  80h |          1/2 |     50.0%
+Data Governance                          |  80h |          1/2 |     50.0%
+Innovation Lab: SaaS Product             |  80h |          1/2 |     50.0%
+Mobile Applications                      |  80h |          0/4 |      0.0%
+Software Quality Assurance               |  80h |          1/2 |     50.0%
+--------------------------------------------------------------------------
+Total Geral de Tarefas : 4/12 concluidas (33.3%)
+Progresso Ponderado CH : 40.0%
+==========================================================================</pre>
+<div class="label">Saída literal do terminal — casos limite (0,0), (10,7) e (5,9)</div><pre class="term">$ python -c &quot;from scripts.calculate_progress import calculate_task_progress as f; print(f(0,0)); print(f(10,7)); print(f(5,9))&quot;
+(0, 0) -&gt; {&#x27;total_tasks&#x27;: 0, &#x27;completed_tasks&#x27;: 0, &#x27;pending_tasks&#x27;: 0, &#x27;progress_percent&#x27;: 0.0, &#x27;formatted&#x27;: &#x27;0.0%&#x27;}
+(10, 7) -&gt; {&#x27;total_tasks&#x27;: 10, &#x27;completed_tasks&#x27;: 7, &#x27;pending_tasks&#x27;: 3, &#x27;progress_percent&#x27;: 70.0, &#x27;formatted&#x27;: &#x27;70.0%&#x27;}
+(5, 9) -&gt; {&#x27;total_tasks&#x27;: 5, &#x27;completed_tasks&#x27;: 5, &#x27;pending_tasks&#x27;: 0, &#x27;progress_percent&#x27;: 100.0, &#x27;formatted&#x27;: &#x27;100.0%&#x27;}</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Script Python funcional</td><td>python ../scripts/calculate_progress.py imprime a tabela por disciplina</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Percentual por disciplina</td><td>calculate_task_progress devolve progress_percent e formatted</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Tratamento de zero tarefas</td><td>f(0,0) retorna progress_percent 0.0, sem exceção</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Ponderação por carga horária</td><td>calculate_weighted_progress usa workload_hours de cada disciplina</td><td><span class="status ok">Atendido</span></td></tr>
+</tbody></table>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 13</div><h2>CRUD de disciplinas com baixa lógica</h2><div class="modulo">Módulo: API e regras de domínio</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Implementar o CRUD de disciplinas do aluno, incluindo remoção com baixa lógica e documentação dos endpoints.</p>
+<h3>O que foi entregue</h3><ul>
+<li><code>GET|POST /api/v1/student-subjects</code> e <code>GET|PUT|PATCH|DELETE /api/v1/student-subjects/{id}</code>.</li>
+<li><code>DELETE</code> faz baixa lógica: o registro muda para <code>status="dropped"</code> e a resposta é <code>204 No Content</code>.</li>
+<li>Isolamento por usuário: toda consulta passa por <code>filter(user=user)</code>, onde <code>user</code> vem de <code>self.request.user</code>.</li>
+<li>Endpoints documentados no Swagger em <code>/api/docs/</code> e cada verbo evidenciado na galeria /prints.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/app/t13-swagger.png" alt="Swagger UI com os endpoints /api/v1/ e os verbos disponíveis"><figcaption><b>Figura 32</b> &mdash; Swagger UI com os endpoints /api/v1/ e os verbos disponíveis. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/app/t13-prints-page.png" alt="Galeria /prints: 11 operações reais com payload e resposta"><figcaption><b>Figura 33</b> &mdash; Galeria /prints: 11 operações reais com payload e resposta. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/prints/crud_subjects_post.png" alt="POST /api/v1/student-subjects criando a disciplina"><figcaption><b>Figura 34</b> &mdash; POST /api/v1/student-subjects criando a disciplina. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/prints/crud_subjects_get.png" alt="GET /api/v1/student-subjects listando as disciplinas"><figcaption><b>Figura 35</b> &mdash; GET /api/v1/student-subjects listando as disciplinas. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/prints/crud_subjects_patch.png" alt="PATCH /api/v1/student-subjects/{id} atualizando a disciplina"><figcaption><b>Figura 36</b> &mdash; PATCH /api/v1/student-subjects/{id} atualizando a disciplina. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Listagem e criação de disciplinas</td><td>GET e POST em /api/v1/student-subjects</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Detalhe, atualização e remoção</td><td>GET/PUT/PATCH/DELETE em /api/v1/student-subjects/{id}</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Baixa lógica na remoção</td><td>DELETE muda status para dropped e responde 204 (verificado no teste)</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Isolamento por usuário</td><td>filter(user=user) em todas as consultas da view</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Ferramenta Xano</td><td>Endpoints implementados em DRF</td><td><span class="status na">Não aplicável</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original cria os endpoints no Xano. Aqui o CRUD é implementado em Django REST Framework, com as mesmas operações e uma regra adicional de baixa lógica, verificada por teste automatizado.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 14</div><h2>Busca e filtros combinados</h2><div class="modulo">Módulo: Consulta e filtros</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Permitir busca textual e filtros combinados nas disciplinas e tarefas, com resultado correto e previsível.</p>
+<h3>O que foi entregue</h3><ul>
+<li>Parâmetros <code>search</code> e <code>q</code> filtram nome, código e professor da disciplina via <code>icontains</code> no ORM.</li>
+<li>Parâmetros <code>has_overdue_tasks</code> e <code>overdue</code> retornam apenas disciplinas com tarefa não concluída e prazo vencido.</li>
+<li>Busca de tarefas por título, descrição e disciplina em <code>/api/v1/tasks</code>.</li>
+<li>Teste automatizado cobre os dois filtros: cada um retorna exatamente uma disciplina.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/ide/t13-vscode-view.png" alt="get_queryset com filtro por usuário, semestre, search/q e has_overdue_tasks"><figcaption><b>Figura 37</b> &mdash; get_queryset com filtro por usuário, semestre, search/q e has_overdue_tasks. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Saída literal — respostas reais da API com filtros</div><pre class="term">usuario autenticado: erick.demo@aluno.impacta.edu.br
+======================================================================
+GET /api/v1/student-subjects?search=Governance  -&gt;  HTTP 200
+itens retornados: 1
+[
+  {
+    &quot;id&quot;: &quot;619bdfd0-3d18-43ad-8e78-20c78ea80c44&quot;,
+    &quot;subject&quot;: {
+      &quot;id&quot;: &quot;93fee105-e9ac-4089-b4ba-29651d101a09&quot;,
+      &quot;course&quot;: &quot;575e1fff-48f8-5b8c-8a3f-72c79cef547f&quot;,
+      &quot;course_name&quot;: &quot;Análise e Desenvolvimento de Sistemas&quot;,
+      &quot;name&quot;: &quot;Data Governance&quot;,
+      &quot;code&quot;: &quot;ADS599&quot;,
+      &quot;semester&quot;: 5,
+      &quot;workload_hours&quot;: 80,
+      &quot;description&quot;: &quot;Disciplina do semestre de demonstracao.&quot;,
+      &quot;active&quot;: true
+    },
+    &quot;professor&quot;: null,
+    &quot;professor_name&quot;: &quot;Prof. Dr. Marcelo Tanaka&quot;,
+    &quot;display_professor_name&quot;: &quot;Prof. Dr. Marcelo Tanaka&quot;,
+    &quot;term&quot;: {
+      &quot;id&quot;: &quot;5f14b66c-aec7-49d6-a5e2-c4d0d60f5f80&quot;,
+      &quot;name&quot;: &quot;2026/2&quot;,
+      &quot;start_date&quot;: &quot;2026-08-03&quot;,
+      &quot;end_date&quot;: &quot;2026-12-12&quot;,
+      &quot;timezone&quot;: &quot;America/Sao_Paulo&quot;,
+      &quot;created_at&quot;: &quot;2026-11-19T12:31:16.242588-03:00&quot;,
+      &quot;updated_at&quot;: &quot;2026-11-19T12:31:16.242601-03:00&quot;
+    },
+    &quot;custom_workload_hours&quot;: null,
+    &quot;effective_workload_hours&quot;: 80,
+    &quot;status&quot;: &quot;active&quot;,
+    &quot;semester_period&quot;: &quot;2026/2&quot;,
+    &quot;progress_percent&quot;: 50,
+    &quot;created_at&quot;: &quot;2026-11-19T12:31:16.265075-03:00&quot;,
+    &quot;updated_at&quot;: &quot;2026-11-19T12:31:16.265086-03:00&quot;
+  }
+]
+======================================================================
+GET /api/v1/student-subjects?has_overdue_tasks=true  -&gt;  HTTP 200
+itens retornados: 1
+[
+  {
+    &quot;id&quot;: &quot;765160f3-04bb-4320-8bca-341401f3bb07&quot;,
+    &quot;subject&quot;: {
+      &quot;id&quot;: &quot;fa0bd21c-e66b-5681-8df4-ef0d4b361275&quot;,
+      &quot;course&quot;: &quot;575e1fff-48f8-5b8c-8a3f-72c79cef547f&quot;,
+      &quot;course_name&quot;: &quot;Análise e Desenvolvimento de Sistemas&quot;,
+      &quot;name&quot;: &quot;Mobile Applications&quot;,
+      &quot;code&quot;: &quot;ADS503&quot;,
+      &quot;semester&quot;: 5,
+      &quot;workload_hours&quot;: 80,
+      &quot;description&quot;: &quot;Desenvolvimento de Aplicativos Móveis (Android). • Linguagem de Programação Dart. • Componentes Visuais de Aplicativo Mobile. • Aplicação Mobile com Armazenamento de Dados. • App Mobile com consumo de serviços na web e APIs.&quot;,
+      &quot;active&quot;: true
+    },
+    &quot;professor&quot;: null,
+    &quot;professor_name&quot;: &quot;Prof. Dr. Caio Bernardes&quot;,
+    &quot;display_professor_name&quot;: &quot;Prof. Dr. Caio Bernardes&quot;,
+    &quot;term&quot;: {
+      &quot;id&quot;: &quot;5f14b66c-aec7-49d6-a5e2-c4d0d60f5f80&quot;,
+      &quot;name&quot;: &quot;2026/2&quot;,
+      &quot;start_date&quot;: &quot;2026-08-03&quot;,
+      &quot;end_date&quot;: &quot;2026-12-12&quot;,
+      &quot;timezone&quot;: &quot;America/Sao_Paulo&quot;,
+      &quot;created_at&quot;: &quot;2026-11-19T12:31:16.242588-03:00&quot;,
+      &quot;updated_at&quot;: &quot;2026-11-19T12:31:16.242601-03:00&quot;
+    },
+    &quot;custom_workload_hours&quot;: null,
+    &quot;effective_workload_hours&quot;: 80,
+    &quot;status&quot;: &quot;active&quot;,
+    &quot;semester_period&quot;: &quot;2026/2&quot;,
+    &quot;progress_percent&quot;: 0,
+    &quot;created_at&quot;: &quot;2026-11-19T12:31:16.256352-03:00&quot;,
+    &quot;updated_at&quot;: &quot;2026-11-19T12:31:16.256363-03:00&quot;
+  }
+]
+======================================================================
+GET /api/v1/tasks?search=Prova  -&gt;  HTTP 200
+itens retornados: 2
+[
+  {
+    &quot;id&quot;: &quot;93f25a5e-24a9-4d8b-b329-ad4426b2f08f&quot;,
+    &quot;student_subject&quot;: &quot;c0fe0afe-7ce2-4e83-9f22-41a4249955d0&quot;,
+    &quot;subject_id&quot;: &quot;076c2c90-9307-5463-a6e7-d812f971f381&quot;,
+    &quot;subject_name&quot;: &quot;Software Quality Assurance&quot;,
+    &quot;subject_semester&quot;: 5,
+    &quot;category&quot;: &quot;exam&quot;,
+    &quot;title&quot;: &quot;Prova AP1&quot;,
+    &quot;description&quot;: &quot;Atividade concluida da disciplina de demonstracao.&quot;,
+    &quot;due_date&quot;: &quot;2026-10-30T12:31:16.062382-03:00&quot;,
+    &quot;end_date&quot;: null,
+    &quot;all_day&quot;: false,
+    &quot;room&quot;: &quot;&quot;,
+    &quot;status&quot;: &quot;completed&quot;,
+    &quot;estimated_minutes&quot;: 120,
+    &quot;actual_minutes&quot;: 110,
+    &quot;completed_at&quot;: &quot;2026-10-30T15:31:16.062382-03:00&quot;,
+    &quot;created_at&quot;: &quot;2026-11-19T12:31:16.284498-03:00&quot;,
+    &quot;updated_at&quot;: &quot;2026-11-19T12:31:16.284504-03:00&quot;
+  },
+  {
+    &quot;id&quot;: &quot;7fa0105f-0314-4035-9852-da5b43f71153&quot;,
+    &quot;student_subject&quot;: &quot;7713e5c5-1171-44c4-9d4b-7471887d3dcc&quot;,
+    &quot;subject_id&quot;: &quot;92d3f490-5f87-5069-ab65-fc9562cb5e60&quot;,
+    &quot;subject_name&quot;: &quot;AI &amp; Machine Learning&quot;,
+    &quot;subject_semester&quot;: 5,
+    &quot;category&quot;: &quot;exam&quot;,
+    &quot;title&quot;: &quot;Prova AP2&quot;,
+    &quot;description&quot;: &quot;Atividade planejada da disciplina de demonstracao.&quot;,
+    &quot;due_date&quot;: &quot;2026-11-25T12:31:16.062382-03:00&quot;,
+    &quot;end_date&quot;: null,
+    &quot;all_day&quot;: false,
+    &quot;room&quot;: &quot;&quot;,
+    &quot;status&quot;: &quot;pending&quot;,
+    &quot;estimated_minutes&quot;: 120,
+    &quot;actual_minutes&quot;: 0,
+    &quot;completed_at&quot;: null,
+    &quot;created_at&quot;: &quot;2026-11-19T12:31:16.289782-03:00&quot;,
+    &quot;updated_at&quot;: &quot;2026-11-19T12:31:16.289788-03:00&quot;
+  }
+]
+======================================================================</pre>
+<div class="label">Saída literal do terminal — teste de busca</div><pre class="term">$ DB_ENGINE=sqlite python manage.py test apps.academic.tests.FlashcardsAndNotesQualityTests.test_advanced_search_and_pdf_report_generation -v 2
+Found 1 test(s).
+Creating test database for alias &#x27;default&#x27; (&#x27;file:memorydb_default?mode=memory&amp;cache=shared&#x27;)...
+
+Operations to perform:
+  Synchronize unmigrated apps: allauth, assistant, drf_spectacular, google, headless, llm, messages, rest_framework, staticfiles
+  Apply all migrations: academic, account, accounts, admin, auth, catalog, contenttypes, legal, sessions, sites, socialaccount, usersessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying catalog.0001_initial... OK
+  Applying catalog.0002_seed_courses... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying accounts.0001_initial... OK
+  Applying academic.0001_initial... OK
+  Applying academic.0002_seed_curriculum... OK
+  Applying academic.0003_sync_impacta_official_curriculum... OK
+  Applying academic.0004_studentsubject_custom_workload_hours... OK
+  Applying academic.0005_professor_studentsubject_professor... OK
+  Applying academic.0006_migrate_legacy_professor_names... OK
+  Applying academic.0007_academicevent_academicterm_and_more... OK
+  Applying academic.0008_studyfolder_studynote... OK
+  Applying academic.0009_academicreading_studynote_reading_readinglog... OK
+  Applying academic.0010_classoccurrence_attendance_and_origin... OK
+  Applying academic.0011_flashcard... OK
+  Applying academic.0012_academictask_all_day_academictask_category_and_more... OK
+  Applying academic.0013_studydocument_studyquiz_studydocumentpage... OK
+  Applying academic.0014_rename_summary_ai_studydocument_analysis_cache_and_more... OK
+  Applying account.0001_initial... OK
+  Applying account.0002_email_max_length... OK
+  Applying account.0003_alter_emailaddress_create_unique_verified_email... OK
+  Applying account.0004_alter_emailaddress_drop_unique_email... OK
+  Applying account.0005_emailaddress_idx_upper_email... OK
+  Applying account.0006_emailaddress_lower... OK
+  Applying account.0007_emailaddress_idx_email... OK
+  Applying account.0008_emailaddress_unique_primary_email_fixup... OK
+  Applying account.0009_emailaddress_unique_primary_email... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+  Applying accounts.0002_configure_site... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying legal.0001_initial... OK
+  Applying legal.0002_seed_documents... OK
+  Applying sessions.0001_initial... OK
+  Applying socialaccount.0001_initial... OK
+  Applying socialaccount.0002_token_max_lengths... OK
+  Applying socialaccount.0003_extra_data_default_dict... OK
+  Applying socialaccount.0004_app_provider_id_settings... OK
+  Applying socialaccount.0005_socialtoken_nullable_app... OK
+  Applying socialaccount.0006_alter_socialaccount_extra_data... OK
+  Applying usersessions.0001_initial... OK
+System check identified no issues (0 silenced).
+test_advanced_search_and_pdf_report_generation (apps.academic.tests.FlashcardsAndNotesQualityTests.test_advanced_search_and_pdf_report_generation) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.138s
+
+OK
+Destroying test database for alias &#x27;default&#x27; (&#x27;file:memorydb_default?mode=memory&amp;cache=shared&#x27;)...</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Busca textual por disciplina</td><td>?search=Governance retorna 1 disciplina (Data Governance)</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Filtro por tarefas atrasadas</td><td>?has_overdue_tasks=true retorna 1 disciplina (Mobile Applications)</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Busca em tarefas</td><td>?search= no endpoint de tarefas filtra título e descrição</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Cobertura por teste automatizado</td><td>test_advanced_search_and_pdf_report_generation: OK</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Campo de busca na interface de disciplinas</td><td>A interface não expõe campo de texto; o filtro está na API e no Swagger</td><td><span class="status equiv">Atendido por equivalente</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original pede busca híbrida (plataforma + script). Aqui a busca roda no ORM do Django, que é o caminho natural deste backend, e o Python atua no progresso e no relatório. A tela de disciplinas não tem campo de texto: o filtro é consumido pela API e documentado no Swagger, por isso a evidência é a resposta JSON real.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 15</div><h2>Relatório de desempenho em PDF</h2><div class="modulo">Módulo: Geração de documentos</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Gerar um relatório de desempenho acadêmico em PDF a partir dos dados do estudante, com um endpoint dedicado.</p>
+<h3>O que foi entregue</h3><ul>
+<li><code>GET /api/v1/reports/generate</code> devolve <code>application/pdf</code> iniciando com <code>%PDF-</code>.</li>
+<li>Geração em <code>apps/academic/reports.py</code> com apoio de <code>pypdf</code>, sem biblioteca de layout externa.</li>
+<li>Relatório com indicadores consolidados, desempenho por disciplina e relação de tarefas com prazo e status.</li>
+<li>Artefato versionado em <code>docs/relatorio-desempenho-edutrack.pdf</code>.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/app/t15-relatorio.png" alt="PDF gerado para o usuário de demonstração: indicadores, desempenho por disciplina e tarefas"><figcaption><b>Figura 38</b> &mdash; PDF gerado para o usuário de demonstração: indicadores, desempenho por disciplina e tarefas. <span class="muted">Fonte: Execução do projeto.</span></figcaption></figure>
+<figure><img src="assets/ide/t15-vscode-docs.png" alt="Pasta docs/ com o relatório versionado e os documentos de pesquisa e planejamento"><figcaption><b>Figura 39</b> &mdash; Pasta docs/ com o relatório versionado e os documentos de pesquisa e planejamento. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<figure><img src="assets/github/t15-report.png" alt="docs/ no GitHub com relatorio-desempenho-edutrack.pdf versionado"><figcaption><b>Figura 40</b> &mdash; docs/ no GitHub com relatorio-desempenho-edutrack.pdf versionado. <span class="muted">Fonte: GitHub.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Saída literal do terminal — metadados do PDF versionado</div><pre class="term">$ ls -lh docs/relatorio-desempenho-edutrack.pdf
+-rwxrwxrwx 1 somebody somegroup 6.9K Nov 17 19:50 docs/relatorio-desempenho-edutrack.pdf
+
+$ python -c &quot;from pypdf import PdfReader; r = PdfReader(&#x27;docs/relatorio-desempenho-edutrack.pdf&#x27;); print(&#x27;paginas:&#x27;, len(r.pages))&quot;
+incorrect startxref pointer(1)
+parsing for Object Streams
+paginas: 1
+
+# O artefato versionado registra o relatorio de outro estudante; no documento
+# de entrega e usado apenas como evidencia de existencia, sem exibir o conteudo.
+
+$ head -c 8 docs/relatorio-desempenho-edutrack.pdf
+%PDF-1.4</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Endpoint gera PDF</td><td>GET /api/v1/reports/generate responde application/pdf</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Arquivo PDF válido</td><td>Conteúdo inicia com %PDF-1.4 e é lido pelo pypdf</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Relatório com dados do estudante</td><td>Indicadores, tabela por disciplina e lista de tarefas</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Artefato versionado no repositório</td><td>docs/relatorio-desempenho-edutrack.pdf</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Biblioteca reportlab</td><td>Não usada; a geração é própria, apoiada em pypdf</td><td><span class="status na">Não aplicável</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original sugere uma biblioteca de relatórios pronta. O projeto gera o PDF com implementação própria sobre pypdf, o que evita dependência de layout externo. O PDF exibido neste documento foi gerado na hora para o usuário de demonstração, sem sobrescrever o artefato versionado, que pertence a outro estudante.</div>
+</section>
+<section class="task">
+<div class="task-head"><div class="kicker">Tarefa 16</div><h2>Auditoria final e entrega</h2><div class="modulo">Módulo: Fechamento</div></div>
+<h3>Objetivo da tarefa</h3>
+<p>Revisar o estado do repositório, validar as especificações e entregar o projeto com histórico e documentação coerentes.</p>
+<h3>O que foi entregue</h3><ul>
+<li>23 propostas arquivadas e 6 em andamento, todas validadas por <code>openspec validate --all</code> (23 aprovados, 0 falhas).</li>
+<li>README com stack, funcionalidades implementadas, comandos de execução e fluxo OpenSpec.</li>
+<li>PR #56 como último merge da <code>main</code>, em 2026-11-17.</li>
+<li>Pendência assumida: não existe branch nem PR <code>release/final-delivery</code>; a entrega é feita por este documento e pelo repositório.</li>
+</ul>
+<h3>Evidências</h3>
+<figure><img src="assets/ide/t16-vscode-readme.png" alt="README com a tabela de stack e o que está implementado"><figcaption><b>Figura 41</b> &mdash; README com a tabela de stack e o que está implementado. <span class="muted">Fonte: Ambiente local.</span></figcaption></figure>
+<h3>Saídas literais</h3>
+<div class="label">Saída literal do terminal — openspec validate --all</div><pre class="term">$ openspec validate --all 2&gt;&amp;1 | grep -E &#x27;^(✓|✗)|Totals&#x27;
+✓ spec/academic-calendar
+✓ spec/academic-curriculum
+✓ spec/academic-reading
+✓ change/acompanhar-boletim-configuravel
+✓ spec/clippit-assistant
+✓ change/completar-requisitos-academicos
+✓ change/deepseek-llm-module
+✓ spec/flashcards-and-calendar
+✓ spec/flashcards-and-notes-quality
+✓ spec/flashcards-notes-calendar
+✓ spec/icone-marca-impatrack
+✓ change/impatrack-clippit-refresh
+✓ spec/inline-professor-management-only
+✓ spec/perfil-configuracoes-e-dependabot
+✓ change/personalizar-rotina-academica
+✓ spec/restaurar-changes-openspec
+✓ spec/social-auth-flow
+✓ spec/student-dashboard
+✓ spec/student-profile-management
+✓ change/student-profile-tab
+✓ spec/study-documents-rag
+✓ spec/study-session
+✓ spec/study-tasks
+Totals: 23 passed, 0 failed (23 items)</pre>
+<div class="label">Saída literal do terminal — merges e últimos commits</div><pre class="term">$ git log --merges --oneline -10
+3d70f8c Merge pull request #52 from ErickJV/dependabot/pip/backend/gunicorn-27.0.1
+6f1f84e Merge pull request #50 from ErickJV/dependabot/pip/backend/django-allauth-65.22.1
+e51b899 Merge pull request #51 from ErickJV/dependabot/pip/backend/ruff-0.17.5
+77b605e Merge pull request #48 from ErickJV/dependabot/pip/backend/mypy-2.4.1
+845a4cc Merge pull request #53 from ErickJV/dependabot/npm_and_yarn/frontend/vite-8.3.8
+7d219f7 Merge pull request #49 from ErickJV/dependabot/pip/backend/djangorestframework-stubs-3.18.2
+ad71161 Merge pull request #54 from ErickJV/dependabot/npm_and_yarn/frontend/babel/preset-typescript-8.0.7
+9ac8a6e Merge pull request #55 from ErickJV/dependabot/npm_and_yarn/frontend/globals-17.14.0
+ffe81fd Merge pull request #47 from KarinyAlves/main
+4d2819a Merge branch &#x27;main&#x27; of https://github.com/ErickJV/edutrack
+$ git log --oneline -5
+aa94981 feat(academic,docs): filtros de busca em disciplinas, relatorio de desempenho em PDF e documentacao do projeto (#56)
+cc03975 revert(calendario): mantém Programação Semanal antes da grade mensal
+9e25fd3 style(clippit): restaura fins de linha LF nos arquivos tocados
+2f87a5e feat(clippit): chave DeepSeek no servidor, marca Impatrack e calendário reordenado
+198cedb update: brand and icons</pre>
+<h3>Critérios de avaliação</h3>
+<table><thead><tr><th style="width:34%">Critério original</th><th style="width:46%">Evidência neste projeto</th><th style="width:20%">Status</th></tr></thead><tbody>
+<tr><td>Especificações validadas no estado final</td><td>openspec validate --all: 23 itens, 0 falhas</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Documentação do projeto atualizada</td><td>README e AGENTS.md coerentes com o código</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Histórico de integração rastreável</td><td>PR #56 mergeado em 2026-11-17</td><td><span class="status ok">Atendido</span></td></tr>
+<tr><td>Propostas pendentes declaradas</td><td>6 changes em andamento listadas no Apêndice B</td><td><span class="status partial">Parcial</span></td></tr>
+<tr><td>Branch e PR de entrega final</td><td>Não existem; pendência declarada</td><td><span class="status partial">Parcial</span></td></tr>
+</tbody></table>
+<div class="nota"><b>Nota de adaptação.</b> A tarefa original pede um PR de release fechando a disciplina. O repositório não tem esse PR: as seis propostas em andamento continuam abertas e a entrega acontece por este documento. O estado real é mostrado sem máscara.</div>
+</section>
+<section class="appendix">
+<h2>Apêndice A &mdash; AGENTS.md integral</h2>
+<p>Conteúdo completo do arquivo de diretrizes na raiz do repositório, sem resumo. É o documento que orienta pessoas e agentes no projeto.</p>
+<pre class="doc"># AGENTS.md — EduTrack
+
+Este arquivo fornece contexto durável e diretrizes para o desenvolvimento neste repositório. Leia também o `README.md` e, para mudanças planejadas, os artefatos em `openspec/`.
+
+## 1. Visão Geral e Arquitetura
+
+O **EduTrack** é uma plataforma mobile-first de organização acadêmica voltada para estudantes universitários (com matriz curricular da Faculdade Impacta). O sistema centraliza disciplinas matriculadas por semestre, frequência, tarefas acadêmicas, calendário integrado com extração automática de datas de planos de ensino (PDF/DOCX), espaço de anotações e flashcards com repetição espaçada.
+
+### Stack Tecnológica
+- **Monorepo**: `backend/` (Django) e `frontend/` (React + TypeScript).
+- **Backend**: Python 3.14+, Django 5.2 LTS, Django REST Framework 3.18, `django-allauth`, `pypdf` e `uv`.
+- **Banco de Dados**: PostgreSQL 16+ (`psycopg 3`) em produção e desenvolvimento padrão, com suporte nativo a SQLite (`DB_ENGINE=sqlite`) para execução local e testes rápidos.
+- **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS 4, Lucide React e `pnpm`.
+- **Especificações**: OpenSpec (`openspec/specs/` e `openspec/changes/`).
+
+## 2. Regras de Domínio e Segurança
+
+1. **Isolamento estrito por usuário (`user_id` / `request.user`)**:
+   - Todo endpoint de disciplinas do aluno (`StudentSubject`), tarefas (`AcademicTask`), eventos (`AcademicEvent`), anotações (`StudyNote`), pastas (`StudyFolder`), documentos (`StudyDocument`), flashcards (`Flashcard`) e relatórios deve obrigatoriamente filtrar os registros pelo usuário autenticado (`filter(user=request.user)`).
+   - Nunca retorne, altere ou exclua dados pertencentes a outros estudantes.
+2. **Prevenção contra SQL Injection e Validação de Entrada**:
+   - Utilize exclusivamente o ORM do Django ou consultas parametrizadas (`cursor.execute(sql, [params])`). Jamais construa queries SQL concatenando strings enviadas pelo usuário.
+   - Uploads de arquivos no calendário e nos documentos de estudo devem validar extensão, MIME type e assinatura binária real (magic bytes `%PDF-` para PDF e estrutura ZIP/OOXML `word/document.xml` para DOCX).
+3. **Autenticação e Sessão**:
+   - Aceite somente e-mails institucionais terminados em `@aluno.impacta.edu.br`.
+   - Sessões utilizam cookies `HttpOnly`, `SameSite=Lax`, proteção CSRF ativa e hash de senhas Argon2id.
+
+## 3. Contratos Principais de API e Rotas
+
+### Endpoints Backend (`/api/v1/`)
+- `GET /api/v1/course-offerings` e `GET|PUT /api/v1/profile`
+- `GET|POST /api/v1/curriculum`
+- `GET|POST /api/v1/student-subjects` (suporta filtros `status`, `search` e `has_overdue_tasks`)
+- `GET|PUT|PATCH|DELETE /api/v1/student-subjects/{id}`
+- `GET|POST /api/v1/tasks` e `GET|PUT|PATCH|DELETE /api/v1/tasks/{id}`
+- `POST /api/v1/tasks/{id}/toggle-complete`
+- `GET /api/v1/dashboard/summary`
+- `GET /api/v1/calendar`, `POST /api/v1/calendar/extract-pdf` e `POST /api/v1/calendar/confirm-extracted`
+- `GET|POST /api/v1/study-notes` e `GET|PUT|PATCH|DELETE /api/v1/study-notes/{id}`
+- `GET|POST /api/v1/flashcards`, `GET|PATCH|DELETE /api/v1/flashcards/{id}` e `POST /api/v1/flashcards/generate-ai`
+- `GET /api/v1/reports/generate` (geração de relatório de desempenho acadêmico em PDF)
+
+### Navegação Principal do Frontend
+- Ordem padronizada do menu: **Início | Calendário | Tarefas | Anotações | Flashcards | Disciplinas** e **Perfil** alinhado à direita.
+- Responsividade mobile-first a partir de 360px, suporte a tema claro/escuro e contraste acessível WCAG AA.
+
+## 4. Fluxo de Trabalho com OpenSpec
+
+Toda nova funcionalidade, alteração de modelo de dados ou contrato de API deve seguir o fluxo orientado a especificações:
+
+1. **Explorar**: inspecionar modelos (`backend/apps/academic/models.py`), views (`views.py`), rotas e componentes existentes antes de propor mudanças.
+2. **Propor (`openspec/changes/&lt;nome-da-mudanca&gt;/`)**: documentar `proposal.md`, `design.md`, deltas em `specs/` e `tasks.md`.
+3. **Implementar**: aplicar as alterações mantendo compatibilidade com a arquitetura existente e validando com testes automatizados.
+4. **Arquivar (`openspec/changes/archive/`)**: após a conclusão e verificação de todas as tarefas (`- [x]`), sincronizar as especificações principais em `openspec/specs/` e mover a mudança concluída para `openspec/changes/archive/`.
+
+## 5. Convenções de Código, Git e Validação
+
+- **Commits**: utilize o padrão *Conventional Commits* em português (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`), com mensagens claras e objetivas.
+- **Branches e Pull Requests**: desenvolva funcionalidades e correções mantendo o histórico limpo e verificável antes do merge na branch `main`.
+- **Comandos de verificação**:
+  - Backend: `cd backend &amp;&amp; uv run --no-sync python manage.py test apps.academic`
+  - Frontend: `cd frontend &amp;&amp; pnpm typecheck &amp;&amp; pnpm build`
+  - Scripts utilitários: `python scripts/calculate_progress.py` e `python scripts/generate_report.py`</pre>
+</section>
+<section class="appendix">
+<h2>Apêndice B &mdash; Inventário OpenSpec</h2>
+<p>O repositório mantém <b>23 propostas arquivadas</b> em <code>openspec/changes/archive/</code> e <b>6 mudancas em andamento</b> em <code>openspec/changes/</code>, todas validadas por <code>openspec validate --all</code>.</p>
+<h3>Mudanças em andamento</h3>
+<table><thead><tr><th style="width:60%">Change</th><th>Progresso das tarefas</th></tr></thead><tbody>
+<tr><td><code>deepseek-llm-module</code></td><td>✓ Complete</td></tr>
+<tr><td><code>impatrack-clippit-refresh</code></td><td>✓ Complete</td></tr>
+<tr><td><code>personalizar-rotina-academica</code></td><td>18/36 tasks</td></tr>
+<tr><td><code>completar-requisitos-academicos</code></td><td>0/28 tasks</td></tr>
+<tr><td><code>acompanhar-boletim-configuravel</code></td><td>0/23 tasks</td></tr>
+<tr><td><code>student-profile-tab</code></td><td>0/6 tasks</td></tr>
+</tbody></table>
+<h3>Propostas arquivadas</h3>
+<table><thead><tr><th style="width:8%">#</th><th>Diretório em openspec/changes/archive/</th></tr></thead><tbody>
+<tr><td>1</td><td><code>2026-11-16-aba-meu-perfil-e-navegacao</code></td></tr>
+<tr><td>2</td><td><code>2026-11-16-aprimoramento-flashcards-anotacoes-calendario</code></td></tr>
+<tr><td>3</td><td><code>2026-11-16-arquivar-proposes-openspec</code></td></tr>
+<tr><td>4</td><td><code>2026-11-16-caderno-fontes-customizadas-color-picker-sidebar</code></td></tr>
+<tr><td>5</td><td><code>2026-11-16-calendario-semanal-anotacoes-e-flashcards-anki</code></td></tr>
+<tr><td>6</td><td><code>2026-11-16-clippit-assistant</code></td></tr>
+<tr><td>7</td><td><code>2026-11-16-correcao-registro-paginas-leitura-academica</code></td></tr>
+<tr><td>8</td><td><code>2026-11-16-corrigir-oauth-e-cadastro-social</code></td></tr>
+<tr><td>9</td><td><code>2026-11-16-corrigir-origem-csrf-e2e</code></td></tr>
+<tr><td>10</td><td><code>2026-11-16-destacar-urgencias-e-tarefas-vencidas</code></td></tr>
+<tr><td>11</td><td><code>2026-11-16-flashcards-ia-raciocinio-profundo-e-correcao-anotacao</code></td></tr>
+<tr><td>12</td><td><code>2026-11-16-gestao-academica-e-estudos</code></td></tr>
+<tr><td>13</td><td><code>2026-11-16-icone-marca-impatrack</code></td></tr>
+<tr><td>14</td><td><code>2026-11-16-layout-estudo-fullwidth-e-rich-textbook</code></td></tr>
+<tr><td>15</td><td><code>2026-11-16-modulo-calendario-integrado</code></td></tr>
+<tr><td>16</td><td><code>2026-11-16-modulo-estudo-ia-rag-e-simulados</code></td></tr>
+<tr><td>17</td><td><code>2026-11-16-perfil-configuracoes-e-dependabot</code></td></tr>
+<tr><td>18</td><td><code>2026-11-16-reestruturar-calendario-caderno-e-tarefas</code></td></tr>
+<tr><td>19</td><td><code>2026-11-16-refatoracao-estudos-e-leitura-academica</code></td></tr>
+<tr><td>20</td><td><code>2026-11-16-remover-modulo-professores</code></td></tr>
+<tr><td>21</td><td><code>2026-11-16-remover-proximos-passos-home</code></td></tr>
+<tr><td>22</td><td><code>2026-11-16-restaurar-changes-openspec</code></td></tr>
+<tr><td>23</td><td><code>2026-11-16-sessao-pomodoro-e-anotacoes-de-estudo</code></td></tr>
+</tbody></table>
+</section>
+<section class="appendix">
+<h2>Apêndice C &mdash; Endpoints da API</h2>
+<p>Contratos declarados em <code>AGENTS.md</code> e implementados em <code>backend/apps/academic/urls.py</code>, servidos sob <code>/api/v1/</code>.</p>
+<table><thead><tr><th style="width:44%">Verbo e rota</th><th>Observação</th></tr></thead><tbody>
+<tr><td><code>GET|POST /api/v1/curriculum</code></td><td>&mdash;</td></tr>
+<tr><td><code>GET|POST /api/v1/student-subjects</code></td><td>suporta filtros `status`, `search` e `has_overdue_tasks`</td></tr>
+<tr><td><code>GET|PUT|PATCH|DELETE /api/v1/student-subjects/{id}</code></td><td>&mdash;</td></tr>
+<tr><td><code>POST /api/v1/tasks/{id}/toggle-complete</code></td><td>&mdash;</td></tr>
+<tr><td><code>GET /api/v1/dashboard/summary</code></td><td>&mdash;</td></tr>
+<tr><td><code>GET /api/v1/reports/generate</code></td><td>geração de relatório de desempenho acadêmico em PDF</td></tr>
+</tbody></table>
+<p class="small">Documentação interativa em <code>/api/docs/</code> e schema OpenAPI em <code>/api/schema/</code>.</p>
+</section>
+<section class="appendix">
+<h2>Apêndice D &mdash; Links</h2>
+<table><thead><tr><th style="width:30%">Item</th><th>URL</th></tr></thead><tbody>
+<tr><td>Repositório</td><td><a href="https://github.com/ErickJV/edutrack">https://github.com/ErickJV/edutrack</a></td></tr>
+<tr><td>Pull request final</td><td><a href="https://github.com/ErickJV/edutrack/pull/56">https://github.com/ErickJV/edutrack/pull/56</a></td></tr>
+<tr><td>Diretrizes do projeto</td><td><a href="https://github.com/ErickJV/edutrack/blob/main/AGENTS.md">https://github.com/ErickJV/edutrack/blob/main/AGENTS.md</a></td></tr>
+<tr><td>Pesquisa de referências</td><td><a href="https://github.com/ErickJV/edutrack/blob/main/docs/pesquisa/referencias.md">https://github.com/ErickJV/edutrack/blob/main/docs/pesquisa/referencias.md</a></td></tr>
+<tr><td>Proposta arquivada</td><td><a href="https://github.com/ErickJV/edutrack/tree/main/openspec/changes/archive/2026-11-16-gestao-academica-e-estudos">https://github.com/ErickJV/edutrack/tree/main/openspec/changes/archive/2026-11-16-gestao-academica-e-estudos</a></td></tr>
+<tr><td>Relatório versionado</td><td><a href="https://github.com/ErickJV/edutrack/blob/main/docs/relatorio-desempenho-edutrack.pdf">https://github.com/ErickJV/edutrack/blob/main/docs/relatorio-desempenho-edutrack.pdf</a></td></tr>
+<tr><td>Aplicação publicada</td><td><a href="https://impatrack.dev">https://impatrack.dev</a></td></tr>
+</tbody></table>
+<p class="small">Documento gerado a partir de 16 tarefas, 41 figuras e saídas literais de terminal capturadas durante a execução local do projeto.</p>
+</section>
+</body></html>

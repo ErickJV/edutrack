@@ -1,0 +1,31 @@
+$ python ../scripts/calculate_progress.py
+==========================================================================
+EDUTRACK - RELATORIO DE PROGRESSO DE TAREFAS POR DISCIPLINA
+==========================================================================
+Disciplina                               |   CH | Concl./Total | Progresso
+--------------------------------------------------------------------------
+Agile Software Development               |  80h |          4/5 |     80.0%
+Data Governance                          |  80h |          3/4 |     75.0%
+Distributed Systems & Cloud Computing    |  80h |          4/6 |     66.7%
+Inovacao Lab - No/Low Code               |  40h |          7/8 |     87.5%
+Artificial Intelligence Fundamentals     |  80h |          0/0 |      0.0%
+--------------------------------------------------------------------------
+Total Geral de Tarefas : 18/23 concluidas (78.3%)
+Progresso Ponderado CH : 59.0%
+==========================================================================
+
+$ DJANGO_SETTINGS_MODULE=edutrack.settings python ../scripts/calculate_progress.py
+==========================================================================
+EDUTRACK - RELATORIO DE PROGRESSO DE TAREFAS POR DISCIPLINA
+==========================================================================
+Disciplina                               |   CH | Concl./Total | Progresso
+--------------------------------------------------------------------------
+AI & Machine Learning                    |  80h |          1/2 |     50.0%
+Data Governance                          |  80h |          1/2 |     50.0%
+Innovation Lab: SaaS Product             |  80h |          1/2 |     50.0%
+Mobile Applications                      |  80h |          0/4 |      0.0%
+Software Quality Assurance               |  80h |          1/2 |     50.0%
+--------------------------------------------------------------------------
+Total Geral de Tarefas : 4/12 concluidas (33.3%)
+Progresso Ponderado CH : 40.0%
+==========================================================================

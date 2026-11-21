@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "apps.legal.apps.LegalConfig",
     "apps.academic.apps.AcademicConfig",
     "apps.assistant.apps.AssistantConfig",
+    "apps.llm.apps.LLMConfig",
 ]
 
 MIDDLEWARE = [
@@ -190,7 +191,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL") or "deepseek-v4-flash"
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL") or "deepseek-flash"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["apps.accounts.authentication.BrowserSessionAuthentication"],

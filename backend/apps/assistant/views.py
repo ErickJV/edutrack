@@ -7,8 +7,9 @@ from rest_framework.views import APIView
 
 from apps.academic.permissions import IsAuthenticatedOr401
 from apps.accounts.authentication import BrowserSessionAuthentication
+from apps.llm.client import LLMClient
 
-from .deepseek import DeepSeekClient
+from .chat import generate_chat_response
 from .context import format_academic_context_for_prompt, get_student_academic_context
 from .serializers import (
     AssistantChatRequestSerializer,
@@ -43,8 +44,7 @@ class AssistantChatView(APIView):
         academic_context = get_student_academic_context(request.user)
         academic_context_md = format_academic_context_for_prompt(academic_context)
 
-        client = DeepSeekClient()
-        response_data = client.generate_chat_response(
+        response_data = generate_chat_response(
             user_message=user_message,
             conversation_history=history,
             academic_context_markdown=academic_context_md,
@@ -87,7 +87,7 @@ class AssistantStatusView(APIView):
         description="Verifica se o backend possui a chave de acesso do assistente configurada.",
     )
     def get(self, request, *args, **kwargs):
-        client = DeepSeekClient()
+        client = LLMClient()
         status_data = client.get_status()
         serializer = AssistantStatusSerializer(data=status_data)
         serializer.is_valid(raise_exception=True)

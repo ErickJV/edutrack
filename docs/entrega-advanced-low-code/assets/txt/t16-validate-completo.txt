@@ -1,0 +1,52 @@
+$ openspec validate --all
+✓ spec/academic-calendar
+✓ spec/academic-curriculum
+  ⚠ [WARNING] requirements[3]: Requirement "Edição de Carga Horária Declarada e Professor na Disciplina Ativa" should contain SHALL or MUST (RFC 2119 best practice for English specs)
+✓ spec/academic-reading
+✓ change/acompanhar-boletim-configuravel
+  ⚠ [WARNING] absence-budget/spec.md: ADDED "Configuração de unidades e origem de TF": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] absence-budget/spec.md: ADDED "Limite e cobertura": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] grading-policies/spec.md: ADDED "Configuração por disciplina e modelos": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] grading-policies/spec.md: ADDED "MAP, substitutiva, bônus e arredondamento declarados": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] student-gradebook/spec.md: ADDED "Lançamento de notas e leitura privada": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] student-gradebook/spec.md: ADDED "Cálculo transparente e simulação": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] student-gradebook/spec.md: ADDED "Situação e interface": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ℹ [INFO] class-attendance/spec.md: Archive would refuse this delta: class-attendance: target spec does not exist; only ADDED requirements are allowed for new specs. MODIFIED and RENAMED operations require an existing spec.
+✓ spec/clippit-assistant
+✓ change/completar-requisitos-academicos
+  ⚠ [WARNING] academic-curriculum/spec.md: ADDED "Informações pessoais e filtros de disciplinas": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] study-analytics/spec.md: ADDED "Métricas e distribuição de tempo": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] study-analytics/spec.md: ADDED "Recomendações explicáveis por estimado e real": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] study-analytics/spec.md: ADDED "Previsão de conclusão das tarefas": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] study-time-records/spec.md: ADDED "Registros datados e correção": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] study-time-records/spec.md: ADDED "Histórico legado e cronômetro": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] weekly-study-reports/spec.md: ADDED "Relatório semanal sob demanda": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] weekly-study-reports/spec.md: ADDED "Apresentação e falhas": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+✓ change/deepseek-llm-module
+✓ spec/flashcards-and-calendar
+✓ spec/flashcards-and-notes-quality
+  ⚠ [WARNING] overview: Purpose section is still a placeholder rather than a Purpose anyone wrote (the sentence `openspec archive` writes for a new capability, or a `TBD`/`TODO` marker left in its place). Replace it with what this capability is for, editing the main spec directly: a `## Purpose` in a delta is read only when the capability is created, so it cannot replace this one.
+✓ spec/flashcards-notes-calendar
+  ⚠ [WARNING] overview: Purpose section is still a placeholder rather than a Purpose anyone wrote (the sentence `openspec archive` writes for a new capability, or a `TBD`/`TODO` marker left in its place). Replace it with what this capability is for, editing the main spec directly: a `## Purpose` in a delta is read only when the capability is created, so it cannot replace this one.
+✓ spec/icone-marca-impatrack
+✓ change/impatrack-clippit-refresh
+✓ spec/inline-professor-management-only
+✓ spec/perfil-configuracoes-e-dependabot
+✓ change/personalizar-rotina-academica
+  ⚠ [WARNING] academic-calendar/spec.md: ADDED "Semestre e horários semanais": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] academic-calendar/spec.md: ADDED "Cancelamentos e reposições preservam histórico": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] academic-calendar/spec.md: ADDED "Eventos acadêmicos e prazos integrados": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] academic-curriculum/spec.md: ADDED "Personalização privada de disciplina": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+  ⚠ [WARNING] class-attendance/spec.md: ADDED "Resumo e interface de frequência": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+✓ spec/restaurar-changes-openspec
+✓ spec/social-auth-flow
+  ⚠ [WARNING] requirements[0]: Requirement "Redirecionamento de Retorno OAuth Dinâmico" should contain SHALL or MUST (RFC 2119 best practice for English specs)
+  ⚠ [WARNING] requirements[1]: Requirement "Conclusão Assistida de Cadastro para Usuário OAuth" should contain SHALL or MUST (RFC 2119 best practice for English specs)
+✓ spec/student-dashboard
+✓ spec/student-profile-management
+✓ change/student-profile-tab
+✓ spec/study-documents-rag
+  ⚠ [WARNING] overview: Purpose section is still a placeholder rather than a Purpose anyone wrote (the sentence `openspec archive` writes for a new capability, or a `TBD`/`TODO` marker left in its place). Replace it with what this capability is for, editing the main spec directly: a `## Purpose` in a delta is read only when the capability is created, so it cannot replace this one.
+✓ spec/study-session
+✓ spec/study-tasks
+Totals: 23 passed, 0 failed (23 items)

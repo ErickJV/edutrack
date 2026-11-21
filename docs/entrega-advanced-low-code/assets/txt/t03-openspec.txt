@@ -1,0 +1,15 @@
+$ openspec --version
+1.14.3
+$ openspec list
+Changes:
+  deepseek-llm-module                 ✓ Complete    1d ago
+  impatrack-clippit-refresh           ✓ Complete    1d ago
+  personalizar-rotina-academica       18/36 tasks   2d ago
+  completar-requisitos-academicos     0/28 tasks    2d ago
+  acompanhar-boletim-configuravel     0/23 tasks    21d ago
+  student-profile-tab                 0/6 tasks     22d ago
+$ find openspec -maxdepth 2 -type f
+openspec/config.yaml
+openspec/specs/.gitkeep
+$ ls openspec/changes/archive | grep -v '^\.' | wc -l
+23

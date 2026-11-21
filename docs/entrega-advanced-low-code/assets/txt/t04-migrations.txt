@@ -1,0 +1,16 @@
+$ python manage.py showmigrations academic
+academic
+ [X] 0001_initial
+ [X] 0002_seed_curriculum
+ [X] 0003_sync_impacta_official_curriculum
+ [X] 0004_studentsubject_custom_workload_hours
+ [X] 0005_professor_studentsubject_professor
+ [X] 0006_migrate_legacy_professor_names
+ [X] 0007_academicevent_academicterm_and_more
+ [X] 0008_studyfolder_studynote
+ [X] 0009_academicreading_studynote_reading_readinglog
+ [X] 0010_classoccurrence_attendance_and_origin
+ [X] 0011_flashcard
+ [X] 0012_academictask_all_day_academictask_category_and_more
+ [X] 0013_studydocument_studyquiz_studydocumentpage
+ [X] 0014_rename_summary_ai_studydocument_analysis_cache_and_more

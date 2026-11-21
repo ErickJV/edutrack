@@ -1,0 +1,123 @@
+usuario autenticado: erick.demo@aluno.impacta.edu.br
+======================================================================
+GET /api/v1/student-subjects?search=Governance  ->  HTTP 200
+itens retornados: 1
+[
+  {
+    "id": "619bdfd0-3d18-43ad-8e78-20c78ea80c44",
+    "subject": {
+      "id": "93fee105-e9ac-4089-b4ba-29651d101a09",
+      "course": "575e1fff-48f8-5b8c-8a3f-72c79cef547f",
+      "course_name": "Análise e Desenvolvimento de Sistemas",
+      "name": "Data Governance",
+      "code": "ADS599",
+      "semester": 5,
+      "workload_hours": 80,
+      "description": "Disciplina do semestre de demonstracao.",
+      "active": true
+    },
+    "professor": null,
+    "professor_name": "Prof. Dr. Marcelo Tanaka",
+    "display_professor_name": "Prof. Dr. Marcelo Tanaka",
+    "term": {
+      "id": "5f14b66c-aec7-49d6-a5e2-c4d0d60f5f80",
+      "name": "2026/2",
+      "start_date": "2026-08-03",
+      "end_date": "2026-12-12",
+      "timezone": "America/Sao_Paulo",
+      "created_at": "2026-11-19T12:31:16.242588-03:00",
+      "updated_at": "2026-11-19T12:31:16.242601-03:00"
+    },
+    "custom_workload_hours": null,
+    "effective_workload_hours": 80,
+    "status": "active",
+    "semester_period": "2026/2",
+    "progress_percent": 50,
+    "created_at": "2026-11-19T12:31:16.265075-03:00",
+    "updated_at": "2026-11-19T12:31:16.265086-03:00"
+  }
+]
+======================================================================
+GET /api/v1/student-subjects?has_overdue_tasks=true  ->  HTTP 200
+itens retornados: 1
+[
+  {
+    "id": "765160f3-04bb-4320-8bca-341401f3bb07",
+    "subject": {
+      "id": "fa0bd21c-e66b-5681-8df4-ef0d4b361275",
+      "course": "575e1fff-48f8-5b8c-8a3f-72c79cef547f",
+      "course_name": "Análise e Desenvolvimento de Sistemas",
+      "name": "Mobile Applications",
+      "code": "ADS503",
+      "semester": 5,
+      "workload_hours": 80,
+      "description": "Desenvolvimento de Aplicativos Móveis (Android). • Linguagem de Programação Dart. • Componentes Visuais de Aplicativo Mobile. • Aplicação Mobile com Armazenamento de Dados. • App Mobile com consumo de serviços na web e APIs.",
+      "active": true
+    },
+    "professor": null,
+    "professor_name": "Prof. Dr. Caio Bernardes",
+    "display_professor_name": "Prof. Dr. Caio Bernardes",
+    "term": {
+      "id": "5f14b66c-aec7-49d6-a5e2-c4d0d60f5f80",
+      "name": "2026/2",
+      "start_date": "2026-08-03",
+      "end_date": "2026-12-12",
+      "timezone": "America/Sao_Paulo",
+      "created_at": "2026-11-19T12:31:16.242588-03:00",
+      "updated_at": "2026-11-19T12:31:16.242601-03:00"
+    },
+    "custom_workload_hours": null,
+    "effective_workload_hours": 80,
+    "status": "active",
+    "semester_period": "2026/2",
+    "progress_percent": 0,
+    "created_at": "2026-11-19T12:31:16.256352-03:00",
+    "updated_at": "2026-11-19T12:31:16.256363-03:00"
+  }
+]
+======================================================================
+GET /api/v1/tasks?search=Prova  ->  HTTP 200
+itens retornados: 2
+[
+  {
+    "id": "93f25a5e-24a9-4d8b-b329-ad4426b2f08f",
+    "student_subject": "c0fe0afe-7ce2-4e83-9f22-41a4249955d0",
+    "subject_id": "076c2c90-9307-5463-a6e7-d812f971f381",
+    "subject_name": "Software Quality Assurance",
+    "subject_semester": 5,
+    "category": "exam",
+    "title": "Prova AP1",
+    "description": "Atividade concluida da disciplina de demonstracao.",
+    "due_date": "2026-10-30T12:31:16.062382-03:00",
+    "end_date": null,
+    "all_day": false,
+    "room": "",
+    "status": "completed",
+    "estimated_minutes": 120,
+    "actual_minutes": 110,
+    "completed_at": "2026-10-30T15:31:16.062382-03:00",
+    "created_at": "2026-11-19T12:31:16.284498-03:00",
+    "updated_at": "2026-11-19T12:31:16.284504-03:00"
+  },
+  {
+    "id": "7fa0105f-0314-4035-9852-da5b43f71153",
+    "student_subject": "7713e5c5-1171-44c4-9d4b-7471887d3dcc",
+    "subject_id": "92d3f490-5f87-5069-ab65-fc9562cb5e60",
+    "subject_name": "AI & Machine Learning",
+    "subject_semester": 5,
+    "category": "exam",
+    "title": "Prova AP2",
+    "description": "Atividade planejada da disciplina de demonstracao.",
+    "due_date": "2026-11-25T12:31:16.062382-03:00",
+    "end_date": null,
+    "all_day": false,
+    "room": "",
+    "status": "pending",
+    "estimated_minutes": 120,
+    "actual_minutes": 0,
+    "completed_at": null,
+    "created_at": "2026-11-19T12:31:16.289782-03:00",
+    "updated_at": "2026-11-19T12:31:16.289788-03:00"
+  }
+]
+======================================================================

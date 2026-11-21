@@ -1,0 +1,4 @@
+$ python -c "from scripts.calculate_progress import calculate_task_progress as f; print(f(0,0)); print(f(10,7)); print(f(5,9))"
+(0, 0) -> {'total_tasks': 0, 'completed_tasks': 0, 'pending_tasks': 0, 'progress_percent': 0.0, 'formatted': '0.0%'}
+(10, 7) -> {'total_tasks': 10, 'completed_tasks': 7, 'pending_tasks': 3, 'progress_percent': 70.0, 'formatted': '70.0%'}
+(5, 9) -> {'total_tasks': 5, 'completed_tasks': 5, 'pending_tasks': 0, 'progress_percent': 100.0, 'formatted': '100.0%'}

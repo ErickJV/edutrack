@@ -12,14 +12,14 @@
 
 ## 3. Backend DeepSeek
 
-- [x] 3.1 Adicionar `DEEPSEEK_API_KEY`/`DEEPSEEK_MODEL` em `backend/edutrack/settings.py` e substituir o bloco Antigravity de `.env.example` por `DEEPSEEK_API_KEY=`, mantendo `GEMINI_API_KEY` para os flashcards.
-- [x] 3.2 Remover `backend/apps/assistant/antigravity.py` e criar `backend/apps/assistant/deepseek.py` preservando `CLIPPIT_SYSTEM_PROMPT` e `_determine_animation`.
+- [x] 3.1 Adicionar `DEEPSEEK_API_KEY`/`DEEPSEEK_MODEL` em `backend/edutrack/settings.py` e substituir o bloco de credenciais do provedor anterior em `.env.example` por `DEEPSEEK_API_KEY=`.
+- [x] 3.2 Remover o módulo de transporte anterior de `backend/apps/assistant` e criar `backend/apps/assistant/deepseek.py` preservando `CLIPPIT_SYSTEM_PROMPT` e `_determine_animation`.
 - [x] 3.3 Atualizar `views.py` e `serializers.py` para usar `DeepSeekClient`, remover o header de token customizado e reduzir o status a `{configured}`.
 - [x] 3.4 Reescrever os testes do assistente (payload DeepSeek, remoção de mensagem duplicada, fallback sem chave).
 
 ## 4. Limpeza da API no frontend
 
-- [x] 4.1 Remover o armazenamento do token Antigravity, o header customizado, `getAssistantStatus` e o tipo `AssistantStatus` de `client.ts`/`types.ts`.
+- [x] 4.1 Remover o armazenamento do token do provedor anterior, o header customizado, `getAssistantStatus` e o tipo `AssistantStatus` de `client.ts`/`types.ts`.
 - [x] 4.2 Atualizar o texto de erro do Clippit para não citar provedor/credenciais.
 
 ## 5. Verificação
@@ -30,4 +30,4 @@
   - `/home`: `Brand` renderiza `<svg>` + `<span>Impatrack</span>` com `gap-2.5 sm:gap-3`.
   - `/calendario`: ordem preservada = Calendário Acadêmico → Programação Semanal → grade mensal; `Semana anterior` alterna 16–22 nov. → 09–15 nov. e mantém 7 cards de dia.
   - Clippit: sem `Copiloto Impatrack`, sem `Online`, sem rodapé de atalhos/modelo; balão do assistente com `background-color: rgb(248, 250, 252)` e borda `rgb(226, 232, 240)`; envio de mensagem retorna a resposta de fallback (sem `DEEPSEEK_API_KEY` no ambiente de verificação).
-- [x] 5.4 Greps do plano sem resultados: nenhum `Antigravity|antigravity|Gemini|gemini|oh-my-pi|.omp` em `backend/apps/assistant`/`frontend/src/components/clippit`; nenhum `DeepSeek|deepseek|DEEPSEEK|v4` em `frontend/src`; nenhum `amber|orange|yellow` em `frontend/src/components/clippit`.
+- [x] 5.4 Greps do plano sem resultados: nenhuma menção ao provedor anterior, `oh-my-pi` ou `.omp` em `backend/apps/assistant`/`frontend/src/components/clippit`; nenhum `DeepSeek|deepseek|DEEPSEEK|v4` em `frontend/src`; nenhum `amber|orange|yellow` em `frontend/src/components/clippit`.

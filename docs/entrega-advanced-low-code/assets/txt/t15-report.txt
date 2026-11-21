@@ -1,0 +1,13 @@
+$ ls -lh docs/relatorio-desempenho-edutrack.pdf
+-rwxrwxrwx 1 somebody somegroup 6.9K Nov 17 19:50 docs/relatorio-desempenho-edutrack.pdf
+
+$ python -c "from pypdf import PdfReader; r = PdfReader('docs/relatorio-desempenho-edutrack.pdf'); print('paginas:', len(r.pages))"
+incorrect startxref pointer(1)
+parsing for Object Streams
+paginas: 1
+
+# O artefato versionado registra o relatorio de outro estudante; no documento
+# de entrega e usado apenas como evidencia de existencia, sem exibir o conteudo.
+
+$ head -c 8 docs/relatorio-desempenho-edutrack.pdf
+%PDF-1.4

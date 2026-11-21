@@ -1,0 +1,26 @@
+$ git --version
+git version 2.56.0.windows.2
+$ git config --global user.name
+Erick Jonathan
+$ git config --global user.email
+erick.jonathan@aluno.impacta.edu.br
+$ git log --oneline -15
+aa94981 feat(academic,docs): filtros de busca em disciplinas, relatorio de desempenho em PDF e documentacao do projeto (#56)
+cc03975 revert(calendario): mantém Programação Semanal antes da grade mensal
+9e25fd3 style(clippit): restaura fins de linha LF nos arquivos tocados
+2f87a5e feat(clippit): chave DeepSeek no servidor, marca Impatrack e calendário reordenado
+198cedb update: brand and icons
+fdaff9e chore(openspec): arquivar changes concluídos
+51d8e28 docs(openspec): archive perfil-configuracoes-e-dependabot
+7c40c51 feat(profile): add account settings, data export and deletion
+3d70f8c Merge pull request #52 from ErickJV/dependabot/pip/backend/gunicorn-27.0.1
+6f1f84e Merge pull request #50 from ErickJV/dependabot/pip/backend/django-allauth-65.22.1
+e51b899 Merge pull request #51 from ErickJV/dependabot/pip/backend/ruff-0.17.5
+864c4e4 build(deps-dev): bump ruff from 0.16.6 to 0.17.5 in /backend
+77b605e Merge pull request #48 from ErickJV/dependabot/pip/backend/mypy-2.4.1
+483f0ea build(deps-dev): bump mypy from 1.18.2 to 2.4.1 in /backend
+845a4cc Merge pull request #53 from ErickJV/dependabot/npm_and_yarn/frontend/vite-8.3.8
+$ git branch -a
+* main
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/main

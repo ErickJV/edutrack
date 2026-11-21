@@ -13,6 +13,12 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.accounts.models import User
+from apps.llm.services import (
+    extract_calendar_items,
+    generate_document_analysis,
+    generate_flashcards,
+    generate_quiz_questions,
+)
 
 from .models import (
     AcademicEvent,
@@ -1604,11 +1610,7 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         import html
-        import json
-        import os
         import re
-        import urllib.request
-        from rest_framework import status as drf_status
         from rest_framework.exceptions import ValidationError as DRFValidationError
 
         user = cast(User, request.user)
@@ -1705,55 +1707,14 @@ class FlashcardAIGenerateView(generics.GenericAPIView):
             else (student_subject.subject.name if student_subject else core_theme or "Geral")
         )
 
-        generated_specs: list[dict[str, str]] = []
-
-        # 1. Tenta geração via Gemini API se houver chave configurada no ambiente, com prompt socrático rigoroso
-        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-        if api_key:
-            try:
-                prompt = (
-                    f"Você é um especialista em cartões de repetição espaçada (Anki - Princípio do Mínimo de Informação) "
-                    f"combinado com raciocínio lógico universitário.\n"
-                    f"Elabore exatamente {count} flashcards em português do Brasil sobre:\n"
-                    f"- Disciplina: {subject_title}\n"
-                    f"- Tema Central: {core_theme}\n"
-                    f"- Conteúdo da Anotação: {clean_source[:4000] if clean_source else full_context_label}\n\n"
-                    f"REGRAS OBRIGATÓRIAS (ESTILO ANKI AUTÊNTICO):\n"
-                    f"1. PERGUNTAS CURTAS E ATÔMICAS: O campo 'front' DEVE ter apenas 1 frase curta e direta (entre 6 e 14 palavras, máximo absoluto de 95 caracteres). Jamais escreva parágrafos longos ou enfileire listas dentro da pergunta.\n"
-                    f"2. RACIOCÍNIO LÓGICO DIRETO: Embora curta, a pergunta não deve ser superficial; deve cobrar causa e efeito, critério de decisão, trade-off ou consequência de falha.\n"
-                    f"3. PROIBIDO usar 'Nova anotação' ou fragmentos soltos ('Temos que considerar', 'Nossos modelos') como conceitos.\n"
-                    f"4. RESPOSTA CONCISA: O campo 'back' deve ter no máximo 2 a 3 tópicos curtos e objetivos.\n\n"
-                    f"Retorne APENAS um JSON array válido onde cada objeto tem as chaves: "
-                    f"\"front\", \"back\", \"hint\" e \"tags\"."
-                )
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-                req_body = json.dumps({
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"responseMimeType": "application/json"},
-                }).encode("utf-8")
-                req = urllib.request.Request(
-                    url, data=req_body, headers={"Content-Type": "application/json"}
-                )
-                with urllib.request.urlopen(req, timeout=12) as resp:
-                    resp_data = json.loads(resp.read().decode("utf-8"))
-                    text_out = (
-                        resp_data.get("candidates", [{}])[0]
-                        .get("content", {})
-                        .get("parts", [{}])[0]
-                        .get("text", "")
-                    )
-                    parsed = json.loads(text_out)
-                    if isinstance(parsed, list):
-                        for item in parsed[:count]:
-                            if isinstance(item, dict) and item.get("front") and item.get("back"):
-                                generated_specs.append({
-                                    "front": str(item["front"]).strip(),
-                                    "back": str(item["back"]).strip(),
-                                    "hint": str(item.get("hint") or "Raciocínio lógico e análise").strip()[:255],
-                                    "tags": str(item.get("tags") or "ia, raciocinio-logico").strip()[:255],
-                                })
-            except Exception:
-                generated_specs = []
+        # 1. Geração via módulo de IA compartilhado, com prompt socrático rigoroso
+        generated_specs = generate_flashcards(
+            count=count,
+            subject_title=subject_title,
+            core_theme=core_theme,
+            source_text=clean_source,
+            fallback_context=full_context_label,
+        )
 
         # 2. Motor Criterioso Local de Raciocínio Lógico e Análise Semântica Profunda
         if len(generated_specs) < count:
@@ -1958,7 +1919,9 @@ class StudyDocumentListCreateView(generics.ListCreateAPIView):
         # Gera automaticamente a análise cognitiva inicial para que todas as abas abram de imediato pós-upload
         try:
             analyzer = StudyDocumentAIAnalyzeView()
-            initial_analysis = analyzer._generate_cognitive_analysis(doc, created_pages, extracted_full_text)
+            initial_analysis = analyzer._generate_cognitive_analysis(
+                doc, created_pages, extracted_full_text, use_llm=False
+            )
             doc.analysis_cache = initial_analysis
             doc.save(update_fields=["analysis_cache"])
         except Exception:
@@ -2044,7 +2007,7 @@ class StudyDocumentAIAnalyzeView(generics.GenericAPIView):
 
         combined_text = "\n\n".join(context_pages) if context_pages else doc.title
 
-        # Tentar chamar IA (Google Gemini API se configurada) ou Motor Cognitivo Avançado
+        # Análise via módulo de IA compartilhado, com motor cognitivo determinístico como fallback
         analysis_result = self._generate_cognitive_analysis(doc, pages, combined_text)
 
         doc.analysis_cache = analysis_result
@@ -2052,78 +2015,21 @@ class StudyDocumentAIAnalyzeView(generics.GenericAPIView):
 
         return Response(analysis_result, status=drf_status.HTTP_200_OK)
 
-    def _generate_cognitive_analysis(self, doc: StudyDocument, pages: list[StudyDocumentPage], full_text: str) -> dict:
+    def _generate_cognitive_analysis(
+        self,
+        doc: StudyDocument,
+        pages: list[StudyDocumentPage],
+        full_text: str,
+        use_llm: bool = True,
+    ) -> dict:
         doc_title = doc.title or "Documento"
         total_p = doc.page_count or (len(pages) if pages else 1)
 
-        # 1. Tentar chamar API de IA generativa se disponível no ambiente
-        gemini_api_key = os.environ.get("GEMINI_API_KEY")
-        if gemini_api_key:
-            try:
-                import json
-                import urllib.request
-                prompt = f"""Você é o tutor cognitivo de elite da plataforma Impatrack.
-Analise detalhadamente o documento "{doc_title}" (composto pelas seguintes páginas e conteúdos):
-
-{full_text[:12000]}
-
-REGRA MANDATÓRIA ABSOLUTA: Sempre que citar qualquer informação, conceito ou exemplo, você DEVE indicar expressamente a fonte e a página no formato [{doc_title} - Pág. X].
-
-Gere uma resposta em JSON estrito com o seguinte esquema:
-{{
-  "summary": "Resumo estruturado e didático dos conceitos principais, contendo citações de páginas [{doc_title} - Pág. X] em cada tópico.",
-  "complex_topics": [
-    {{
-      "topic": "Nome do tópico complexo",
-      "explanation": "Explicação aprofundada com raciocínio causal",
-      "citation": "[{doc_title} - Pág. X]",
-      "example": "Exemplo prático de aplicação no mundo real"
-    }}
-  ],
-  "key_concepts": [
-    {{
-      "term": "Termo chave",
-      "definition": "Definição formal e objetiva",
-      "citation": "[{doc_title} - Pág. X]"
-    }}
-  ],
-  "mental_map_mermaid": "graph TD;\\nA[{doc_title}] --> B[Conceito 1];\\nA --> C[Conceito 2];",
-  "study_roadmap": [
-    {{
-      "step": 1,
-      "goal": "Objetivo do passo",
-      "recommended_pages": "Págs. 1 a 3",
-      "action": "O que praticar ou revisar"
-    }}
-  ],
-  "reinforcement_topics": [
-    "Tópico que requer maior atenção ou pré-requisito matemático/lógico"
-  ],
-  "complementary_materials": [
-    {{
-      "title": "Leitura recomendada / Documentação",
-      "type": "Artigo / Vídeo / Livro",
-      "description": "Por que aprofundar neste tema"
-    }}
-  ]
-}}
-Retorne APENAS o JSON válido sem marcações markdown de bloco."""
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api_key}"
-                req = urllib.request.Request(
-                    url,
-                    data=json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode("utf-8"),
-                    headers={"Content-Type": "application/json"},
-                )
-                with urllib.request.urlopen(req, timeout=12) as response:
-                    res_body = json.loads(response.read().decode())
-                    raw_text = res_body["candidates"][0]["content"]["parts"][0]["text"].strip()
-                    if raw_text.startswith("```json"):
-                        raw_text = raw_text[7:]
-                    if raw_text.endswith("```"):
-                        raw_text = raw_text[:-3]
-                    return json.loads(raw_text.strip())
-            except Exception:
-                pass
+        # 1. Análise cognitiva pelo módulo de IA compartilhado (quando solicitada)
+        if use_llm:
+            analysis = generate_document_analysis(doc_title, full_text)
+            if analysis is not None:
+                return analysis
 
         # 2. Motor Cognitivo Semântico de Alta Precisão (Fallback Inteligente com Citações Reais)
         # Identifica parágrafos-chave e páginas de onde se originam
@@ -2279,7 +2185,12 @@ class StudyDocumentQuizView(generics.GenericAPIView):
             }, status=drf_status.HTTP_200_OK)
 
         # Generate 10 Questions Quiz
-        questions = self._build_10_questions(doc, pages)
+        snippets = self._collect_page_snippets(pages)
+        questions = generate_quiz_questions(doc_title, snippets) or self._build_10_questions(
+            doc, pages
+        )
+        for index, question in enumerate(questions, start=1):
+            question["id"] = index
         quiz = StudyQuiz.objects.create(
             user=user,
             student_subject=doc.student_subject,
@@ -2291,13 +2202,20 @@ class StudyDocumentQuizView(generics.GenericAPIView):
 
         return Response(StudyQuizSerializer(quiz).data, status=drf_status.HTTP_201_CREATED)
 
-    def _build_10_questions(self, doc: StudyDocument, pages: list[StudyDocumentPage]) -> list[dict]:
-        doc_title = doc.title or "Documento"
-        page_snippets = []
+    @staticmethod
+    def _collect_page_snippets(
+        pages: list[StudyDocumentPage],
+    ) -> list[tuple[int, str]]:
+        page_snippets: list[tuple[int, str]] = []
         for p in pages:
             lines = [l.strip() for l in p.content.split("\n") if len(l.strip()) > 35]
             for l in lines:
                 page_snippets.append((p.page_number, l))
+        return page_snippets
+
+    def _build_10_questions(self, doc: StudyDocument, pages: list[StudyDocumentPage]) -> list[dict]:
+        doc_title = doc.title or "Documento"
+        page_snippets = self._collect_page_snippets(pages)
 
         if not page_snippets:
             page_snippets = [(1, f"Fundamentos teóricos e metodológicos estruturados em {doc_title}.")]
@@ -2633,12 +2551,56 @@ class CalendarPdfExtractView(generics.GenericAPIView):
             return None
 
     @classmethod
+    def _resolve_reference_year(cls, student_subject: StudentSubject) -> int:
+        """Prioriza o ano do semestre vigente da matrícula e depois o do termo."""
+        ref_year = timezone.now().year
+        if student_subject.semester_period:
+            m_year = re.search(r"\b(20\d{2})\b", student_subject.semester_period)
+            if m_year:
+                return int(m_year.group(1))
+        if student_subject.term and student_subject.term.start_date:
+            return student_subject.term.start_date.year
+        return ref_year
+
+    @classmethod
+    def _make_calendar_item(
+        cls,
+        assessment_type: str,
+        iso_date: str,
+        snippet: str,
+        subject_name: str,
+        student_subject: StudentSubject,
+        *,
+        matched_label: str | None = None,
+    ) -> dict[str, Any]:
+        canonical_label = cls.CANONICAL_ASSESSMENT_NAMES.get(assessment_type, assessment_type)
+        if assessment_type in ("PAI 1", "PAI 2", "PAI 3"):
+            item_title = f"Prova {assessment_type}"
+            item_subj_id = None
+            item_subj_name = "Interdisciplinar (Geral)"
+        else:
+            item_title = f"{canonical_label} — {subject_name}"
+            item_subj_id = str(student_subject.id)
+            item_subj_name = subject_name
+
+        return {
+            "assessment_type": assessment_type,
+            "title": item_title,
+            "date": iso_date,
+            "student_subject_id": item_subj_id,
+            "subject_name": item_subj_name,
+            "matched_label": matched_label if matched_label is not None else assessment_type,
+            "source_snippet": snippet,
+        }
+
+    @classmethod
     def parse_calendar_text(
         cls,
         raw_text: str,
         student_subject: StudentSubject,
         user: User,
         filename: str = "",
+        llm_items: list[dict[str, str]] | None = None,
     ) -> dict[str, Any]:
         import unicodedata
 
@@ -2646,16 +2608,7 @@ class CalendarPdfExtractView(generics.GenericAPIView):
         ascii_text = norm_text.translate(cls.ACCENT_TRANSLATION).lower()
 
         # Determina o ano de referência priorizando o semestre vigente da matrícula ou termo ativo
-        ref_year = timezone.now().year
-        year_resolved = False
-        if student_subject.semester_period:
-            m_year = re.search(r"\b(20\d{2})\b", student_subject.semester_period)
-            if m_year:
-                ref_year = int(m_year.group(1))
-                year_resolved = True
-        if not year_resolved and student_subject.term and student_subject.term.start_date:
-            ref_year = student_subject.term.start_date.year
-            year_resolved = True
+        ref_year = cls._resolve_reference_year(student_subject)
 
         warnings: list[str] = []
         subject_name = student_subject.subject.name
@@ -2764,26 +2717,14 @@ class CalendarPdfExtractView(generics.GenericAPIView):
                     snip_start = max(0, min(s, matched_date["start"]) - 10)
                     snip_end = min(len(norm_text), max(e, matched_date["end"]) + 55)
                     snippet = norm_text[snip_start:snip_end].strip()
-                    canonical_label = cls.CANONICAL_ASSESSMENT_NAMES.get(a_type, a_type)
-                    is_pai = a_type in ("PAI 1", "PAI 2", "PAI 3")
-                    if is_pai:
-                        item_title = f"Prova {a_type}"
-                        item_subj_id = None
-                        item_subj_name = "Interdisciplinar (Geral)"
-                    else:
-                        item_title = f"{canonical_label} — {subject_name}"
-                        item_subj_id = str(student_subject.id)
-                        item_subj_name = subject_name
-
-                    extracted_by_type_and_date[key] = {
-                        "assessment_type": a_type,
-                        "title": item_title,
-                        "date": matched_date["iso"],
-                        "student_subject_id": item_subj_id,
-                        "subject_name": item_subj_name,
-                        "matched_label": mention["matched_text"],
-                        "source_snippet": snippet,
-                    }
+                    extracted_by_type_and_date[key] = cls._make_calendar_item(
+                        a_type,
+                        matched_date["iso"],
+                        snippet,
+                        subject_name,
+                        student_subject,
+                        matched_label=mention["matched_text"],
+                    )
             else:
                 # Verifica se não é apenas menção genérica na seção inicial de critérios
                 wider_before = ascii_text[max(0, s - 160) : s]
@@ -2791,6 +2732,24 @@ class CalendarPdfExtractView(generics.GenericAPIView):
                     mentions_without_date.add(a_type)
 
         extracted_items = list(extracted_by_type_and_date.values())
+        extracted_items.sort(key=lambda x: (x["date"], x["assessment_type"]))
+
+        # O regex é autoritativo: candidatos do LLM só preenchem tipos que ele não detectou
+        existing_types = {item["assessment_type"] for item in extracted_items}
+        for candidate in llm_items or []:
+            candidate_type = candidate["assessment_type"]
+            if candidate_type in existing_types:
+                continue
+            extracted_items.append(
+                cls._make_calendar_item(
+                    candidate_type,
+                    candidate["date"],
+                    candidate.get("source_snippet", ""),
+                    subject_name,
+                    student_subject,
+                )
+            )
+            existing_types.add(candidate_type)
         extracted_items.sort(key=lambda x: (x["date"], x["assessment_type"]))
 
         # Verifica avaliações existentes no banco (para esta disciplina ou universais PAI) para evitar duplicação
@@ -3027,11 +2986,19 @@ class CalendarPdfExtractView(generics.GenericAPIView):
                 status=drf_status.HTTP_200_OK,
             )
 
+        llm_items = extract_calendar_items(
+            raw_text,
+            subject_name=student_subject.subject.name,
+            reference_year=self._resolve_reference_year(student_subject),
+            allowed_types=list(self.CANONICAL_ASSESSMENT_NAMES),
+        )
+
         result = self.parse_calendar_text(
             raw_text=raw_text,
             student_subject=student_subject,
             user=user,
             filename=filename,
+            llm_items=llm_items,
         )
         return Response(result, status=drf_status.HTTP_200_OK)
 

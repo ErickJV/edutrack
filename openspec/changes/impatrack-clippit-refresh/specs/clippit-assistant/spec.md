@@ -2,9 +2,9 @@
 
 ## REMOVED Requirements
 
-### Requirement: Clippit Assistant Felix Rieseberg Style com Gemini
-**Reason**: A autenticação via Google Antigravity/OMP e o modelo Gemini foram substituídos por uma chave de API do servidor, e nenhum nome de provedor ou modelo é exposto ao usuário final.
-**Migration**: O assistente agora usa `DEEPSEEK_API_KEY` no backend (endpoint compatível com OpenAI) e a interface não exibe provedor nem modelo; clientes que enviavam o header `X-Antigravity-Token` devem parar de enviá-lo.
+### Requirement: Clippit Assistant Felix Rieseberg Style com autenticação local
+**Reason**: A autenticação via OAuth local do provedor anterior e o modelo usado por ele foram substituídos por uma chave de API do servidor, e nenhum nome de provedor ou modelo é exposto ao usuário final.
+**Migration**: O assistente agora usa `DEEPSEEK_API_KEY` no backend (endpoint compatível com OpenAI) e a interface não exibe provedor nem modelo; clientes que enviavam o header customizado de token do provedor anterior devem parar de enviá-lo.
 
 ## ADDED Requirements
 

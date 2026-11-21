@@ -1,0 +1,17 @@
+$ git log --merges --oneline -10
+3d70f8c Merge pull request #52 from ErickJV/dependabot/pip/backend/gunicorn-27.0.1
+6f1f84e Merge pull request #50 from ErickJV/dependabot/pip/backend/django-allauth-65.22.1
+e51b899 Merge pull request #51 from ErickJV/dependabot/pip/backend/ruff-0.17.5
+77b605e Merge pull request #48 from ErickJV/dependabot/pip/backend/mypy-2.4.1
+845a4cc Merge pull request #53 from ErickJV/dependabot/npm_and_yarn/frontend/vite-8.3.8
+7d219f7 Merge pull request #49 from ErickJV/dependabot/pip/backend/djangorestframework-stubs-3.18.2
+ad71161 Merge pull request #54 from ErickJV/dependabot/npm_and_yarn/frontend/babel/preset-typescript-8.0.7
+9ac8a6e Merge pull request #55 from ErickJV/dependabot/npm_and_yarn/frontend/globals-17.14.0
+ffe81fd Merge pull request #47 from KarinyAlves/main
+4d2819a Merge branch 'main' of https://github.com/ErickJV/edutrack
+$ git log --oneline -5
+aa94981 feat(academic,docs): filtros de busca em disciplinas, relatorio de desempenho em PDF e documentacao do projeto (#56)
+cc03975 revert(calendario): mantém Programação Semanal antes da grade mensal
+9e25fd3 style(clippit): restaura fins de linha LF nos arquivos tocados
+2f87a5e feat(clippit): chave DeepSeek no servidor, marca Impatrack e calendário reordenado
+198cedb update: brand and icons

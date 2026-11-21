@@ -1,13 +1,17 @@
 # clippit-assistant Specification
 
 ## Purpose
-Provides specification and requirements for Clippit Assistant (Felix Rieseberg Style) com Gemini 3.8 Flash via Antigravity OAuth to ensure reliable system behavior.
+Define o comportamento do assistente acadêmico Clippit, que responde com o contexto acadêmico isolado do estudante autenticado através do módulo LLM compartilhado do backend, sem expor provedor ou modelo na interface.
 
 ## Requirements
 
-### Requirement: Clippit Assistant Felix Rieseberg Style com Gemini
-The system SHALL implement Clippit Assistant (Felix Rieseberg Style) com Gemini 3.8 Flash via Antigravity OAuth in accordance with the specified approach and verification criteria.
+### Requirement: Clippit usa o módulo LLM compartilhado
+O assistente Clippit MUST construir o contexto acadêmico isolado do usuário autenticado e enviar o prompt de persona pelo módulo `apps.llm`, sem descoberta de OAuth local ou header de token customizado.
 
-#### Scenario: Standard execution of Clippit Assistant (Felix Rieseberg Style) com Gemini 3.8 Flash via Antigravity OAuth
-- **WHEN** Clippit Assistant (Felix Rieseberg Style) com Gemini 3.8 Flash via Antigravity OAuth is invoked or triggered
-- **THEN** the system executes the specified behavior and produces the expected observable result
+#### Scenario: Mensagem do aluno com chave configurada
+- **WHEN** o aluno envia uma mensagem em `POST /api/v1/assistant/chat`
+- **THEN** o backend envia o contexto acadêmico e o histórico recente via `LLMClient.chat`, retorna `reply`, `animation` e `timestamp`, e não expõe provedor nem modelo
+
+#### Scenario: Chave não configurada no servidor
+- **WHEN** `DEEPSEEK_API_KEY` está vazia e o aluno envia uma mensagem
+- **THEN** o backend responde com a mensagem de fallback do Clippit e `animation = alert`, sem realizar chamada HTTP

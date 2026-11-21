@@ -14,7 +14,7 @@ from apps.academic.models import (
     Subject,
 )
 from apps.assistant.context import format_academic_context_for_prompt, get_student_academic_context
-from apps.assistant.deepseek import DeepSeekClient
+from apps.llm.client import LLMClient
 from apps.catalog.models import Course, CourseOffering
 
 User = get_user_model()
@@ -151,10 +151,10 @@ class AssistantContextAndChatTestCase(TestCase):
         self.assertEqual(resp.json(), {"configured": False})
 
     @override_settings(DEEPSEEK_API_KEY="")
-    @patch("apps.assistant.deepseek.requests.post")
+    @patch("apps.llm.client.requests.post")
     def test_assistant_chat_unconfigured_fallback(self, mock_post):
         """Sem chave configurada, responde educadamente sem chamar o serviço externo."""
-        self.assertFalse(DeepSeekClient().get_status()["configured"])
+        self.assertFalse(LLMClient().get_status()["configured"])
 
         resp = self.client1.post(
             "/api/v1/assistant/chat",
@@ -167,8 +167,8 @@ class AssistantContextAndChatTestCase(TestCase):
         self.assertEqual(data["animation"], "alert")
         mock_post.assert_not_called()
 
-    @override_settings(DEEPSEEK_API_KEY="test-key", DEEPSEEK_MODEL="deepseek-v4-flash")
-    @patch("apps.assistant.deepseek.requests.post")
+    @override_settings(DEEPSEEK_API_KEY="test-key", DEEPSEEK_MODEL="deepseek-flash")
+    @patch("apps.llm.client.requests.post")
     def test_assistant_chat_with_deepseek_api_key(self, mock_post):
         """Com chave configurada, envia o contexto ao endpoint compatível com OpenAI."""
         mock_response = MagicMock()
@@ -205,7 +205,7 @@ class AssistantContextAndChatTestCase(TestCase):
         args, kwargs = mock_post.call_args
         self.assertEqual(args[0], "https://api.deepseek.com/chat/completions")
         self.assertEqual(kwargs["headers"]["Authorization"], "Bearer test-key")
-        self.assertEqual(kwargs["json"]["model"], "deepseek-v4-flash")
+        self.assertEqual(kwargs["json"]["model"], "deepseek-flash")
         self.assertEqual(kwargs["json"]["messages"][0]["role"], "system")
         self.assertIn("Banco de Dados", kwargs["json"]["messages"][0]["content"])
         user_messages = [

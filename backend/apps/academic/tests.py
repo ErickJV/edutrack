@@ -1,12 +1,24 @@
+import json
+from unittest.mock import MagicMock, patch
+
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
-from apps.academic.models import AcademicTerm, Flashcard, StudentSubject, StudyNote, Subject
+from apps.academic.models import (
+    AcademicTerm,
+    Flashcard,
+    StudentSubject,
+    StudyDocument,
+    StudyDocumentPage,
+    StudyNote,
+    Subject,
+)
 from apps.accounts.models import User
 from apps.catalog.models import Course
 
 
+@override_settings(DEEPSEEK_API_KEY="")
 class FlashcardsAndNotesQualityTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -947,6 +959,226 @@ class FlashcardsAndNotesQualityTests(TestCase):
         self.assertEqual(del_resp.status_code, 204)
         ss_data.refresh_from_db()
         self.assertEqual(ss_data.status, StudentSubject.Status.DROPPED)
+
+    @override_settings(DEEPSEEK_API_KEY="test-key", DEEPSEEK_MODEL="deepseek-flash")
+    @patch("apps.llm.client.requests.post")
+    def test_flashcard_generation_uses_shared_llm(self, mock_post):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": json.dumps(
+                            {
+                                "cards": [
+                                    {
+                                        "front": "Pergunta LLM",
+                                        "back": "Resposta LLM",
+                                        "hint": "dica",
+                                        "tags": "llm",
+                                    }
+                                ]
+                            }
+                        )
+                    }
+                }
+            ]
+        }
+        mock_post.return_value = mock_response
+
+        resp = self.client.post(
+            "/api/v1/flashcards/generate-ai",
+            {"topic": "Modelagem", "count": 1},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["created_count"], 1)
+
+        card = Flashcard.objects.get(user=self.user)
+        self.assertEqual(card.front, "Pergunta LLM")
+        self.assertEqual(card.back, "Resposta LLM")
+        self.assertEqual(card.hint, "dica")
+        self.assertEqual(card.tags, "llm")
+
+    @override_settings(DEEPSEEK_API_KEY="test-key")
+    @patch("apps.llm.client.requests.post")
+    def test_document_analysis_uses_shared_llm(self, mock_post):
+        doc = StudyDocument.objects.create(
+            user=self.user,
+            student_subject=self.student_subject,
+            title="Documento IA",
+            file_type="pdf",
+            page_count=1,
+        )
+        StudyDocumentPage.objects.create(
+            document=doc,
+            page_number=1,
+            content="Dependências funcionais e normalização de dados em bancos relacionais.",
+            token_count=9,
+        )
+
+        analysis = {
+            "summary": "Resumo gerado pelo módulo de IA. [Documento IA - Pág. 1]",
+            "complex_topics": [
+                {
+                    "topic": "Dependência transitiva",
+                    "explanation": "Explicação causal",
+                    "citation": "[Documento IA - Pág. 1]",
+                    "example": "Exemplo prático",
+                }
+            ],
+            "key_concepts": [
+                {
+                    "term": "Normalização",
+                    "definition": "Definição formal",
+                    "citation": "[Documento IA - Pág. 1]",
+                }
+            ],
+            "mental_map_mermaid": "graph TD\n    Root[\"Documento IA\"]",
+            "study_roadmap": [
+                {
+                    "step": 1,
+                    "goal": "Fundamentação",
+                    "recommended_pages": "Pág. 1",
+                    "action": "Ler ativamente",
+                }
+            ],
+            "reinforcement_topics": ["Dependência transitiva"],
+            "complementary_materials": [
+                {
+                    "title": "Leitura recomendada",
+                    "type": "Artigo",
+                    "description": "Aprofundamento",
+                }
+            ],
+        }
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": json.dumps(analysis)}}]
+        }
+        mock_post.return_value = mock_response
+
+        resp = self.client.post(f"/api/v1/study-documents/{doc.id}/ai-analyze")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["summary"], analysis["summary"])
+
+        doc.refresh_from_db()
+        self.assertEqual(doc.analysis_cache["summary"], analysis["summary"])
+
+    @override_settings(DEEPSEEK_API_KEY="test-key")
+    @patch("apps.llm.client.requests.post")
+    def test_quiz_generation_uses_shared_llm(self, mock_post):
+        doc = StudyDocument.objects.create(
+            user=self.user,
+            student_subject=self.student_subject,
+            title="Documento Quiz",
+            file_type="pdf",
+            page_count=1,
+        )
+        StudyDocumentPage.objects.create(
+            document=doc,
+            page_number=1,
+            content="Chaves estrangeiras garantem integridade referencial entre relações do modelo.",
+            token_count=10,
+        )
+
+        questions = [
+            {
+                "question": f"Questão {index} sobre integridade referencial?",
+                "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
+                "correct_option_index": index % 4,
+                "citation": "[Documento Quiz - Pág. 1]",
+                "explanation": "Justificativa curta.",
+            }
+            for index in range(10)
+        ]
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [
+                {"message": {"content": json.dumps({"questions": questions})}}
+            ]
+        }
+        mock_post.return_value = mock_response
+
+        resp = self.client.post(f"/api/v1/study-documents/{doc.id}/quiz")
+        self.assertEqual(resp.status_code, 201)
+        data = resp.json()
+        self.assertEqual(data["total_questions"], 10)
+        self.assertEqual(len(data["questions"]), 10)
+        self.assertEqual(
+            data["questions"][0]["question"],
+            "Questão 0 sobre integridade referencial?",
+        )
+        self.assertEqual(
+            [question["id"] for question in data["questions"]],
+            list(range(1, 11)),
+        )
+
+    @override_settings(DEEPSEEK_API_KEY="test-key")
+    @patch("apps.llm.client.requests.post")
+    def test_calendar_extraction_merges_llm_items(self, mock_post):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": json.dumps(
+                            {
+                                "items": [
+                                    {
+                                        "assessment_type": "AP2",
+                                        "date": "2026-10-19",
+                                        "source_snippet": "AP 2 - 19/10/2026",
+                                    },
+                                    {
+                                        "assessment_type": "PAI 1",
+                                        "date": "2026-09-25",
+                                        "source_snippet": "PAI I: 25/09/2026",
+                                    },
+                                    {
+                                        "assessment_type": "AP 1",
+                                        "date": "2026-09-01",
+                                        "source_snippet": "AP 1: 01/09/2026",
+                                    },
+                                ]
+                            }
+                        )
+                    }
+                }
+            ]
+        }
+        mock_post.return_value = mock_response
+
+        pdf_bytes = (
+            b"%PDF-1.4\n"
+            b"1 0 obj << /Type /Page >> endobj\n"
+            b"(Calendario Academico 2026 - AP 1: 14/09/2026) Tj\n"
+        )
+        upload = SimpleUploadedFile(
+            "calendario_llm.pdf",
+            pdf_bytes,
+            content_type="application/pdf",
+        )
+
+        resp = self.client.post(
+            "/api/v1/calendar/extract-pdf",
+            {"file": upload, "student_subject_id": str(self.student_subject.id)},
+            format="multipart",
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+
+        extracted = {item["assessment_type"]: item["date"] for item in data["items"]}
+        self.assertEqual(extracted.get("AP1"), "2026-09-14")
+        self.assertEqual(extracted.get("AP2"), "2026-10-19")
+        self.assertEqual(extracted.get("PAI 1"), "2026-09-25")
+        self.assertNotIn("AP1", data["missing_types"])
+        self.assertNotIn("AP2", data["missing_types"])
+        self.assertNotIn("PAI 1", data["missing_types"])
 
 
 

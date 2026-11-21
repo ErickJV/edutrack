@@ -1,0 +1,25 @@
+$ openspec validate --all 2>&1 | grep -E '^(✓|✗)|Totals'
+✓ spec/academic-calendar
+✓ spec/academic-curriculum
+✓ spec/academic-reading
+✓ change/acompanhar-boletim-configuravel
+✓ spec/clippit-assistant
+✓ change/completar-requisitos-academicos
+✓ change/deepseek-llm-module
+✓ spec/flashcards-and-calendar
+✓ spec/flashcards-and-notes-quality
+✓ spec/flashcards-notes-calendar
+✓ spec/icone-marca-impatrack
+✓ change/impatrack-clippit-refresh
+✓ spec/inline-professor-management-only
+✓ spec/perfil-configuracoes-e-dependabot
+✓ change/personalizar-rotina-academica
+✓ spec/restaurar-changes-openspec
+✓ spec/social-auth-flow
+✓ spec/student-dashboard
+✓ spec/student-profile-management
+✓ change/student-profile-tab
+✓ spec/study-documents-rag
+✓ spec/study-session
+✓ spec/study-tasks
+Totals: 23 passed, 0 failed (23 items)

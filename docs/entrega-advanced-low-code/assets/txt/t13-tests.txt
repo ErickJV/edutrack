@@ -1,0 +1,74 @@
+$ DB_ENGINE=sqlite python manage.py test apps.academic.tests.FlashcardsAndNotesQualityTests.test_advanced_search_and_pdf_report_generation -v 2
+Found 1 test(s).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Operations to perform:
+  Synchronize unmigrated apps: allauth, assistant, drf_spectacular, google, headless, llm, messages, rest_framework, staticfiles
+  Apply all migrations: academic, account, accounts, admin, auth, catalog, contenttypes, legal, sessions, sites, socialaccount, usersessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying catalog.0001_initial... OK
+  Applying catalog.0002_seed_courses... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying accounts.0001_initial... OK
+  Applying academic.0001_initial... OK
+  Applying academic.0002_seed_curriculum... OK
+  Applying academic.0003_sync_impacta_official_curriculum... OK
+  Applying academic.0004_studentsubject_custom_workload_hours... OK
+  Applying academic.0005_professor_studentsubject_professor... OK
+  Applying academic.0006_migrate_legacy_professor_names... OK
+  Applying academic.0007_academicevent_academicterm_and_more... OK
+  Applying academic.0008_studyfolder_studynote... OK
+  Applying academic.0009_academicreading_studynote_reading_readinglog... OK
+  Applying academic.0010_classoccurrence_attendance_and_origin... OK
+  Applying academic.0011_flashcard... OK
+  Applying academic.0012_academictask_all_day_academictask_category_and_more... OK
+  Applying academic.0013_studydocument_studyquiz_studydocumentpage... OK
+  Applying academic.0014_rename_summary_ai_studydocument_analysis_cache_and_more... OK
+  Applying account.0001_initial... OK
+  Applying account.0002_email_max_length... OK
+  Applying account.0003_alter_emailaddress_create_unique_verified_email... OK
+  Applying account.0004_alter_emailaddress_drop_unique_email... OK
+  Applying account.0005_emailaddress_idx_upper_email... OK
+  Applying account.0006_emailaddress_lower... OK
+  Applying account.0007_emailaddress_idx_email... OK
+  Applying account.0008_emailaddress_unique_primary_email_fixup... OK
+  Applying account.0009_emailaddress_unique_primary_email... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+  Applying accounts.0002_configure_site... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying legal.0001_initial... OK
+  Applying legal.0002_seed_documents... OK
+  Applying sessions.0001_initial... OK
+  Applying socialaccount.0001_initial... OK
+  Applying socialaccount.0002_token_max_lengths... OK
+  Applying socialaccount.0003_extra_data_default_dict... OK
+  Applying socialaccount.0004_app_provider_id_settings... OK
+  Applying socialaccount.0005_socialtoken_nullable_app... OK
+  Applying socialaccount.0006_alter_socialaccount_extra_data... OK
+  Applying usersessions.0001_initial... OK
+System check identified no issues (0 silenced).
+test_advanced_search_and_pdf_report_generation (apps.academic.tests.FlashcardsAndNotesQualityTests.test_advanced_search_and_pdf_report_generation) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.138s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
