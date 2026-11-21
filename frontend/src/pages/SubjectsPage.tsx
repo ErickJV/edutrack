@@ -1,6 +1,7 @@
 import { BookOpen, ClipboardList, LoaderCircle, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
+import { PerspectiveBook } from '@/components/perspective-book'
 import { listStudentSubjects } from '../api/client'
 import type { StudentSubject } from '../api/types'
 import { Brand } from '../components/Brand'
@@ -9,9 +10,29 @@ import { SemesterSelectionModal } from '../components/SemesterSelectionModal'
 import { SubjectEditModal } from '../components/SubjectEditModal'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { Alert, PageLoader } from '../components/Feedback'
+
 function toSemesterLabel(semester: number): string {
   return `${semester}º semestre`
 }
+
+function getProfessorDisplay(item: StudentSubject): string {
+  const fromRelation = item.professor?.name?.trim()
+  if (fromRelation) return fromRelation
+  const fromDisplay = item.display_professor_name?.trim()
+  if (fromDisplay) return fromDisplay
+  const fromName = item.professor_name?.trim()
+  if (fromName) return fromName
+  return 'Professor não informado'
+}
+
+const BOOK_COVER_STYLES = [
+  'bg-gradient-to-br from-[#006768] via-[#005859] to-[#003f40] text-white',
+  'bg-gradient-to-br from-[#124e66] via-[#0d3b4f] to-[#082735] text-white',
+  'bg-gradient-to-br from-[#1e4363] via-[#15314b] to-[#0c2033] text-white',
+  'bg-gradient-to-br from-[#0e6b7c] via-[#0a5260] to-[#063842] text-white',
+  'bg-gradient-to-br from-[#1b5e5a] via-[#134643] to-[#0b2e2c] text-white',
+  'bg-gradient-to-br from-[#234b6e] via-[#193752] to-[#0f2336] text-white',
+]
 
 export function SubjectsPage() {
   const [activeSubjects, setActiveSubjects] = useState<StudentSubject[]>([])
@@ -19,6 +40,7 @@ export function SubjectsPage() {
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingSubject, setEditingSubject] = useState<StudentSubject | null>(null)
+
   useEffect(() => {
     let alive = true
     async function load() {
@@ -42,16 +64,25 @@ export function SubjectsPage() {
 
   const progressAverage = useMemo(() => {
     if (activeSubjects.length === 0) return 0
-    return Math.round(activeSubjects.reduce((sum, item) => sum + item.progress_percent, 0) / activeSubjects.length)
+    return Math.round(
+      activeSubjects.reduce((sum, item) => sum + item.progress_percent, 0) /
+        activeSubjects.length,
+    )
   }, [activeSubjects])
+
   const totalHours = useMemo(
-    () => activeSubjects.reduce((sum, item) => sum + (item.custom_workload_hours ?? item.subject.workload_hours), 0),
+    () =>
+      activeSubjects.reduce(
+        (sum, item) => sum + (item.custom_workload_hours ?? item.subject.workload_hours),
+        0,
+      ),
     [activeSubjects],
   )
+
   if (loading) return <PageLoader />
 
   return (
-    <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
+    <main className="min-h-dvh overflow-x-hidden bg-[#dce6ef] dark:bg-[#040f17]">
       <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
         <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
           <div className="flex items-center justify-between gap-4">
@@ -75,40 +106,117 @@ export function SubjectsPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
-        <section className="rounded-[2rem] bg-[#0d3950] border border-[#005063]/40 px-6 py-8 text-white shadow-xl sm:px-10 sm:py-10 dark:bg-[#081a26] dark:border-[#005063]/50">
-          <div className="max-w-3xl space-y-4">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white">
-              <BookOpen size={14} aria-hidden="true" /> Minhas disciplinas
-            </p>
-            <h1 className="text-3xl font-black tracking-tight sm:text-4xl text-white">Acompanhe sua matriz curricular e o progresso de cada disciplina.</h1>
-            <p className="max-w-2xl text-base leading-7 text-[#dce6ef]/90">
-              Selecione as matérias que está cursando neste semestre e acompanhe o avanço individual de cada disciplina.
-            </p>
+        <section className="rounded-[2rem] border border-[#005063]/40 bg-[#0d3950] px-6 py-8 text-white shadow-xl sm:px-10 sm:py-10 dark:border-[#005063]/50 dark:bg-[#081a26]">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            {/* Lado esquerdo: conteúdo textual original */}
+            <div className="max-w-xl space-y-4 lg:shrink-0 xl:max-w-2xl">
+              <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white">
+                <BookOpen size={14} aria-hidden="true" /> Minhas disciplinas
+              </p>
+              <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+                Acompanhe sua matriz curricular e o progresso de cada disciplina.
+              </h1>
+              <p className="max-w-2xl text-base leading-7 text-[#dce6ef]/90">
+                Selecione as matérias que está cursando neste semestre e acompanhe o avanço
+                individual de cada disciplina.
+              </p>
+            </div>
+
+            {/* Lado direito: coleção dinâmica de livros em perspectiva (Spell UI PerspectiveBook) */}
+            <div
+              aria-label="Coleção de livros das disciplinas ativas"
+              className="flex min-w-0 flex-1 items-center justify-center lg:justify-end"
+            >
+              {activeSubjects.length === 0 ? (
+                <p className="text-center text-xs font-medium text-[#dce6ef]/70 italic lg:text-right">
+                  Adicione disciplinas para montar sua coleção.
+                </p>
+              ) : (
+                <div className="flex max-w-full items-center overflow-x-auto px-3 py-4 [scrollbar-width:thin]">
+                  <div
+                    className={`flex items-center ${
+                      activeSubjects.length > 3
+                        ? '-space-x-7 sm:-space-x-6'
+                        : activeSubjects.length > 1
+                          ? '-space-x-3 sm:-space-x-2'
+                          : ''
+                    }`}
+                  >
+                    {activeSubjects.map((item, index) => {
+                      const coverClass =
+                        BOOK_COVER_STYLES[index % BOOK_COVER_STYLES.length]
+                      const professorLabel = getProfessorDisplay(item)
+                      return (
+                        <div
+                          key={item.id}
+                          className="relative shrink-0 transition-[z-index] duration-200 hover:z-30 focus-within:z-30"
+                        >
+                          <PerspectiveBook
+                            size="sm"
+                            textured
+                            className={coverClass}
+                          >
+                            <div className="flex h-full flex-col justify-between gap-2 select-none">
+                              <h2 className="text-[13px] leading-4.5 font-extrabold tracking-tight wrap-break-word text-white">
+                                {item.subject.name}
+                              </h2>
+                              <p className="mt-auto border-t border-white/15 pt-1.5 text-[10.5px] leading-3.5 font-normal wrap-break-word text-white/85">
+                                {professorLabel}
+                              </p>
+                            </div>
+                          </PerspectiveBook>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
-        {error ? <div className="mt-6"><Alert>{error}</Alert></div> : null}
+        {error ? (
+          <div className="mt-6">
+            <Alert>{error}</Alert>
+          </div>
+        ) : null}
 
         <section className="mt-6 grid gap-4 sm:grid-cols-3">
           <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Disciplinas ativas</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{activeSubjects.length}</p>
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+              Disciplinas ativas
+            </p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">
+              {activeSubjects.length}
+            </p>
           </article>
           <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Média de progresso</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{progressAverage}%</p>
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+              Média de progresso
+            </p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">
+              {progressAverage}%
+            </p>
           </article>
           <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Carga horária ativa</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{totalHours}h</p>
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+              Carga horária ativa
+            </p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">
+              {totalHours}h
+            </p>
           </article>
         </section>
 
         <section className="mt-8 rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">Disciplinas ativas</p>
-              <h2 className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-white">Progresso por matéria</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">
+                Disciplinas ativas
+              </p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-white">
+                Progresso por matéria
+              </h2>
             </div>
             <button
               type="button"
@@ -122,10 +230,17 @@ export function SubjectsPage() {
 
           {activeSubjects.length === 0 ? (
             <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-8 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
-              <LoaderCircle className="mx-auto text-slate-400 dark:text-slate-500" size={28} aria-hidden="true" />
-              <p className="mt-4 text-lg font-black text-[#0d3950] dark:text-white">Nenhuma disciplina ativa ainda</p>
+              <LoaderCircle
+                className="mx-auto text-slate-400 dark:text-slate-500"
+                size={28}
+                aria-hidden="true"
+              />
+              <p className="mt-4 text-lg font-black text-[#0d3950] dark:text-white">
+                Nenhuma disciplina ativa ainda
+              </p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Configure seu semestre para visualizar o progresso e começar a acompanhar sua rotina.
+                Configure seu semestre para visualizar o progresso e começar a acompanhar sua
+                rotina.
               </p>
               <button
                 type="button"
@@ -139,11 +254,18 @@ export function SubjectsPage() {
           ) : (
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               {activeSubjects.map((item) => (
-                <article key={item.id} className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
+                <article
+                  key={item.id}
+                  className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{toSemesterLabel(item.subject.semester)}</p>
-                      <h3 className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-white">{item.subject.name}</h3>
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                        {toSemesterLabel(item.subject.semester)}
+                      </p>
+                      <h3 className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-white">
+                        {item.subject.name}
+                      </h3>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
@@ -153,23 +275,39 @@ export function SubjectsPage() {
                         type="button"
                         onClick={() => setEditingSubject(item)}
                         className="inline-flex min-h-9 items-center rounded-lg border border-slate-200 px-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                        title="Editar professor e carga horária"
+                        title="Editar disciplina, professor e carga horária"
                       >
                         Editar
                       </button>
                     </div>
                   </div>
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true">
-                    <div className="h-full rounded-full bg-[#006768] dark:bg-[#005063]" style={{ width: `${item.progress_percent}%` }} />
+                  <div
+                    className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+                    aria-hidden="true"
+                  >
+                    <div
+                      className="h-full rounded-full bg-[#006768] dark:bg-[#005063]"
+                      style={{ width: `${item.progress_percent}%` }}
+                    />
                   </div>
                   <dl className="mt-4 grid gap-3 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
                     <div>
-                      <dt className="font-semibold text-slate-500 dark:text-slate-400">Carga horária</dt>
-                      <dd className="mt-1 font-bold text-[#0d3950] dark:text-white">{item.custom_workload_hours != null ? `${item.custom_workload_hours}h (declarada)` : `${item.subject.workload_hours}h`}</dd>
+                      <dt className="font-semibold text-slate-500 dark:text-slate-400">
+                        Carga horária
+                      </dt>
+                      <dd className="mt-1 font-bold text-[#0d3950] dark:text-white">
+                        {item.custom_workload_hours != null
+                          ? `${item.custom_workload_hours}h (declarada)`
+                          : `${item.subject.workload_hours}h`}
+                      </dd>
                     </div>
                     <div>
-                      <dt className="font-semibold text-slate-500 dark:text-slate-400">Professor</dt>
-                      <dd className="mt-1 font-bold text-[#0d3950] dark:text-white">{item.professor_name || 'Não definido'}</dd>
+                      <dt className="font-semibold text-slate-500 dark:text-slate-400">
+                        Professor
+                      </dt>
+                      <dd className="mt-1 font-bold text-[#0d3950] dark:text-white">
+                        {getProfessorDisplay(item)}
+                      </dd>
                     </div>
                   </dl>
                 </article>
@@ -177,7 +315,6 @@ export function SubjectsPage() {
             </div>
           )}
         </section>
-
       </div>
 
       <SemesterSelectionModal
@@ -193,7 +330,23 @@ export function SubjectsPage() {
         enrollment={editingSubject}
         onClose={() => setEditingSubject(null)}
         onSaved={(updated) => {
-          setActiveSubjects((current) => current.map((i) => (i.id === updated.id ? updated : i)))
+          setActiveSubjects((current) =>
+            current.map((item) => {
+              if (item.id === updated.id) return updated
+              if (
+                updated.professor &&
+                item.professor?.id === updated.professor.id
+              ) {
+                return {
+                  ...item,
+                  professor: updated.professor,
+                  professor_name: updated.professor.name,
+                  display_professor_name: updated.professor.name,
+                }
+              }
+              return item
+            }),
+          )
         }}
       />
     </main>

@@ -25,6 +25,7 @@ type SubjectEditModalProps = {
 
 export function SubjectEditModal({ open, enrollment, onClose, onSaved }: SubjectEditModalProps) {
   const [professors, setProfessors] = useState<Professor[]>([])
+  const [subjectName, setSubjectName] = useState('')
   const [selectedProfId, setSelectedProfId] = useState<string>('')
   const [customProfName, setCustomProfName] = useState('')
   const [isCreatingNew, setIsCreatingNew] = useState(false)
@@ -62,6 +63,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
       })
       .catch(() => {})
 
+    setSubjectName(enrollment.subject.name)
     setWorkloadHours(
       enrollment.custom_workload_hours != null
         ? String(enrollment.custom_workload_hours)
@@ -147,6 +149,11 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
 
   async function submit(event: FormEvent) {
     event.preventDefault()
+    const trimmedSubjectName = subjectName.trim()
+    if (trimmedSubjectName.length < 2) {
+      setError('Informe um nome válido para a disciplina (mínimo de 2 caracteres).')
+      return
+    }
     const hours = Number.parseInt(workloadHours, 10)
     if (Number.isNaN(hours) || hours < 1 || hours > 2000) {
       setError('Informe uma carga horária válida entre 1 e 2000 horas.')
@@ -173,6 +180,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
       }
 
       const updated = await updateStudentSubject(enrollment!.id, {
+        subject_name: trimmedSubjectName,
         professor_id: finalProfId,
         professor_name: finalProfName,
         custom_workload_hours: hours,
@@ -220,10 +228,15 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-4">
             {error ? <Alert>{error}</Alert> : null}
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-[#005063]/30 dark:bg-[#040f17]">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Disciplina da matriz</p>
-              <p className="mt-1 text-base font-extrabold text-[#0d3950] dark:text-slate-50">{enrollment.subject.name}</p>
-              <p className="mt-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-[#005063]/30 dark:bg-[#040f17] space-y-2">
+              <Input
+                label="Nome da disciplina"
+                name="subject_name"
+                value={subjectName}
+                onChange={(e) => setSubjectName(e.target.value)}
+                required
+              />
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 {enrollment.subject.code || 'Sem código'} · Matriz oficial: {enrollment.subject.workload_hours}h
               </p>
             </div>
