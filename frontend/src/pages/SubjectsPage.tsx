@@ -1,4 +1,4 @@
-import { BookOpen, ClipboardList, LoaderCircle, Plus } from 'lucide-react'
+import { ClipboardList, LoaderCircle, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { PerspectiveBook } from '@/components/perspective-book'
@@ -26,12 +26,12 @@ function getProfessorDisplay(item: StudentSubject): string {
 }
 
 const BOOK_COVER_STYLES = [
-  'bg-gradient-to-br from-[#006768] via-[#005859] to-[#003f40] text-white',
+  'bg-gradient-to-br from-[#0d3950] via-[#092b3d] to-[#051c28] text-white',
+  'bg-gradient-to-br from-[#006768] via-[#005253] to-[#003b3c] text-white',
   'bg-gradient-to-br from-[#124e66] via-[#0d3b4f] to-[#082735] text-white',
   'bg-gradient-to-br from-[#1e4363] via-[#15314b] to-[#0c2033] text-white',
   'bg-gradient-to-br from-[#0e6b7c] via-[#0a5260] to-[#063842] text-white',
   'bg-gradient-to-br from-[#1b5e5a] via-[#134643] to-[#0b2e2c] text-white',
-  'bg-gradient-to-br from-[#234b6e] via-[#193752] to-[#0f2336] text-white',
 ]
 
 export function SubjectsPage() {
@@ -106,74 +106,49 @@ export function SubjectsPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
-        <section className="rounded-[2rem] border border-[#005063]/40 bg-[#0d3950] px-6 py-8 text-white shadow-xl sm:px-10 sm:py-10 dark:border-[#005063]/50 dark:bg-[#081a26]">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-            {/* Lado esquerdo: conteúdo textual original */}
-            <div className="max-w-xl space-y-4 lg:shrink-0 xl:max-w-2xl">
-              <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white">
-                <BookOpen size={14} aria-hidden="true" /> Minhas disciplinas
-              </p>
-              <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-                Acompanhe sua matriz curricular e o progresso de cada disciplina.
-              </h1>
-              <p className="max-w-2xl text-base leading-7 text-[#dce6ef]/90">
-                Selecione as matérias que está cursando neste semestre e acompanhe o avanço
-                individual de cada disciplina.
-              </p>
-            </div>
-
-            {/* Lado direito: coleção dinâmica de livros em perspectiva (Spell UI PerspectiveBook) */}
-            <div
-              aria-label="Coleção de livros das disciplinas ativas"
-              className="flex min-w-0 flex-1 items-center justify-center lg:justify-end"
-            >
-              {activeSubjects.length === 0 ? (
-                <p className="text-center text-xs font-medium text-[#dce6ef]/70 italic lg:text-right">
-                  Adicione disciplinas para montar sua coleção.
-                </p>
-              ) : (
-                <div className="flex max-w-full items-center overflow-x-auto px-3 py-4 [scrollbar-width:thin]">
-                  <div
-                    className={`flex items-center ${
-                      activeSubjects.length > 3
-                        ? '-space-x-7 sm:-space-x-6'
-                        : activeSubjects.length > 1
-                          ? '-space-x-3 sm:-space-x-2'
-                          : ''
-                    }`}
-                  >
-                    {activeSubjects.map((item, index) => {
-                      const coverClass =
-                        BOOK_COVER_STYLES[index % BOOK_COVER_STYLES.length]
-                      const professorLabel = getProfessorDisplay(item)
-                      return (
-                        <div
-                          key={item.id}
-                          className="relative shrink-0 transition-[z-index] duration-200 hover:z-30 focus-within:z-30"
-                        >
-                          <PerspectiveBook
-                            size="sm"
-                            textured
-                            className={coverClass}
-                          >
-                            <div className="flex h-full flex-col justify-between gap-2 select-none">
-                              <h2 className="text-[13px] leading-4.5 font-extrabold tracking-tight wrap-break-word text-white">
-                                {item.subject.name}
-                              </h2>
-                              <p className="mt-auto border-t border-white/15 pt-1.5 text-[10.5px] leading-3.5 font-normal wrap-break-word text-white/85">
-                                {professorLabel}
-                              </p>
-                            </div>
-                          </PerspectiveBook>
+        {activeSubjects.length > 0 ? (
+          <section
+            aria-label="Livros das disciplinas ativas"
+            className="w-full"
+          >
+            <div className="w-full overflow-x-auto py-4 [scrollbar-width:thin]">
+              <div
+                className={`flex min-w-full items-center gap-6 px-2 sm:gap-8 lg:gap-10 ${
+                  activeSubjects.length === 1
+                    ? 'justify-start'
+                    : 'justify-between'
+                }`}
+              >
+                {activeSubjects.map((item, index) => {
+                  const coverClass =
+                    BOOK_COVER_STYLES[index % BOOK_COVER_STYLES.length]
+                  const professorLabel = getProfessorDisplay(item)
+                  return (
+                    <div
+                      key={item.id}
+                      className="relative shrink-0 transition-[z-index] duration-200 hover:z-30 focus-within:z-30"
+                    >
+                      <PerspectiveBook
+                        size="default"
+                        textured
+                        className={coverClass}
+                      >
+                        <div className="flex h-full flex-col justify-between gap-3 select-none">
+                          <h2 className="text-base leading-5 font-extrabold tracking-tight wrap-break-word text-white">
+                            {item.subject.name}
+                          </h2>
+                          <p className="mt-auto border-t border-white/15 pt-2 text-xs leading-4 font-normal wrap-break-word text-white/85">
+                            {professorLabel}
+                          </p>
                         </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
+                      </PerspectiveBook>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
         {error ? (
           <div className="mt-6">
@@ -181,7 +156,7 @@ export function SubjectsPage() {
           </div>
         ) : null}
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-3">
+        <section className={`${activeSubjects.length > 0 ? 'mt-6' : ''} grid gap-4 sm:grid-cols-3`}>
           <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
               Disciplinas ativas
