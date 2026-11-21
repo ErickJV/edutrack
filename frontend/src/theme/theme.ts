@@ -1,3 +1,5 @@
+import { prefersReducedMotion } from '../utils/motion'
+
 export type ThemePreference = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
@@ -68,3 +70,17 @@ export function initializeTheme(): void {
 
 // Run immediately upon import to avoid theme flash (FOUC)
 initializeTheme()
+
+let themeTransitionTimer: number | undefined
+
+/** Liga a transição de cores do documento por `durationMs`, antes da troca da classe `dark`. */
+export function startThemeTransition(durationMs = 420): void {
+  if (typeof document === 'undefined' || prefersReducedMotion()) return
+  const root = document.documentElement
+  root.classList.add('theme-transition')
+  if (themeTransitionTimer !== undefined) window.clearTimeout(themeTransitionTimer)
+  themeTransitionTimer = window.setTimeout(() => {
+    root.classList.remove('theme-transition')
+    themeTransitionTimer = undefined
+  }, durationMs)
+}

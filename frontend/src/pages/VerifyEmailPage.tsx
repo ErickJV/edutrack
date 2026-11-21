@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext'
 import { AuthShell } from '../components/AuthShell'
 import { Alert } from '../components/Feedback'
 import { Input, PrimaryButton } from '../components/FormControls'
+import { runExitTransition } from '../utils/motion'
 
 export function VerifyEmailPage() {
   const navigate = useNavigate()
@@ -49,7 +50,9 @@ export function VerifyEmailPage() {
             ? '/home'
             : '/completar-perfil'
         window.setTimeout(() => {
-          if (alive) navigate(target, { replace: true })
+          void runExitTransition().then(() => {
+            if (alive) navigate(target, { replace: true })
+          })
         }, 1200)
       })
       .catch((reason) => {
@@ -78,6 +81,7 @@ export function VerifyEmailPage() {
       const response = await verifyEmail(code)
       if (response.data?.user) {
         sessionStorage.removeItem('edutrack_pending_email')
+        await runExitTransition()
         setUser(response.data.user)
         navigate(response.data.user.profile_complete ? '/home' : '/completar-perfil', { replace: true })
       }

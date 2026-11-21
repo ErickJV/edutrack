@@ -11,6 +11,7 @@ import {
 } from '../../api/client'
 import type { AccountSession } from '../../api/types'
 import { useAuth } from '../../auth/AuthContext'
+import { clearExitTransition, runExitTransition } from '../../utils/motion'
 import { Alert } from '../Feedback'
 import { Input, PasswordInput, PrimaryButton } from '../FormControls'
 
@@ -109,9 +110,11 @@ export function AccountPrivacySection() {
         confirmation: confirmation.trim().toUpperCase(),
         password: user?.has_usable_password ? password : undefined,
       })
+      await runExitTransition()
       setUser(null)
       navigate('/entrar', { replace: true })
     } catch (reason) {
+      clearExitTransition()
       setDeleteError(
         reason instanceof ApiError ? reason.message : 'Não foi possível excluir a conta.',
       )

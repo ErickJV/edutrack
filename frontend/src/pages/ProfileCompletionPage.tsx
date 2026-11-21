@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthContext'
 import { AuthShell } from '../components/AuthShell'
 import { Alert } from '../components/Feedback'
 import { Input, PasswordInput, PrimaryButton, Select } from '../components/FormControls'
+import { runExitTransition } from '../utils/motion'
 
 export function ProfileCompletionPage() {
   const { user, setUser, signOut } = useAuth()
@@ -54,6 +55,9 @@ export function ProfileCompletionPage() {
         accept_legal: acceptLegal,
         password: needsPassword ? password : undefined,
       })
+      // Fade antes de publicar o perfil: ProfileCompletionRoute redireciona
+      // para /home assim que `setUser` commita.
+      await runExitTransition()
       setUser(profile)
       navigate('/home', { replace: true })
     } catch (reason) {

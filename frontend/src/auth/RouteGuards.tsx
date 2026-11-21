@@ -2,33 +2,58 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { ClippitFloatingWidget } from '../components/clippit/ClippitFloatingWidget'
 import { PageLoader } from '../components/Feedback'
+import { MotionPresence } from '../components/MotionPresence'
 import { useAuth } from './AuthContext'
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth()
   const location = useLocation()
-  if (loading) return <PageLoader />
-  if (!user) return <Navigate to="/entrar" replace state={{ from: location.pathname }} />
-  if (!user.profile_complete) return <Navigate to="/completar-perfil" replace />
+  const allowed = Boolean(user?.profile_complete)
   return (
     <>
-      <Outlet />
-      <ClippitFloatingWidget />
+      <MotionPresence open={loading}>
+        <PageLoader />
+      </MotionPresence>
+      {loading || !allowed ? null : (
+        <>
+          <Outlet />
+          <ClippitFloatingWidget />
+        </>
+      )}
+      {!loading && !user ? (
+        <Navigate to="/entrar" replace state={{ from: location.pathname }} />
+      ) : null}
+      {!loading && user && !user.profile_complete ? <Navigate to="/completar-perfil" replace /> : null}
     </>
   )
 }
 
 export function ProfileCompletionRoute() {
   const { user, loading } = useAuth()
-  if (loading) return <PageLoader />
-  if (!user) return <Navigate to="/entrar" replace />
-  if (user.profile_complete) return <Navigate to="/home" replace />
-  return <Outlet />
+  const allowed = Boolean(user && !user.profile_complete)
+  return (
+    <>
+      <MotionPresence open={loading}>
+        <PageLoader />
+      </MotionPresence>
+      {!loading && allowed ? <Outlet /> : null}
+      {!loading && !user ? <Navigate to="/entrar" replace /> : null}
+      {!loading && user?.profile_complete ? <Navigate to="/home" replace /> : null}
+    </>
+  )
 }
 
 export function GuestRoute() {
   const { user, loading } = useAuth()
-  if (loading) return <PageLoader />
-  if (user) return <Navigate to={user.profile_complete ? '/home' : '/completar-perfil'} replace />
-  return <Outlet />
+  return (
+    <>
+      <MotionPresence open={loading}>
+        <PageLoader />
+      </MotionPresence>
+      {loading || user ? null : <Outlet />}
+      {!loading && user ? (
+        <Navigate to={user.profile_complete ? '/home' : '/completar-perfil'} replace />
+      ) : null}
+    </>
+  )
 }

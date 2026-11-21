@@ -1,10 +1,11 @@
 import { getCsrfToken, googleLoginAction } from '../api/client'
+import { handleGoogleSubmit } from '../utils/googleAuthSubmit'
 
 export function GoogleButton() {
   const enabled = import.meta.env.VITE_GOOGLE_ENABLED === 'true'
   if (!enabled) return null
   return (
-    <form action={googleLoginAction()} method="post">
+    <form action={googleLoginAction()} method="post" onSubmit={handleGoogleSubmit}>
       <input type="hidden" name="csrfmiddlewaretoken" value={getCsrfToken()} />
       <input type="hidden" name="provider" value="google" />
       <input type="hidden" name="process" value="login" />

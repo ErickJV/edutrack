@@ -8,14 +8,16 @@ import { useAuth } from '../auth/AuthContext'
 import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { handleGoogleSubmit } from '../utils/googleAuthSubmit'
+import { runExitTransition } from '../utils/motion'
 
-export function AuthSliderPage({ initialMode }: { initialMode?: 'login' | 'signup' }) {
+export function AuthSliderPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { setUser } = useAuth()
 
   // Derive mode directly from location
-  const isSignUp = initialMode ? initialMode === 'signup' : location.pathname === '/cadastro'
+  const isSignUp = location.pathname === '/cadastro'
 
   function toggleMode(targetSignUp: boolean) {
     navigate(targetSignUp ? '/cadastro' : '/entrar')
@@ -37,12 +39,16 @@ export function AuthSliderPage({ initialMode }: { initialMode?: 'login' | 'signu
       const response = await login(loginEmail.trim().toLowerCase(), loginPassword)
       if (response.data?.user) {
         await setSessionPreference(remember)
+        // Fade antes de publicar o usuário: o GuestRoute redireciona assim que
+        // `setUser` commita, então a transição precisa terminar primeiro.
+        await runExitTransition()
         setUser(response.data.user)
         navigate(response.data.user.profile_complete ? '/home' : '/completar-perfil', { replace: true })
         return
       }
       if (response.data?.flows?.some((flow) => flow.id === 'verify_email' && flow.is_pending)) {
         sessionStorage.setItem('edutrack_pending_email', loginEmail)
+        await runExitTransition()
         navigate('/verificar-email')
         return
       }
@@ -102,6 +108,7 @@ export function AuthSliderPage({ initialMode }: { initialMode?: 'login' | 'signu
         accept_legal: acceptLegal,
       })
       sessionStorage.setItem('edutrack_pending_email', signupEmail.trim().toLowerCase())
+      await runExitTransition()
       navigate('/verificar-email')
     } catch (reason) {
       if (reason instanceof ApiError) {
@@ -172,7 +179,7 @@ export function AuthSliderPage({ initialMode }: { initialMode?: 'login' | 'signu
           >
             <div className="w-full max-w-sm mx-auto">
               <div className="mb-6 text-center">
-                <div className="mb-3 flex justify-center">
+                <div className="mb-3 flex justify-center sm:-translate-y-16">
                   <Brand />
                 </div>
                 <h1 className="font-montserrat text-3xl font-extrabold tracking-tight text-[#0d3950] dark:text-white">
@@ -182,7 +189,7 @@ export function AuthSliderPage({ initialMode }: { initialMode?: 'login' | 'signu
 
               {googleEnabled ? (
                 <div className="mb-4">
-                  <form action={googleLoginAction()} method="post">
+                  <form action={googleLoginAction()} method="post" onSubmit={handleGoogleSubmit}>
                     <input type="hidden" name="csrfmiddlewaretoken" value={getCsrfToken()} />
                     <input type="hidden" name="provider" value="google" />
                     <input type="hidden" name="process" value="login" />

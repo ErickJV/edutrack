@@ -2,18 +2,17 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { GuestRoute, ProfileCompletionRoute, ProtectedRoute } from './auth/RouteGuards'
 import { RouteTransition } from './components/RouteTransition'
+import { AuthSliderPage } from './pages/AuthSliderPage'
 import { CalendarPage } from './pages/CalendarPage'
 import { FlashcardsPage } from './pages/FlashcardsPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LegalPage } from './pages/LegalPage'
-import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PrintsPage } from './pages/PrintsPage'
 import { ProfileCompletionPage } from './pages/ProfileCompletionPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
-import { SignupPage } from './pages/SignupPage'
 import { StudySessionPage } from './pages/StudySessionPage'
 import { SubjectsPage } from './pages/SubjectsPage'
 import { TasksPage } from './pages/TasksPage'
@@ -24,8 +23,8 @@ export function App() {
     <RouteTransition>
       <Routes>
         <Route element={<GuestRoute />}>
-          <Route path="/entrar" element={<LoginPage />} />
-          <Route path="/cadastro" element={<SignupPage />} />
+          <Route path="/entrar" element={<AuthSliderPage />} />
+          <Route path="/cadastro" element={<AuthSliderPage />} />
           <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
           <Route path="/redefinir-senha/:key" element={<ResetPasswordPage />} />
         </Route>

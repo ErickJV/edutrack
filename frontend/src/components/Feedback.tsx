@@ -28,7 +28,7 @@ export function Alert({
 export function PageLoader() {
   return (
     <main
-      className="grid min-h-dvh place-items-center bg-[#0d3950] text-white"
+      className="page-loader grid min-h-dvh place-items-center bg-[#0d3950] text-white"
       aria-label="Carregando"
     >
       <div className="text-center">

@@ -415,4 +415,138 @@ html.dark .skeleton-shimmer {
   .press {
     transition: none !important;
   }
+
+  #root.is-exiting,
+  .route-veil,
+  .page-loader,
+  html.theme-transition #root {
+    animation: none !important;
+  }
+
+  html.theme-transition,
+  html.theme-transition * {
+    transition: none !important;
+  }
+
+  button,
+  a,
+  label,
+  summary,
+  input,
+  select,
+  textarea,
+  li,
+  [role='button'],
+  [role='radio'],
+  [role='tab'] {
+    transition-property: none !important;
+  }
+}
+
+/* ==========================================================================
+   TRANSIÇÕES DE NAVEGAÇÃO, LOADER E TEMA
+   ========================================================================== */
+@keyframes page-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes veil-pulse {
+  0% {
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 0.92;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes theme-fade-in {
+  from {
+    opacity: 0.6;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes loader-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+#root.is-exiting {
+  animation: page-out 200ms ease-in both;
+}
+
+/* Estado de repouso explícito: sem animação (reduced motion) o véu nunca cobre. */
+.route-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0;
+  background: #dce6ef;
+  animation: veil-pulse 220ms ease-out both;
+}
+
+html.dark .route-veil {
+  background: #040f17;
+}
+
+.page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+}
+
+[data-presence='closed'] .page-loader {
+  animation: loader-out 200ms ease-in both;
+  pointer-events: none;
+}
+
+html.theme-transition #root {
+  animation: theme-fade-in 380ms var(--ease-out-expo) backwards;
+}
+
+html.theme-transition,
+html.theme-transition * {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, outline-color;
+  transition-duration: 380ms;
+  transition-timing-function: ease;
+}
+
+/* Default de cor para elementos interativos: utilitários do Tailwind
+   (camada utilities) continuam vencendo esta camada base. */
+@layer base {
+  button,
+  a,
+  label,
+  summary,
+  input,
+  select,
+  textarea,
+  li,
+  [role='button'],
+  [role='radio'],
+  [role='tab'] {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+  }
 }

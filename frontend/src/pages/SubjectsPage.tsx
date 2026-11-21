@@ -9,6 +9,7 @@ import { SemesterSelectionModal } from '../components/SemesterSelectionModal'
 import { SubjectEditModal } from '../components/SubjectEditModal'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { Alert, PageLoader } from '../components/Feedback'
+import { MotionPresence } from '../components/MotionPresence'
 import { MetricValue } from '../components/MetricValue'
 function toSemesterLabel(semester: number): string {
   return `${semester}º semestre`
@@ -49,10 +50,11 @@ export function SubjectsPage() {
     () => activeSubjects.reduce((sum, item) => sum + (item.custom_workload_hours ?? item.subject.workload_hours), 0),
     [activeSubjects],
   )
-  if (loading) return <PageLoader />
-
   return (
     <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
+      <MotionPresence open={loading}>
+        <PageLoader />
+      </MotionPresence>
       <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-[#005063]/30 dark:bg-[#081a26]/90">
         <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
           <div className="flex items-center justify-between gap-4">

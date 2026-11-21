@@ -4,11 +4,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-const EXIT_MS = 180
+import { prefersReducedMotion } from './motion'
 
-export function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
+const EXIT_MS = 180
 
 export function usePresence(open: boolean, exitMs = EXIT_MS) {
   const [mounted, setMounted] = useState(open)

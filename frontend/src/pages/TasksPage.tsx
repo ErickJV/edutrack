@@ -30,6 +30,7 @@ import type {
 import { AppNavigation } from '../components/AppNavigation'
 import { Brand } from '../components/Brand'
 import { Alert, PageLoader } from '../components/Feedback'
+import { MotionPresence } from '../components/MotionPresence'
 import { Input, Select } from '../components/FormControls'
 import { MetricValue } from '../components/MetricValue'
 import { TaskFormModal } from '../components/TaskFormModal'
@@ -317,10 +318,11 @@ export function TasksPage() {
     }
   }
 
-  if (loading) return <PageLoader />
-
   return (
     <main className="min-h-dvh bg-[#dce6ef] dark:bg-[#040f17]">
+      <MotionPresence open={loading}>
+        <PageLoader />
+      </MotionPresence>
       <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
           <div className="flex items-center justify-between gap-4">

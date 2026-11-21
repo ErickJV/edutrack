@@ -6,6 +6,7 @@ import {
   getSystemTheme,
   resolveTheme,
   setStoredPreference,
+  startThemeTransition,
   type ResolvedTheme,
   type ThemePreference,
 } from './theme'
@@ -35,6 +36,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [resolvedTheme])
 
   const setPreference = (newPref: ThemePreference) => {
+    const nextResolved = newPref === 'system' ? getSystemTheme() : newPref
+    if (nextResolved !== resolvedTheme) startThemeTransition()
     setPrefState(newPref)
     setStoredPreference(newPref)
   }

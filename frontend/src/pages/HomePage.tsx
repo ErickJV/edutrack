@@ -8,6 +8,7 @@ import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
 import { MetricValue } from '../components/MetricValue'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { clearExitTransition, runExitTransition } from '../utils/motion'
 
 function formatDueLabel(value: string | null): { label: string; urgent: boolean } {
   if (!value) return { label: 'Sem prazo definido', urgent: false }
@@ -55,8 +56,11 @@ export function HomePage() {
 
   async function leave() {
     setLeaving(true)
+    await runExitTransition()
     try {
       await signOut()
+    } catch {
+      clearExitTransition()
     } finally {
       setLeaving(false)
     }

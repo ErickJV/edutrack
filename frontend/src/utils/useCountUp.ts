@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { prefersReducedMotion } from './usePresence'
+import { prefersReducedMotion } from './motion'
 
 export function useCountUp(target: number, durationMs = 900): number {
   const reduce = prefersReducedMotion()
