@@ -10,7 +10,6 @@ import {
   Play,
   Plus,
   RotateCw,
-  Sparkles,
   Trash2,
   X,
 } from 'lucide-react'
@@ -20,14 +19,12 @@ import {
   ApiError,
   createFlashcard,
   deleteFlashcard,
-  generateFlashcardsWithAI,
   listFlashcards,
   listStudentSubjects,
-  listStudyNotes,
   reviewFlashcard,
   updateFlashcard,
 } from '../api/client'
-import type { Flashcard, FlashcardRating, StudentSubject, StudyNote } from '../api/types'
+import type { Flashcard, FlashcardRating, StudentSubject } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { AppNavigation } from '../components/AppNavigation'
 import { Brand } from '../components/Brand'
@@ -72,7 +69,6 @@ export function FlashcardsPage() {
 
   const [cards, setCards] = useState<Flashcard[]>([])
   const [subjects, setSubjects] = useState<StudentSubject[]>([])
-  const [notes, setNotes] = useState<StudyNote[]>([])
   const [selectedDeck, setSelectedDeck] = useState<string>('ALL')
   const [studyAllMode, setStudyAllMode] = useState(false)
   const [showManageList, setShowManageList] = useState(true)
@@ -97,27 +93,16 @@ export function FlashcardsPage() {
   const [formTags, setFormTags] = useState('')
   const [savingCard, setSavingCard] = useState(false)
 
-  // Modal de Gerar Flashcards Inteligentes pela IA
-  const [aiModalOpen, setAiModalOpen] = useState(false)
-  const [aiSubjectId, setAiSubjectId] = useState('')
-  const [aiNoteId, setAiNoteId] = useState('')
-  const [aiTopic, setAiTopic] = useState('')
-  const [aiSourceText, setAiSourceText] = useState('')
-  const [aiCount, setAiCount] = useState<number>(5)
-  const [generatingAi, setGeneratingAi] = useState(false)
-
   const loadData = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const [loadedCards, loadedSubjects, loadedNotes] = await Promise.all([
+      const [loadedCards, loadedSubjects] = await Promise.all([
         listFlashcards(),
         listStudentSubjects(),
-        listStudyNotes().catch(() => [] as StudyNote[]),
       ])
       setCards(loadedCards)
       setSubjects(loadedSubjects)
-      setNotes(loadedNotes)
     } catch (reason) {
       setError(
         reason instanceof ApiError
@@ -215,7 +200,7 @@ export function FlashcardsPage() {
 
   // Atalhos de teclado (Espaço para flipar, 1-4 para responder)
   useEffect(() => {
-    if (modalOpen || aiModalOpen || !activeCard) return
+    if (modalOpen || !activeCard) return
     const onKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
@@ -231,7 +216,7 @@ export function FlashcardsPage() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [modalOpen, aiModalOpen, activeCard, isFlipped, handleRating])
+  }, [modalOpen, activeCard, isFlipped, handleRating])
 
   async function leave() {
     setLeaving(true)
@@ -254,17 +239,6 @@ export function FlashcardsPage() {
     setFormHint('')
     setFormTags('')
     setModalOpen(true)
-  }
-
-  function openAiModal() {
-    const defaultSubj = subjects[0]
-    setAiSubjectId(defaultSubj?.id || '')
-    setAiNoteId(notes[0]?.id || '')
-    setAiTopic('')
-    setAiSourceText('')
-    setAiCount(5)
-    setError('')
-    setAiModalOpen(true)
   }
 
   function openEditModal(card: Flashcard) {
@@ -315,48 +289,6 @@ export function FlashcardsPage() {
       )
     } finally {
       setSavingCard(false)
-    }
-  }
-
-  async function handleGenerateAiSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setGeneratingAi(true)
-    setError('')
-    setSuccessMessage('')
-    try {
-      const selectedSubj = subjects.find((s) => s.id === aiSubjectId)
-      const selectedNote = notes.find((n) => n.id === aiNoteId)
-      const resolvedDeck =
-        selectedSubj?.subject.name ||
-        aiTopic.trim() ||
-        selectedNote?.title ||
-        (selectedDeck !== 'ALL' ? selectedDeck : 'Geral')
-
-      const res = await generateFlashcardsWithAI({
-        student_subject: aiSubjectId || null,
-        note_id: aiNoteId || null,
-        topic: aiTopic.trim() || selectedNote?.title || selectedSubj?.subject.name || 'Revisão Geral',
-        source_text: aiSourceText.trim() || selectedNote?.content || '',
-        deck_name: resolvedDeck,
-        count: aiCount,
-      })
-
-      setCards((prev) => [...res.items, ...prev])
-      setSelectedDeck('ALL')
-      setCurrentIndex(0)
-      setIsFlipped(false)
-      setAiModalOpen(false)
-      setSuccessMessage(
-        `✨ ${res.created_count} flashcards foram gerados inteligentemente pela IA e adicionados à sua fila!`,
-      )
-    } catch (reason) {
-      setError(
-        reason instanceof ApiError
-          ? reason.message
-          : 'Não foi possível gerar os flashcards com IA.',
-      )
-    } finally {
-      setGeneratingAi(false)
     }
   }
 
@@ -416,20 +348,11 @@ export function FlashcardsPage() {
                 Flashcards
               </h1>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                Selecione um filtro em Cards à esquerda, clique no card para girá-lo em 3D (Flip), gerencie seus cards ou gere novos automaticamente com IA.
+                Selecione um filtro em Cards à esquerda, clique no card para girá-lo em 3D (Flip) e gerencie seus cards.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
-              <button
-                type="button"
-                onClick={openAiModal}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#006768]/40 bg-[#006768]/15 px-4 py-2.5 text-sm font-extrabold text-[#0d3950] shadow-xs transition hover:bg-[#006768]/25 dark:border-cyan-400/40 dark:bg-cyan-400/15 dark:text-cyan-300 dark:hover:bg-cyan-400/25"
-              >
-                <Sparkles className="h-4 w-4 text-[#006768] dark:text-cyan-300" />
-                Gerar com IA
-              </button>
-
               <button
                 type="button"
                 onClick={() => setShowManageList((prev) => !prev)}
@@ -604,25 +527,16 @@ export function FlashcardsPage() {
                   Nenhum card cadastrado ainda
                 </h2>
                 <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-300">
-                  Crie seus próprios cards manualmente ou gere cards inteligentes com IA a
-                  partir de qualquer tema ou anotação!
+                  Crie seus próprios cards para iniciar suas sessões de revisão com repetição espaçada.
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={openAiModal}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#006768] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#005063]"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Gerar Cards com IA
-                  </button>
                   <button
                     type="button"
                     onClick={openCreateModal}
                     className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#005063] dark:bg-[#005063]"
                   >
                     <Plus className="h-4 w-4" />
-                    Criar Card Manual
+                    Criar Card
                   </button>
                 </div>
               </div>
@@ -634,7 +548,7 @@ export function FlashcardsPage() {
                 </h2>
                 <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-300">
                   Todos os cards foram agendados para seus próximos intervalos ótimos. Você pode
-                  praticar todos os cards ou gerar novos com a IA.
+                  praticar todos os cards novamente quando desejar.
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                   <button
@@ -648,14 +562,6 @@ export function FlashcardsPage() {
                   >
                     <RotateCw className="h-4 w-4" />
                     Praticar Todos os Cards ({deckCards.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openAiModal}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#006768]/40 bg-[#006768]/15 px-5 py-2.5 text-sm font-bold text-[#0d3950] hover:bg-[#006768]/25 dark:border-cyan-400/40 dark:bg-cyan-400/15 dark:text-cyan-300"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Gerar Mais com IA
                   </button>
                 </div>
               </div>
@@ -993,156 +899,6 @@ export function FlashcardsPage() {
           </section>
         )}
       </div>
-
-      {/* Modal de Gerar Flashcards Inteligentes pela IA */}
-      {aiModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="ai-flashcard-modal-title"
-        >
-          <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-[#005063]/30">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#006768]/15 text-[#006768] dark:bg-cyan-400/15 dark:text-cyan-300">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2
-                    id="ai-flashcard-modal-title"
-                    className="text-lg font-black text-[#0d3950] dark:text-white"
-                  >
-                    Gerar Flashcards com IA
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Elabora perguntas de raciocínio lógico, análise de cenários e trade-offs a partir das suas anotações
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAiModalOpen(false)}
-                className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#041019]"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={(e) => void handleGenerateAiSubmit(e)} className="mt-4 space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
-                    Disciplina
-                  </span>
-                  <select
-                    value={aiSubjectId}
-                    onChange={(e) => setAiSubjectId(e.target.value)}
-                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
-                  >
-                    <option value="">(Geral | Qualquer disciplina)</option>
-                    {subjects.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.subject.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
-                    Quantidade de Cartões
-                  </span>
-                  <select
-                    value={aiCount}
-                    onChange={(e) => setAiCount(Number(e.target.value))}
-                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
-                  >
-                    <option value={3}>3 flashcards</option>
-                    <option value={5}>5 flashcards (Recomendado)</option>
-                    <option value={8}>8 flashcards</option>
-                    <option value={10}>10 flashcards</option>
-                  </select>
-                </label>
-              </div>
-
-              {notes.length > 0 && (
-                <label className="block">
-                  <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
-                    Basear em uma Página do Bloco de Anotações (Opcional)
-                  </span>
-                  <select
-                    value={aiNoteId}
-                    onChange={(e) => setAiNoteId(e.target.value)}
-                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
-                  >
-                    <option value="">(Não usar anotação salva)</option>
-                    {notes.map((n) => {
-                      const rawTitle = (n.title ?? '').trim()
-                      const displayTitle =
-                        !rawTitle ||
-                        rawTitle.toLowerCase() === 'nova anotaço' ||
-                        rawTitle.toLowerCase() === 'nova anotaco' ||
-                        rawTitle.toLowerCase() === 'sem título'
-                          ? 'Nova anotação'
-                          : rawTitle
-                      return (
-                        <option key={n.id} value={n.id}>
-                          📒 {displayTitle}
-                        </option>
-                      )
-                    })}
-                  </select>
-                </label>
-              )}
-
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
-                  Tema ou Assunto Foco
-                </span>
-                <input
-                  type="text"
-                  value={aiTopic}
-                  onChange={(e) => setAiTopic(e.target.value)}
-                  placeholder="Ex: Normalização de Banco de Dados, Árvores Binárias, Padrões de Projeto..."
-                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
-                  Texto | Resumo de Aula para a IA Analisar (Opcional)
-                </span>
-                <textarea
-                  rows={4}
-                  value={aiSourceText}
-                  onChange={(e) => setAiSourceText(e.target.value)}
-                  placeholder="Cole aqui trechos da matéria, tópicos de slides ou definições para a IA transformar em perguntas e respostas..."
-                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
-                />
-              </label>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setAiModalOpen(false)}
-                  className="min-h-11 rounded-xl border border-slate-200 px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 dark:border-[#005063]/40 dark:text-slate-300 dark:hover:bg-[#041019]"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={generatingAi}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#006768] px-6 py-2 text-sm font-bold text-white shadow-md transition hover:bg-[#005063] disabled:opacity-50"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {generatingAi ? 'Gerando com IA...' : 'Gerar Flashcards com IA'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Modal de Criar / Editar Flashcard Manual */}
       {modalOpen && (

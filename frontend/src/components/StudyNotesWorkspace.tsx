@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
   Bold,
   BookOpen,
-  Brain,
   Check,
   CheckSquare,
   ChevronDown,
@@ -46,7 +44,6 @@ import {
   createStudyNote,
   deleteStudyFolder,
   deleteStudyNote,
-  generateFlashcardsWithAI,
   listStudyFolders,
   listStudyNotes,
   updateStudyFolder,
@@ -306,20 +303,6 @@ function normalizeNoteTitle(raw?: string | null): string {
   return cleaned
 }
 
-function isGenericNoteTitle(raw?: string | null): boolean {
-  const cleaned = (raw ?? '').trim().toLowerCase()
-  return (
-    !cleaned ||
-    cleaned === 'nova anotação' ||
-    cleaned === 'nova anotaço' ||
-    cleaned === 'nova anotaco' ||
-    cleaned === 'sem título' ||
-    cleaned === 'sem titulo' ||
-    cleaned === 'anotação de estudo' ||
-    cleaned === 'anotação guiada'
-  )
-}
-
 export function StudyNotesWorkspace({
   activeSubject,
   activeTask,
@@ -343,8 +326,6 @@ export function StudyNotesWorkspace({
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [aiBanner, setAiBanner] = useState<string>('')
-  const [generatingAi, setGeneratingAi] = useState(false)
 
   // Estilo do bloco e fonte (persistidos no navegador)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -441,7 +422,6 @@ export function StudyNotesWorkspace({
       setEditorTaskId(note.task || '')
       setEditorReadingId(note.reading || '')
       setSaveStatus('idle')
-      setAiBanner('')
       window.setTimeout(() => syncEditorDom(visualHtml), 0)
     },
     [syncEditorDom],
@@ -581,34 +561,6 @@ export function StudyNotesWorkspace({
       setFolders(updatedFolders)
     } catch {
       setError('Erro ao excluir anotação.')
-    }
-  }
-
-  const handleGenerateFlashcardsFromNote = async () => {
-    if (!activeNoteId || generatingAi) return
-    setGeneratingAi(true)
-    setError('')
-    setAiBanner('')
-    try {
-      const currentHtml = editorRef.current?.innerHTML ?? editorContent
-      const subj = subjects.find((s) => s.id === editorSubjectId)
-      const cleanTitle = normalizeNoteTitle(editorTitle)
-      const specificTopic = isGenericNoteTitle(cleanTitle) ? '' : cleanTitle
-      const res = await generateFlashcardsWithAI({
-        note_id: activeNoteId,
-        topic: specificTopic,
-        source_text: currentHtml,
-        student_subject: editorSubjectId || activeSubject?.id || null,
-        deck_name: subj?.subject.name || specificTopic || 'Geral',
-        count: 4,
-      })
-      setAiBanner(
-        `✨ ${res.created_count} flashcards de raciocínio lógico e análise profunda foram gerados pela IA a partir desta anotação!`,
-      )
-    } catch {
-      setError('Não foi possível gerar flashcards com IA a partir desta anotação.')
-    } finally {
-      setGeneratingAi(false)
     }
   }
 
@@ -946,19 +898,6 @@ export function StudyNotesWorkspace({
             </div>
           )}
 
-          {activeNoteId && activeTab !== 'documents' && (
-            <button
-              type="button"
-              disabled={generatingAi}
-              onClick={() => void handleGenerateFlashcardsFromNote()}
-              className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-[#005063]/30 bg-[#005063]/10 px-3 text-xs font-extrabold text-[#0d3950] transition hover:bg-[#005063]/20 disabled:opacity-50 dark:border-cyan-400/30 dark:bg-cyan-400/15 dark:text-cyan-300"
-              title="Gerar flashcards inteligentes pela IA usando o conteúdo desta anotação"
-            >
-              <Brain className="size-3.5" />
-              <span>{generatingAi ? 'Gerando com IA...' : '✨ Gerar Flashcards com IA'}</span>
-            </button>
-          )}
-
           <button
             type="button"
             onClick={() => {
@@ -978,18 +917,6 @@ export function StudyNotesWorkspace({
       {error ? (
         <div className="mx-4 mt-3 rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs font-semibold text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
           {error}
-        </div>
-      ) : null}
-
-      {aiBanner ? (
-        <div className="mx-4 mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-900 dark:text-emerald-200">
-          <span>{aiBanner}</span>
-          <Link
-            to="/flashcards"
-            className="rounded-lg bg-emerald-600 px-3 py-1 text-white transition hover:bg-emerald-700"
-          >
-            Abrir Flashcards →
-          </Link>
         </div>
       ) : null}
 
@@ -1690,8 +1617,8 @@ export function StudyNotesWorkspace({
                 Seu Bloco de Anotações
               </h4>
               <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
-                Crie páginas de anotação por disciplina, escolha a fonte no menu suspenso da barra
-                de personalização e gere flashcards inteligentes pela IA.
+                Crie páginas de anotação por disciplina e escolha a fonte no menu suspenso da barra
+                de personalização.
               </p>
               <button
                 type="button"
