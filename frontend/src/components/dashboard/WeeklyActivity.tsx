@@ -21,7 +21,7 @@ export function WeeklyActivity({
   const peak = Math.max(...loads.map((day) => day.minutes), 120)
 
   return (
-    <section className={`dashboard-card flex flex-col p-4 sm:p-5 ${className}`} aria-labelledby="weekly-load">
+    <section className={`dashboard-card p-4 sm:p-5 ${className}`} aria-labelledby="weekly-load">
       <header className="flex items-start justify-between gap-3">
         <div>
           <h2 id="weekly-load" className="text-[15px] font-black tracking-tight text-ink">
@@ -35,7 +35,7 @@ export function WeeklyActivity({
       </header>
 
       {loading ? (
-        <div className="mt-4 flex max-h-56 min-h-32 flex-1 items-end gap-2" aria-hidden="true">
+        <div className="mt-4 flex h-24 items-end gap-2" aria-hidden="true">
           {Array.from({ length: 7 }).map((_, index) => (
             <div
               key={index}
@@ -45,7 +45,7 @@ export function WeeklyActivity({
           ))}
         </div>
       ) : (
-        <div className="mt-4 flex max-h-56 min-h-32 flex-1 items-end gap-1.5 sm:gap-2">
+        <div className="mt-4 flex h-24 items-end gap-1.5 sm:gap-2">
           {loads.map((day, index) => {
             const pct = day.minutes === 0 ? 0 : Math.max(4, Math.round((day.minutes / peak) * 100))
             const selected = day.key === selectedKey
@@ -54,7 +54,7 @@ export function WeeklyActivity({
                 ? 'bg-line'
                 : day.isToday
                   ? 'bg-accent'
-                  : 'bg-ink/20 hover:bg-ink/30 dark:bg-ink/70'
+                  : 'bg-ink/18 hover:bg-ink/28 dark:bg-ink/65'
             return (
               <button
                 key={day.key}
@@ -71,7 +71,7 @@ export function WeeklyActivity({
                   {formatMinutes(day.minutes)}
                 </span>
                 <span
-                  className={`bar-rise w-full rounded-t-xl transition-[filter] group-hover:brightness-105 ${barTone} ${
+                  className={`bar-rise mx-auto w-[62%] rounded-t-md transition-[filter] group-hover:brightness-105 ${barTone} ${
                     selected ? 'ring-2 ring-accent ring-offset-2 ring-offset-surface' : ''
                   }`}
                   style={{

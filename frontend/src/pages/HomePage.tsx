@@ -25,7 +25,7 @@ import { Alert } from '../components/Feedback'
 import { FocusCard } from '../components/dashboard/FocusCard'
 import { MetricCard } from '../components/dashboard/MetricCard'
 import { MiniCalendar } from '../components/dashboard/MiniCalendar'
-import { SubjectProgress } from '../components/dashboard/SubjectProgress'
+import { SubjectBooks } from '../components/dashboard/SubjectBooks'
 import { UpcomingTasks } from '../components/dashboard/UpcomingTasks'
 import { WeeklyActivity } from '../components/dashboard/WeeklyActivity'
 import { toLocalDateKey } from '../utils/calendar'
@@ -286,25 +286,16 @@ export function HomePage() {
           />
         </div>
 
-        <WeeklyActivity
-          className="min-w-0 xl:col-span-7"
-          loads={weekLoads}
-          selectedKey={selectedDateKey}
-          onSelectDay={setSelectedDateKey}
-          loading={loading}
-          error={calendarError}
-          onRetry={retry}
-        />
+        <div className="grid min-w-0 gap-3 xl:col-span-7">
+          <WeeklyActivity
+            loads={weekLoads}
+            selectedKey={selectedDateKey}
+            onSelectDay={setSelectedDateKey}
+            loading={loading}
+            error={calendarError}
+            onRetry={retry}
+          />
 
-        <MiniCalendar
-          className="min-w-0 xl:col-span-5"
-          selectedDateKey={selectedDateKey}
-          onSelectDate={setSelectedDateKey}
-        />
-
-        <SubjectProgress className="min-w-0 xl:col-span-7" subjects={subjects} loading={loading} />
-
-        <div className="grid min-w-0 gap-3 xl:col-span-5">
           <UpcomingTasks
             tasks={tasks}
             loading={loading}
@@ -312,6 +303,13 @@ export function HomePage() {
             onToggle={(id) => void handleToggleTask(id)}
             onRetry={retry}
             error={partialError.length > 0}
+          />
+        </div>
+
+        <div className="grid min-w-0 gap-3 xl:col-span-5">
+          <MiniCalendar
+            selectedDateKey={selectedDateKey}
+            onSelectDate={setSelectedDateKey}
           />
 
           <section className="dashboard-card p-4 sm:p-5" aria-labelledby="review-card">
@@ -327,40 +325,50 @@ export function HomePage() {
               </span>
             </div>
 
-            <p className="mt-3 text-2xl leading-none font-black tracking-tight text-ink">
-              {dueFlashcards}
-            </p>
-            <p className="mt-1.5 text-[11px] text-muted">
-              {dueFlashcards === 0
-                ? 'Nenhum card vencido'
-                : `${dueFlashcards} ${dueFlashcards === 1 ? 'card para revisar' : 'cards para revisar'} hoje`}
-            </p>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link
-                to="/flashcards"
-                className="press inline-flex min-h-9 items-center gap-2 rounded-lg bg-accent px-3 text-[11px] font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
-              >
-                <Sparkles size={13} aria-hidden="true" />
-                Revisar agora
-              </Link>
-              <Link
-                to="/calendario"
-                className="press inline-flex min-h-9 items-center gap-2 rounded-lg border border-line px-3 text-[11px] font-bold text-ink transition hover:border-accent"
-              >
-                <CalendarDays size={13} aria-hidden="true" />
-                Calendário
-              </Link>
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-2xl leading-none font-black tracking-tight text-ink">
+                  {dueFlashcards}
+                </p>
+                <p className="mt-1.5 text-[11px] text-muted">
+                  {dueFlashcards === 0
+                    ? 'Nenhum card vencido'
+                    : `${dueFlashcards} ${dueFlashcards === 1 ? 'card para revisar' : 'cards para revisar'} hoje`}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  to="/flashcards"
+                  className="press inline-flex min-h-9 items-center gap-2 rounded-lg bg-accent px-3 text-[11px] font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+                >
+                  <Sparkles size={13} aria-hidden="true" />
+                  Revisar
+                </Link>
+                <Link
+                  to="/calendario"
+                  className="press inline-flex min-h-9 items-center gap-2 rounded-lg border border-line px-3 text-[11px] font-bold text-ink transition hover:border-accent"
+                >
+                  <CalendarDays size={13} aria-hidden="true" />
+                  Calendário
+                </Link>
+              </div>
             </div>
 
             {!loading ? (
               <p className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-muted">
                 <CheckCircle2 size={13} aria-hidden="true" className="text-emerald-500" />
-                {pendingTasks.length} {pendingTasks.length === 1 ? 'entrega aberta' : 'entregas abertas'} no total
+                {pendingTasks.length}{' '}
+                {pendingTasks.length === 1 ? 'entrega aberta' : 'entregas abertas'} no total
               </p>
             ) : null}
           </section>
         </div>
+
+        <SubjectBooks
+          className="min-w-0 xl:col-span-12"
+          subjects={subjects}
+          loading={loading}
+        />
       </div>
     </div>
   )

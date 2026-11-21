@@ -6,7 +6,7 @@ import { listCalendarItems } from '../../api/client'
 import type { CalendarItem } from '../../api/types'
 import {
   buildMonthCells,
-  formatTimeRange,
+  formatShortTime,
   getCategoryMeta,
   itemToDateKey,
   MONTH_NAMES,
@@ -201,24 +201,25 @@ export function MiniCalendar({
           <p className="mt-2 text-[11px] text-muted">Nenhum compromisso neste dia.</p>
         ) : (
           <ul className="mt-2 space-y-1.5">
-            {agenda.slice(0, 4).map((item) => {
+            {agenda.slice(0, 3).map((item) => {
               const meta = getCategoryMeta(item)
               const done = item.task_status === 'completed'
               return (
                 <li
                   key={item.id}
-                  className={`flex items-start gap-2 rounded-lg px-2 py-1.5 ${done ? 'opacity-60' : 'bg-surface-2'}`}
+                  className={`flex items-start gap-2 rounded-lg px-1.5 py-1.5 transition hover:bg-surface-2 ${done ? 'opacity-60' : ''}`}
                 >
-                  <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${meta.dotClass}`} />
-                  <div className="min-w-0">
-                    <p
-                      className={`truncate text-[11px] font-bold text-ink ${done ? 'line-through' : ''}`}
-                    >
+                  <span className="w-9 shrink-0 pt-0.5 text-[10px] font-bold tabular-nums text-muted">
+                    {formatShortTime(item)}
+                  </span>
+                  <span className={`mt-1 h-7 w-[3px] shrink-0 rounded-full ${meta.dotClass}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className={`truncate text-[11px] font-bold text-ink ${done ? 'line-through' : ''}`}>
                       {item.title}
                     </p>
                     <p className="truncate text-[10px] text-muted">
-                      {formatTimeRange(item)}
-                      {item.subject_name ? ` · ${item.subject_name}` : ''}
+                      {item.subject_name || meta.label}
+                      {item.room ? ` · ${item.room}` : ''}
                     </p>
                   </div>
                 </li>
@@ -226,6 +227,15 @@ export function MiniCalendar({
             })}
           </ul>
         )}
+
+        {!loading && agenda.length > 3 ? (
+          <Link
+            to="/calendario"
+            className="mt-1.5 inline-flex text-[10px] font-bold text-muted hover:text-ink"
+          >
+            e mais {agenda.length - 3} compromisso{agenda.length - 3 === 1 ? '' : 's'}
+          </Link>
+        ) : null}
 
         {error ? (
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
