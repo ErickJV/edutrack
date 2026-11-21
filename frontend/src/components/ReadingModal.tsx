@@ -6,6 +6,7 @@ import type {
   AcademicReadingStatus,
   StudentSubject,
 } from '../api/types'
+import { usePresence } from '../utils/usePresence'
 
 export type ReadingModalProps = {
   isOpen: boolean
@@ -46,7 +47,10 @@ export function ReadingModal({
   const examDateId = useId()
   const targetDateId = useId()
 
+  const presence = usePresence(isOpen)
+
   useEffect(() => {
+    if (!isOpen) return
     if (reading) {
       setTitle(reading.title)
       setAuthor(reading.author || '')
@@ -73,7 +77,7 @@ export function ReadingModal({
     setError('')
   }, [reading, isOpen])
 
-  if (!isOpen) return null
+  if (!presence.mounted) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,9 +119,10 @@ export function ReadingModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="reading-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs overflow-y-auto"
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs overflow-y-auto"
+      data-presence={presence.closing ? 'closed' : 'open'}
     >
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-900 my-8">
+      <div className="modal-dialog w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-900 my-8">
         <h3 id="reading-modal-title" className="text-lg font-black text-slate-950 dark:text-slate-50">
           {reading ? 'Editar Leitura Acadêmica' : 'Nova Leitura Acadêmica'}
         </h3>

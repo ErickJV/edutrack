@@ -41,6 +41,7 @@
   background: #dce6ef;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html.dark {
@@ -253,6 +254,301 @@ html.dark .notebook-paper-clean {
 .anki-flip-face-back {
   transform: rotateY(180deg) translateZ(2px);
   -webkit-transform: rotateY(180deg) translateZ(2px);
+}
+
+/* ==========================================================================
+   SISTEMA DE MOVIMENTO — TRANSICIONES DE ROTA, OVERLAYS, LISTAS E MÉTRICAS
+   ========================================================================== */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.997);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes modal-dialog-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.page-enter {
+  animation: page-in 320ms var(--ease-out-expo) backwards;
+}
+
+.stagger-item {
+  animation: rise 420ms var(--ease-out-expo) backwards;
+}
+
+.bar-grow {
+  transform-origin: left;
+  animation: bar-grow 700ms var(--ease-out-expo) backwards;
+}
+
+.card-lift {
+  transition: transform 220ms var(--ease-out-expo);
+}
+
+@media (hover: hover) {
+  .card-lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.press {
+  transition: transform 120ms ease;
+}
+
+.press:active {
+  transform: scale(0.97);
+}
+
+.skeleton-shimmer {
+  background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.7) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+html.dark .skeleton-shimmer {
+  background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.06) 50%, transparent 100%);
+}
+
+.modal-backdrop {
+  animation: modal-backdrop-in 180ms ease-out both;
+}
+
+.modal-dialog {
+  animation: modal-dialog-in 220ms var(--ease-out-expo) both;
+}
+
+/* Fill-mode "backwards": segura o estado inicial durante o delay e libera a
+   propriedade ao final, para que .card-lift/.press continuem funcionando. */
+/* data-presence pode viver no próprio backdrop ou num wrapper com display: contents. */
+[data-presence='closed'].modal-backdrop,
+[data-presence='closed'] .modal-backdrop {
+  animation: modal-backdrop-out 160ms ease-in both;
+}
+
+[data-presence='closed'].modal-dialog,
+[data-presence='closed'] .modal-dialog {
+  animation: modal-dialog-out 160ms ease-in both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .stagger-item,
+  .bar-grow,
+  .skeleton-shimmer,
+  .modal-backdrop,
+  .modal-dialog {
+    animation: none !important;
+  }
+
+  .card-lift,
+  .press {
+    transition: none !important;
+  }
+
+  #root.is-exiting,
+  .route-veil,
+  .page-loader,
+  html.theme-transition #root {
+    animation: none !important;
+  }
+
+  html.theme-transition,
+  html.theme-transition * {
+    transition: none !important;
+  }
+
+  button,
+  a,
+  label,
+  summary,
+  input,
+  select,
+  textarea,
+  li,
+  [role='button'],
+  [role='radio'],
+  [role='tab'] {
+    transition-property: none !important;
+  }
+}
+
+/* ==========================================================================
+   TRANSIÇÕES DE NAVEGAÇÃO, LOADER E TEMA
+   ========================================================================== */
+@keyframes page-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes veil-pulse {
+  0% {
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 0.92;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes theme-fade-in {
+  from {
+    opacity: 0.6;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes loader-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+#root.is-exiting {
+  animation: page-out 200ms ease-in both;
+}
+
+/* Estado de repouso explícito: sem animação (reduced motion) o véu nunca cobre. */
+.route-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0;
+  background: #dce6ef;
+  animation: veil-pulse 220ms ease-out both;
+}
+
+html.dark .route-veil {
+  background: #040f17;
+}
+
+.page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+}
+
+[data-presence='closed'] .page-loader {
+  animation: loader-out 200ms ease-in both;
+  pointer-events: none;
+}
+
+html.theme-transition #root {
+  animation: theme-fade-in 380ms var(--ease-out-expo) backwards;
+}
+
+html.theme-transition,
+html.theme-transition * {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, outline-color;
+  transition-duration: 380ms;
+  transition-timing-function: ease;
+}
+
+/* Default de cor para elementos interativos: utilitários do Tailwind
+   (camada utilities) continuam vencendo esta camada base. */
+@layer base {
+  button,
+  a,
+  label,
+  summary,
+  input,
+  select,
+  textarea,
+  li,
+  [role='button'],
+  [role='radio'],
+  [role='tab'] {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+  }
 }
 
 /* ==========================================================================

@@ -49,6 +49,7 @@ import { useAuth } from '../auth/AuthContext'
 import { AppNavigation } from '../components/AppNavigation'
 import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
+import { MotionPresence } from '../components/MotionPresence'
 import { Input, PrimaryButton, Select } from '../components/FormControls'
 import { ThemeToggle } from '../components/ThemeToggle'
 
@@ -1106,11 +1107,12 @@ export function CalendarPage() {
 
           {/* Visão dos 7 dias da semana com todos os compromissos alinhados dentro do esqueleto */}
           <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-            {selectedWeekDays.map((day) => (
+            {selectedWeekDays.map((day, index) => (
               <div
                 key={day.key}
                 onClick={() => setSelectedDateKey(day.key)}
-                className={`flex min-w-0 cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-3 transition ${
+                style={{ animationDelay: `${Math.min(index, 7) * 35}ms` }}
+                className={`stagger-item flex min-w-0 cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-3 transition ${
                   day.isSelected
                     ? 'border-[#0d3950] bg-[#0d3950]/5 ring-2 ring-[#0d3950]/20 dark:border-cyan-400 dark:bg-cyan-400/10'
                     : day.isToday
@@ -1601,14 +1603,14 @@ export function CalendarPage() {
       </div>
 
       {/* Modal de Criação | Edição de Tarefa ou Evento Sincronizado */}
-      {showNewEventModal && (
+      <MotionPresence open={showNewEventModal}>
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+          className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-new-event-title"
         >
-          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+          <div className="modal-dialog w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-[#005063]/30">
               <div>
                 <p className="text-[11px] font-extrabold tracking-wider text-[#006768] uppercase dark:text-cyan-400">
@@ -1755,17 +1757,17 @@ export function CalendarPage() {
             </form>
           </div>
         </div>
-      )}
+      </MotionPresence>
 
       {/* Modal de Upload e Leitura Automática de Calendários Acadêmicos (PDF) */}
-      {showPdfModal && (
+      <MotionPresence open={showPdfModal}>
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+          className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-pdf-calendar-title"
         >
-          <div className="flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+          <div className="modal-dialog flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-[#005063]/30">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#006768]/15 text-[#006768] dark:bg-cyan-400/15 dark:text-cyan-300">
@@ -2023,7 +2025,7 @@ export function CalendarPage() {
             </div>
           </div>
         </div>
-      )}
+      </MotionPresence>
     </main>
   )
 }

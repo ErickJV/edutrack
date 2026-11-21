@@ -6,7 +6,9 @@ import type { DashboardSummary, StudentSubject } from '../api/types'
 import { AppNavigation } from '../components/AppNavigation'
 import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
+import { MetricValue } from '../components/MetricValue'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { clearExitTransition, runExitTransition } from '../utils/motion'
 
 function formatDueLabel(value: string | null): { label: string; urgent: boolean } {
   if (!value) return { label: 'Sem prazo definido', urgent: false }
@@ -54,8 +56,11 @@ export function HomePage() {
 
   async function leave() {
     setLeaving(true)
+    await runExitTransition()
     try {
       await signOut()
+    } catch {
+      clearExitTransition()
     } finally {
       setLeaving(false)
     }
@@ -107,10 +112,10 @@ export function HomePage() {
           {summaryLoading ? (
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {Array.from({ length: 2 }).map((_, index) => (
-                <article key={index} className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
-                  <div className="h-4 w-24 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="mt-4 h-6 w-48 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="mt-3 h-3 w-32 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                <article key={index} className="card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
+                  <div className="skeleton-shimmer h-4 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="skeleton-shimmer mt-4 h-6 w-48 rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="skeleton-shimmer mt-3 h-3 w-32 rounded-full bg-slate-200 dark:bg-slate-800" />
                 </article>
               ))}
             </div>
@@ -120,10 +125,14 @@ export function HomePage() {
             </p>
           ) : (
             <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {(summary?.upcoming_tasks ?? []).map((task) => {
+              {(summary?.upcoming_tasks ?? []).map((task, index) => {
                 const due = formatDueLabel(task.due_date)
                 return (
-                  <article key={task.id} className={`rounded-3xl border p-5 shadow-sm ${due.urgent ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200/80 bg-slate-50/80 dark:border-[#005063]/20 dark:bg-[#041019]'}`}>
+                  <article
+                    key={task.id}
+                    className={`stagger-item card-lift rounded-3xl border p-5 shadow-sm ${due.urgent ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200/80 bg-slate-50/80 dark:border-[#005063]/20 dark:bg-[#041019]'}`}
+                    style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{task.subject_name}</p>
@@ -158,42 +167,60 @@ export function HomePage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {summaryLoading ? (
               Array.from({ length: 6 }).map((_, index) => (
-                <article key={index} className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
-                  <div className="h-4 w-28 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="mt-4 h-9 w-20 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="mt-3 h-3 w-36 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                <article key={index} className="card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
+                  <div className="skeleton-shimmer h-4 w-28 rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="skeleton-shimmer mt-4 h-9 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="skeleton-shimmer mt-3 h-3 w-36 rounded-full bg-slate-200 dark:bg-slate-800" />
                 </article>
               ))
             ) : (
               <>
-                <article className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
+                <article
+                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
+                  style={{ animationDelay: '0ms' }}
+                >
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Disciplinas ativas</p>
-                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{summary?.subjects_count ?? 0}</p>
+                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={summary?.subjects_count ?? 0} /></p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Matérias acompanhadas no período atual.</p>
                 </article>
-                <article className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
+                <article
+                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
+                  style={{ animationDelay: '45ms' }}
+                >
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas pendentes</p>
-                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{summary?.pending_tasks_count ?? 0}</p>
+                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={summary?.pending_tasks_count ?? 0} /></p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Próximas entregas e revisões em aberto.</p>
                 </article>
-                <article className={`rounded-3xl border p-5 shadow-sm ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200/80 bg-slate-50/80 dark:border-[#005063]/20 dark:bg-[#041019]'}`}>
+                <article
+                  className={`stagger-item card-lift rounded-3xl border p-5 shadow-sm ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/40' : 'border-slate-200/80 bg-slate-50/80 dark:border-[#005063]/20 dark:bg-[#041019]'}`}
+                  style={{ animationDelay: '90ms' }}
+                >
                   <p className={`text-sm font-semibold ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-slate-500 dark:text-slate-400'}`}>Tarefas vencidas</p>
-                  <p className={`mt-2 text-3xl font-black ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-[#0d3950] dark:text-white'}`}>{summary?.overdue_tasks_count ?? 0}</p>
+                  <p className={`mt-2 text-3xl font-black ${(summary?.overdue_tasks_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-[#0d3950] dark:text-white'}`}><MetricValue value={summary?.overdue_tasks_count ?? 0} /></p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Itens com prazo expirado não concluídos.</p>
                 </article>
-                <article className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
+                <article
+                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
+                  style={{ animationDelay: '135ms' }}
+                >
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas concluídas</p>
-                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{summary?.completed_tasks_count ?? 0}</p>
+                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={summary?.completed_tasks_count ?? 0} /></p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Itens já finalizados na sua rotina.</p>
                 </article>
-                <article className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
+                <article
+                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
+                  style={{ animationDelay: '180ms' }}
+                >
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Progresso ponderado</p>
-                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{summary?.weighted_progress_percent ?? 0}%</p>
+                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={summary?.weighted_progress_percent ?? 0} suffix="%" /></p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Desempenho geral das disciplinas ativas.</p>
                 </article>
-                <article className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
+                <article
+                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
+                  style={{ animationDelay: '225ms' }}
+                >
                   <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tempo de estudo</p>
-                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{summary?.actual_minutes_total ?? 0} min</p>
+                  <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={summary?.actual_minutes_total ?? 0} suffix=" min" /></p>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                     Planejado {summary?.planned_minutes_total ?? 0} min
                   </p>
@@ -220,8 +247,12 @@ export function HomePage() {
             </p>
           ) : (
             <div className="mt-6 grid gap-4 xl:grid-cols-2">
-              {activeSubjects.map((subject) => (
-                <article key={subject.id} className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]">
+              {activeSubjects.map((subject, index) => (
+                <article
+                  key={subject.id}
+                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 shadow-sm dark:border-[#005063]/20 dark:bg-[#041019]"
+                  style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{subject.subject.semester}º semestre</p>
@@ -231,7 +262,7 @@ export function HomePage() {
                   </div>
                   <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                     <div
-                      className="h-full rounded-full bg-[#006768] dark:bg-[#005063]"
+                      className="bar-grow h-full rounded-full bg-[#006768] dark:bg-[#005063]"
                       style={{ width: `${subject.progress_percent}%` }}
                       role="progressbar"
                       aria-label={`${subject.subject.name}: ${subject.progress_percent}% concluído`}

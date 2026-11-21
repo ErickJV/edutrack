@@ -30,7 +30,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
             role="radio"
             aria-checked={isSelected}
             onClick={() => setPreference(option.value)}
-            className={`grid size-8 place-items-center rounded-full transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#006768] ${
+            className={`press grid size-8 place-items-center rounded-full transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#006768] ${
               isSelected
                 ? 'bg-[#006768] text-white shadow-xs'
                 : 'text-slate-500 hover:text-[#0d3950] dark:text-white/60 dark:hover:text-white'

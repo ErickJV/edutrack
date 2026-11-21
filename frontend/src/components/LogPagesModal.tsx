@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useId, useState } from 'react'
 import type { AcademicReading, ReadingLogPayload } from '../api/types'
+import { useLastDefined, usePresence } from '../utils/usePresence'
 
 export type LogPagesModalProps = {
   isOpen: boolean
@@ -23,6 +24,9 @@ export function LogPagesModal({
   const pagesId = useId()
   const dateId = useId()
 
+  const presence = usePresence(isOpen)
+  const activeReading = useLastDefined(reading)
+
   useEffect(() => {
     if (reading) {
       setPages(10)
@@ -32,9 +36,9 @@ export function LogPagesModal({
     }
   }, [reading, isOpen])
 
-  if (!isOpen || !reading) return null
+  if (!presence.mounted || !activeReading) return null
 
-  const maxLoggable = Math.max(1, reading.total_pages - reading.current_page)
+  const maxLoggable = Math.max(1, activeReading.total_pages - activeReading.current_page)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,7 +50,7 @@ export function LogPagesModal({
     setLoading(true)
     setError('')
     try {
-      await onLog(reading.id, {
+      await onLog(activeReading.id, {
         pages: Number(pages),
         read_date: readDate || undefined,
       })
@@ -63,14 +67,15 @@ export function LogPagesModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="log-pages-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+      data-presence={presence.closing ? 'closed' : 'open'}
     >
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
+      <div className="modal-dialog w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
         <h3 id="log-pages-modal-title" className="text-base font-black text-[#0d3950] dark:text-slate-50">
           Registrar Leitura
         </h3>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          {reading.title} (atualmente na página {reading.current_page} de {reading.total_pages})
+          {activeReading.title} (atualmente na página {activeReading.current_page} de {activeReading.total_pages})
         </p>
 
         {error ? (

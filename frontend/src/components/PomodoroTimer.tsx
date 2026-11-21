@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Play, Pause, SkipForward, RotateCcw, Settings2 } from 'lucide-react'
 import type { AcademicTask, PomodoroMode, PomodoroSettings } from '../api/types'
+import { MotionPresence } from './MotionPresence'
 
 /* ══ Time scrubber ════════════════════════════════════════
    A time over a ruler. Drag the ruler under the centre mark and
@@ -939,14 +940,14 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
       </div>
 
       {/* Settings Modal */}
-      {settingsOpen ? (
+      <MotionPresence open={settingsOpen}>
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="pomodoro-settings-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+          className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+          <div className="modal-dialog w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
             <h3
               id="pomodoro-settings-title"
               className="text-base font-black text-slate-950 dark:text-slate-50"
@@ -1083,7 +1084,7 @@ export function PomodoroTimer({ activeTask, onSyncMinutes }: PomodoroTimerProps)
             </form>
           </div>
         </div>
-      ) : null}
+      </MotionPresence>
     </section>
   )
 }

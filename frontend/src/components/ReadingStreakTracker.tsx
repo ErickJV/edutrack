@@ -66,7 +66,7 @@ export function ReadingStreakTracker({ summary }: ReadingStreakTrackerProps) {
           </div>
           <div className="mt-1.5 h-2 w-36 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
             <div
-              className={`h-full transition-all duration-300 ${
+              className={`bar-grow h-full transition-all duration-300 ${
                 todayProgressPercent >= 100
                   ? 'bg-emerald-500'
                   : 'bg-[#006768] dark:bg-[#005063]'

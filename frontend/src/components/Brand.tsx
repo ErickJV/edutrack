@@ -10,7 +10,7 @@ export function Brand({ light = false }: { light?: boolean }) {
       aria-label="Impatrack Início"
     >
       <span
-        className={`font-montserrat text-xl font-extrabold tracking-tight sm:text-2xl ${
+        className={`-mr-[0.06em] font-montserrat text-base leading-none font-extrabold tracking-[0.06em] uppercase sm:-mr-[0.08em] sm:text-2xl sm:tracking-[0.08em] ${
           light ? 'text-white' : 'text-[#0d3950] dark:text-white'
         }`}
       >

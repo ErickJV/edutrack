@@ -11,7 +11,9 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Brand } from '../components/Brand'
+import { MotionPresence } from '../components/MotionPresence'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { useLastDefined } from '../utils/usePresence'
 
 interface CrudItem {
   id: string
@@ -408,6 +410,7 @@ export function PrintsPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [activeCodeTab, setActiveCodeTab] = useState<Record<string, 'request' | 'response'>>({})
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const activeImage = useLastDefined(selectedImage)
 
   const filteredItems =
     selectedEntity === 'Todas'
@@ -654,20 +657,20 @@ export function PrintsPage() {
       </main>
 
       {/* Lightbox Modal (Full-Resolution Unclipped Screenshot Viewer) */}
-      {selectedImage ? (
+      <MotionPresence open={Boolean(selectedImage)}>
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
           onClick={() => setSelectedImage(null)}
         >
           <div
-            className="relative flex max-h-[95vh] max-w-5xl flex-col overflow-hidden rounded-2xl bg-slate-900 shadow-2xl"
+            className="modal-dialog relative flex max-h-[95vh] max-w-5xl flex-col overflow-hidden rounded-2xl bg-slate-900 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-white/10 bg-slate-950 px-4 py-3 text-white">
-              <span className="font-mono text-xs text-slate-400">{selectedImage}</span>
+              <span className="font-mono text-xs text-slate-400">{activeImage}</span>
               <div className="flex items-center gap-3">
                 <a
-                  href={selectedImage}
+                  href={activeImage ?? undefined}
                   download
                   className="inline-flex items-center gap-1.5 rounded-lg bg-[#005063] px-3 py-1 text-xs font-bold text-white hover:bg-[#003d4d]"
                 >
@@ -685,14 +688,14 @@ export function PrintsPage() {
             </div>
             <div className="overflow-auto p-2">
               <img
-                src={selectedImage}
+                src={activeImage ?? undefined}
                 alt="Visualização Completa do Swagger"
                 className="w-full h-auto object-contain rounded-lg"
               />
             </div>
           </div>
         </div>
-      ) : null}
+      </MotionPresence>
 
       {/* Footer */}
       <footer className="mt-16 border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500 dark:border-white/10 dark:bg-[#041019]">

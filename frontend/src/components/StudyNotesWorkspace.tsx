@@ -50,6 +50,7 @@ import {
   updateStudyNote,
 } from '../api/client'
 import { StudyDocumentsHub } from './StudyDocumentsHub'
+import { MotionPresence } from './MotionPresence'
 
 const FOLDER_COLORS = [
   { label: 'Azul Profundo', value: 'navy', bg: 'bg-[#0d3950]' },
@@ -1635,14 +1636,14 @@ export function StudyNotesWorkspace({
       )}
 
       {/* Modal de Nova Pasta */}
-      {folderModalOpen ? (
+      <MotionPresence open={folderModalOpen}>
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="folder-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+          className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
+          <div className="modal-dialog w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
             <h3
               id="folder-modal-title"
               className="text-base font-black text-[#0d3950] dark:text-slate-50"
@@ -1707,7 +1708,7 @@ export function StudyNotesWorkspace({
             </form>
           </div>
         </div>
-      ) : null}
+      </MotionPresence>
     </section>
   )
 }
