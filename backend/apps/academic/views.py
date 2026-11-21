@@ -146,8 +146,12 @@ def _get_user_current_semester(user: User) -> int | None:
     quando o aluno já cursa disciplinas de semestres posteriores (ex.: 2º semestre).
     Preserva as anotações existentes, removendo apenas o vínculo incorreto.
     """
-    if user.course_offering_id and user.course_offering is not None:
-        current_course = user.course_offering.course
+    current_course = (
+        user.course_offering.course
+        if user.course_offering_id and user.course_offering is not None
+        else None
+    )
+    if current_course is not None:
         Subject.objects.filter(
             course=current_course,
             name__iexact="Application Data Persistence",
@@ -158,13 +162,15 @@ def _get_user_current_semester(user: User) -> int | None:
         status=StudentSubject.Status.ACTIVE,
         subject__active=True,
     )
+    if current_course is not None:
+        active_qs = active_qs.filter(subject__course=current_course)
     max_sem = active_qs.aggregate(max_sem=models.Max("subject__semester")).get("max_sem")
     if max_sem and max_sem >= 2:
+        stale_filter = models.Q(user=user, subject__semester__lt=max_sem)
+        if current_course is not None:
+            stale_filter &= models.Q(subject__course=current_course)
         stale_past_ids = list(
-            StudentSubject.objects.filter(
-                user=user,
-                subject__semester__lt=max_sem,
-            ).values_list("id", flat=True)
+            StudentSubject.objects.filter(stale_filter).values_list("id", flat=True)
         )
         if stale_past_ids:
             StudentSubject.objects.filter(id__in=stale_past_ids).exclude(
