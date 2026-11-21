@@ -19,7 +19,7 @@ export function AppNavigation() {
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl px-4 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] ${
+              `press inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl px-4 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] ${
                 'alignRight' in item && item.alignRight ? 'ml-auto' : ''
               } ${
                 isActive

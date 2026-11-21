@@ -9,6 +9,7 @@ import { SemesterSelectionModal } from '../components/SemesterSelectionModal'
 import { SubjectEditModal } from '../components/SubjectEditModal'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { Alert, PageLoader } from '../components/Feedback'
+import { MetricValue } from '../components/MetricValue'
 function toSemesterLabel(semester: number): string {
   return `${semester}º semestre`
 }
@@ -61,9 +62,9 @@ export function SubjectsPage() {
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 text-sm font-bold text-white transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
+                className="press group inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 text-sm font-bold text-white transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
               >
-                <Plus size={18} aria-hidden="true" />
+                <Plus size={18} aria-hidden="true" className="transition-transform duration-300 group-hover:rotate-90" />
                 Configurar semestre
               </button>
             </div>
@@ -90,17 +91,26 @@ export function SubjectsPage() {
         {error ? <div className="mt-6"><Alert>{error}</Alert></div> : null}
 
         <section className="mt-6 grid gap-4 sm:grid-cols-3">
-          <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
+          <article
+            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            style={{ animationDelay: '0ms' }}
+          >
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Disciplinas ativas</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{activeSubjects.length}</p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={activeSubjects.length} /></p>
           </article>
-          <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
+          <article
+            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            style={{ animationDelay: '45ms' }}
+          >
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Média de progresso</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{progressAverage}%</p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={progressAverage} suffix="%" /></p>
           </article>
-          <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
+          <article
+            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            style={{ animationDelay: '90ms' }}
+          >
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Carga horária ativa</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{totalHours}h</p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={totalHours} suffix="h" /></p>
           </article>
         </section>
 
@@ -130,7 +140,7 @@ export function SubjectsPage() {
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 text-sm font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
+                className="press mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 text-sm font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
               >
                 <Plus size={17} aria-hidden="true" />
                 Selecionar matérias
@@ -138,8 +148,12 @@ export function SubjectsPage() {
             </div>
           ) : (
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              {activeSubjects.map((item) => (
-                <article key={item.id} className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
+              {activeSubjects.map((item, index) => (
+                <article
+                  key={item.id}
+                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]"
+                  style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{toSemesterLabel(item.subject.semester)}</p>
@@ -160,7 +174,7 @@ export function SubjectsPage() {
                     </div>
                   </div>
                   <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true">
-                    <div className="h-full rounded-full bg-[#006768] dark:bg-[#005063]" style={{ width: `${item.progress_percent}%` }} />
+                    <div className="bar-grow h-full rounded-full bg-[#006768] dark:bg-[#005063]" style={{ width: `${item.progress_percent}%` }} />
                   </div>
                   <dl className="mt-4 grid gap-3 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
                     <div>

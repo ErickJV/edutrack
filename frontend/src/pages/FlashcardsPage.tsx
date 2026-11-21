@@ -32,6 +32,7 @@ import { useAuth } from '../auth/AuthContext'
 import { AppNavigation } from '../components/AppNavigation'
 import { Brand } from '../components/Brand'
 import { Alert } from '../components/Feedback'
+import { MotionPresence } from '../components/MotionPresence'
 import { ThemeToggle } from '../components/ThemeToggle'
 
 type DeckSummary = {
@@ -541,7 +542,7 @@ export function FlashcardsPage() {
                 <Play className="h-4 w-4 shrink-0" />
               </button>
 
-              {decks.map((d) => {
+              {decks.map((d, index) => {
                 const isSelected = selectedDeck === d.deckName
                 return (
                   <button
@@ -553,7 +554,8 @@ export function FlashcardsPage() {
                       setIsFlipped(false)
                       setShowHint(false)
                     }}
-                    className={`flex w-full flex-col gap-2 rounded-2xl border px-4 py-3 text-left transition ${
+                    style={{ animationDelay: `${Math.min(index, 10) * 30}ms` }}
+                    className={`stagger-item card-lift flex w-full flex-col gap-2 rounded-2xl border px-4 py-3 text-left transition ${
                       isSelected
                         ? 'border-[#006768] bg-[#0d3950] text-white shadow-md dark:border-cyan-400/50 dark:bg-[#005063]'
                         : 'border-slate-200 bg-white text-[#0d3950] hover:bg-slate-50 dark:border-slate-800 dark:bg-[#041019]/70 dark:text-slate-100 dark:hover:bg-[#041019]'
@@ -941,10 +943,11 @@ export function FlashcardsPage() {
               </p>
             ) : (
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                {deckCards.map((c) => (
+                {deckCards.map((c, index) => (
                   <article
                     key={c.id}
-                    className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-[#005063]/30 dark:bg-[#041019]/80"
+                    className="stagger-item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-[#005063]/30 dark:bg-[#041019]/80"
+                    style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2">
@@ -995,14 +998,14 @@ export function FlashcardsPage() {
       </div>
 
       {/* Modal de Gerar Flashcards Inteligentes pela IA */}
-      {aiModalOpen && (
+      <MotionPresence open={aiModalOpen}>
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+          className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
           role="dialog"
           aria-modal="true"
           aria-labelledby="ai-flashcard-modal-title"
         >
-          <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+          <div className="modal-dialog w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-[#005063]/30">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#006768]/15 text-[#006768] dark:bg-cyan-400/15 dark:text-cyan-300">
@@ -1142,17 +1145,17 @@ export function FlashcardsPage() {
             </form>
           </div>
         </div>
-      )}
+      </MotionPresence>
 
       {/* Modal de Criar / Editar Flashcard Manual */}
-      {modalOpen && (
+      <MotionPresence open={modalOpen}>
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+          className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
           role="dialog"
           aria-modal="true"
           aria-labelledby="flashcard-modal-title"
         >
-          <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+          <div className="modal-dialog w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-[#005063]/30">
               <h2
                 id="flashcard-modal-title"
@@ -1283,7 +1286,7 @@ export function FlashcardsPage() {
             </form>
           </div>
         </div>
-      )}
+      </MotionPresence>
     </main>
   )
 }

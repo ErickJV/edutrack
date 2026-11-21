@@ -15,6 +15,7 @@ import type { Professor, StudentSubject } from '../api/types'
 import { Alert } from './Feedback'
 import { Input, PrimaryButton, Select } from './FormControls'
 import { ScheduleConfig } from './ScheduleConfig'
+import { useLastDefined, usePresence } from '../utils/usePresence'
 
 type SubjectEditModalProps = {
   open: boolean
@@ -40,6 +41,9 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
   const [editingProfName, setEditingProfName] = useState('')
   const [profActionSaving, setProfActionSaving] = useState(false)
   const [profPopupError, setProfPopupError] = useState('')
+
+  const presence = usePresence(open)
+  const activeEnrollment = useLastDefined(enrollment)
 
   useEffect(() => {
     if (!enrollment || !open) return
@@ -75,7 +79,9 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
     setError('')
   }, [enrollment, open])
 
-  if (!open || !enrollment) return null
+  if (!presence.mounted || !activeEnrollment) return null
+
+  const current = activeEnrollment
 
   function openEditProfessorPopup() {
     if (professors.length === 0) return
@@ -172,7 +178,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
         finalProfName = match ? match.name : ''
       }
 
-      const updated = await updateStudentSubject(enrollment!.id, {
+      const updated = await updateStudentSubject(current.id, {
         professor_id: finalProfId,
         professor_name: finalProfName,
         custom_workload_hours: hours,
@@ -188,7 +194,8 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs"
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs"
+      data-presence={presence.closing ? 'closed' : 'open'}
       role="presentation"
       onClick={onClose}
     >
@@ -196,7 +203,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
         role="dialog"
         aria-modal="true"
         aria-labelledby="subject-edit-title"
-        className="relative flex flex-col w-full max-w-lg max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-950/20 dark:bg-slate-900 dark:border dark:border-slate-800"
+        className="modal-dialog relative flex flex-col w-full max-w-lg max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-950/20 dark:bg-slate-900 dark:border dark:border-slate-800"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="shrink-0 flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6 bg-white z-10 dark:border-[#005063]/30 dark:bg-[#081a26]">
@@ -222,9 +229,9 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-[#005063]/30 dark:bg-[#040f17]">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Disciplina da matriz</p>
-              <p className="mt-1 text-base font-extrabold text-[#0d3950] dark:text-slate-50">{enrollment.subject.name}</p>
+              <p className="mt-1 text-base font-extrabold text-[#0d3950] dark:text-slate-50">{current.subject.name}</p>
               <p className="mt-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                {enrollment.subject.code || 'Sem código'} · Matriz oficial: {enrollment.subject.workload_hours}h
+                {current.subject.code || 'Sem código'} · Matriz oficial: {current.subject.workload_hours}h
               </p>
             </div>
 
@@ -346,7 +353,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
             />
 
             <ScheduleConfig
-              enrollmentId={enrollment.id}
+              enrollmentId={current.id}
               termId={termId}
               onTermLinked={(id) => setTermId(id)}
             />

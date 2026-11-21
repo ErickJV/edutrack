@@ -31,6 +31,7 @@ import { AppNavigation } from '../components/AppNavigation'
 import { Brand } from '../components/Brand'
 import { Alert, PageLoader } from '../components/Feedback'
 import { Input, Select } from '../components/FormControls'
+import { MetricValue } from '../components/MetricValue'
 import { TaskFormModal } from '../components/TaskFormModal'
 import { ThemeToggle } from '../components/ThemeToggle'
 
@@ -443,9 +444,9 @@ export function TasksPage() {
               <button
                 type="submit"
                 disabled={quickSaving}
-                className="inline-flex min-h-12 w-full items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-5 text-sm font-black text-white shadow-md transition hover:bg-[#005063] disabled:opacity-50 dark:bg-[#006768] dark:hover:bg-[#005063]"
+                className="press group inline-flex min-h-12 w-full items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-5 text-sm font-black text-white shadow-md transition hover:bg-[#005063] disabled:opacity-50 dark:bg-[#006768] dark:hover:bg-[#005063]"
               >
-                <Plus size={16} />
+                <Plus size={16} className="transition-transform duration-300 group-hover:rotate-90" />
                 <span>{quickSaving ? 'Salvando...' : 'Adicionar'}</span>
               </button>
             </div>
@@ -453,17 +454,26 @@ export function TasksPage() {
         </section>
 
         <section className="mt-6 grid gap-4 sm:grid-cols-3">
-          <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
+          <article
+            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            style={{ animationDelay: '0ms' }}
+          >
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas filtradas</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{totalTasks}</p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={totalTasks} /></p>
           </article>
-          <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
+          <article
+            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            style={{ animationDelay: '45ms' }}
+          >
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Pendentes</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{pendingTasks}</p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={pendingTasks} /></p>
           </article>
-          <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]">
+          <article
+            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            style={{ animationDelay: '90ms' }}
+          >
             <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Concluídas</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white">{completedTasks}</p>
+            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={completedTasks} /></p>
           </article>
         </section>
 
@@ -519,9 +529,9 @@ export function TasksPage() {
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#0d3950] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
+              className="press group inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#0d3950] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
             >
-              <Plus size={14} />
+              <Plus size={14} className="transition-transform duration-300 group-hover:rotate-90" />
               Nova Tarefa Detalhada
             </button>
           </div>
@@ -590,13 +600,14 @@ export function TasksPage() {
                       <p className="mt-4 text-sm text-slate-500">Nenhuma tarefa nesta categoria.</p>
                     ) : (
                       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                        {group.map((task) => {
+                        {group.map((task, index) => {
                           const catMeta =
                             CATEGORY_LABELS[task.category || 'task'] || CATEGORY_LABELS.task
                           return (
                             <article
                               key={task.id}
-                              className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+                              className="stagger-item card-lift rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+                              style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                             >
                               <div className="flex items-start justify-between gap-4">
                                 <div className="flex items-start gap-3">
@@ -719,7 +730,7 @@ export function TasksPage() {
                                   </div>
                                   <Link
                                     to={`/estudo?taskId=${task.id}`}
-                                    className="inline-flex min-h-10 items-center rounded-xl bg-[#006768] px-4 text-xs font-bold text-white shadow-md shadow-[#006768]/20 transition hover:bg-[#005063]"
+                                    className="press inline-flex min-h-10 items-center rounded-xl bg-[#006768] px-4 text-xs font-bold text-white shadow-md shadow-[#006768]/20 transition hover:bg-[#005063]"
                                   >
                                     Iniciar estudo →
                                   </Link>

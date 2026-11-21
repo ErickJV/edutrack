@@ -13,6 +13,7 @@ import {
 import type { AcademicSubject, StudentSubject } from '../api/types'
 import { Alert } from './Feedback'
 import { PrimaryButton, Select } from './FormControls'
+import { usePresence } from '../utils/usePresence'
 
 type SemesterSelectionModalProps = {
   open: boolean
@@ -24,6 +25,7 @@ function academicPeriodForSemester(semester: number): string {
 }
 
 export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelectionModalProps) {
+  const presence = usePresence(open)
   const [curriculum, setCurriculum] = useState<AcademicSubject[]>([])
   const [enrolledSubjectIds, setEnrolledSubjectIds] = useState<string[]>([])
   const [selectedSemester, setSelectedSemester] = useState(2)
@@ -128,11 +130,12 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
       setSaving(false)
     }
   }
-  if (!open) return null
+  if (!presence.mounted) return null
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs"
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs"
+      data-presence={presence.closing ? 'closed' : 'open'}
       role="presentation"
       onClick={onClose}
     >
@@ -140,7 +143,7 @@ export function SemesterSelectionModal({ open, onClose, onSaved }: SemesterSelec
         role="dialog"
         aria-modal="true"
         aria-labelledby="semester-selection-title"
-        className="relative flex flex-col w-full max-w-3xl max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-950/20 dark:bg-slate-900 dark:border dark:border-slate-800"
+        className="modal-dialog relative flex flex-col w-full max-w-3xl max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-950/20 dark:bg-slate-900 dark:border dark:border-slate-800"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="shrink-0 flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6 bg-white z-10 dark:border-[#005063]/30 dark:bg-[#081a26]">

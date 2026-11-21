@@ -13,6 +13,7 @@ import type {
 } from '../api/types'
 import { Alert } from './Feedback'
 import { Input, PrimaryButton, Select } from './FormControls'
+import { usePresence } from '../utils/usePresence'
 
 type TaskFormValues = {
   student_subject: string
@@ -110,6 +111,7 @@ export function TaskFormModal({
   onClose,
   onSaved,
 }: TaskFormModalProps) {
+  const presence = usePresence(open)
   const [curriculum, setCurriculum] = useState<AcademicSubject[]>([])
   const [values, setValues] = useState<TaskFormValues>(() =>
     buildValues(initialTask, subjects, [], defaultDateKey),
@@ -204,11 +206,12 @@ export function TaskFormModal({
     }
   }
 
-  if (!open) return null
+  if (!presence.mounted) return null
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-xs sm:p-4"
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-xs sm:p-4"
+      data-presence={presence.closing ? 'closed' : 'open'}
       role="presentation"
       onClick={onClose}
     >
@@ -216,7 +219,7 @@ export function TaskFormModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-form-title"
-        className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-950/30 sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl dark:border dark:border-[#005063]/30 dark:bg-[#081a26]"
+        className="modal-dialog relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-950/30 sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl dark:border dark:border-[#005063]/30 dark:bg-[#081a26]"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="z-10 flex shrink-0 items-start justify-between border-b border-slate-200 bg-white p-5 sm:px-6 sm:py-5 dark:border-[#005063]/30 dark:bg-[#081a26]">

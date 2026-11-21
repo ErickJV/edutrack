@@ -185,7 +185,7 @@ export function ReadingCard({
 
           <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
             <div
-              className={`h-full transition-all duration-300 ${
+              className={`bar-grow h-full transition-all duration-300 ${
                 reading.progress_percent >= 100
                   ? 'bg-emerald-500'
                   : 'bg-[#006768] dark:bg-[#005063]'
