@@ -64,8 +64,6 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Tokens obrigatórios da especificação visual do Dashboard */
-  --app-backdrop-start: #F1F2F5;
-  --app-backdrop-end: #E7E8EC;
   --surface-main: #FFFFFF;
   --surface-soft: #FCFBFE;
   --sidebar-bg: #15152F;
@@ -106,8 +104,6 @@ html.dark {
   background: var(--canvas);
   color-scheme: dark;
 
-  --app-backdrop-start: #101014;
-  --app-backdrop-end: #08080B;
   --surface-main: #131326;
   --surface-soft: #191930;
   --sidebar-bg: #0C0C1E;
@@ -870,15 +866,6 @@ html.dark .tms-mark {
 /* ==========================================================================
    APP SHELL E DASHBOARD — SUPERFÍCIES, CARTÕES E MOVIMENTO
    ========================================================================== */
-.app-backdrop {
-  background: linear-gradient(135deg, var(--app-backdrop-start) 0%, var(--app-backdrop-end) 100%);
-}
-
-.app-frame {
-  background-color: var(--surface-main);
-  box-shadow: 0 22px 60px -16px rgba(21, 21, 47, 0.22);
-}
-
 .app-shell {
   background-color: var(--surface-main);
 }

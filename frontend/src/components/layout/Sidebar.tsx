@@ -42,7 +42,7 @@ export function Sidebar({
       className={
         mobile
           ? 'flex h-full w-full flex-col rounded-[20px] bg-[var(--sidebar-bg)]'
-          : `sticky top-4 flex h-[calc(100dvh-76px)] shrink-0 flex-col overflow-hidden rounded-[20px] bg-[var(--sidebar-bg)] transition-[width] duration-300 ease-out xl:h-[calc(100dvh-88px)] ${
+          : `sticky top-3 flex h-[calc(100dvh-24px)] shrink-0 flex-col overflow-hidden rounded-[20px] bg-[var(--sidebar-bg)] transition-[width] duration-300 ease-out ${
               compact ? 'w-[68px]' : 'w-[202px]'
             }`
       }

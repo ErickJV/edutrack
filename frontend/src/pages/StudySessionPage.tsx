@@ -268,7 +268,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
           {activeTab === 'readings' ? (
             <section
               aria-label="Leituras e Livros Vinculados a Provas"
-              className="flex min-h-[calc(100dvh-135px)] w-full flex-col overflow-hidden rounded-[18px] border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
+              className="flex w-full flex-1 flex-col overflow-hidden rounded-[18px] border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
             >
               <StudySectionHeader
                 activeTab={activeTab}

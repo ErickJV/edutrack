@@ -772,7 +772,7 @@ export function StudyNotesWorkspace({
   return (
     <section
       aria-label="Bloco de Anotações de Estudo"
-      className="flex min-h-[calc(100dvh-135px)] w-full flex-col overflow-hidden rounded-[18px] border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
+      className="flex w-full flex-1 flex-col overflow-hidden rounded-[18px] border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
     >
       <StudySectionHeader
         activeTab={activeTab}

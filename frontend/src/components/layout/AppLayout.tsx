@@ -92,9 +92,9 @@ export function AppLayout() {
   }, [mobileOpen])
 
   return (
-    <div className="app-backdrop min-h-dvh w-full text-ink lg:p-[22px] xl:p-[26px]">
-      <div className="app-frame mx-auto flex min-h-dvh w-full max-w-[1640px] flex-col lg:min-h-[calc(100dvh-44px)] lg:flex-row lg:gap-[18px] lg:rounded-[28px] lg:p-4 xl:min-h-[calc(100dvh-52px)] xl:gap-[22px] xl:p-[18px]">
-        <div className="hidden shrink-0 lg:flex">
+    <div className="min-h-dvh w-full bg-surface text-ink">
+      <div className="flex min-h-dvh w-full flex-col lg:flex-row lg:gap-[18px] xl:gap-[22px]">
+        <div className="hidden shrink-0 lg:flex lg:py-3 lg:pl-3">
           <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed((value) => !value)} />
         </div>
 
