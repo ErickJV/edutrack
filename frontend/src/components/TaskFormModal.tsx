@@ -219,17 +219,17 @@ export function TaskFormModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-form-title"
-        className="modal-dialog relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-950/30 sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl dark:border dark:border-[#005063]/30 dark:bg-[#081a26]"
+        className="modal-dialog relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-950/30 sm:max-h-[calc(100dvh-2rem)] sm:rounded-[18px] dark:border dark:border-[#005063]/30 dark:bg-[#081a26]"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="z-10 flex shrink-0 items-start justify-between border-b border-slate-200 bg-white p-5 sm:px-6 sm:py-5 dark:border-[#005063]/30 dark:bg-[#081a26]">
+        <header className="z-10 flex shrink-0 items-start justify-between border-b border-slate-200 bg-white p-4 sm:px-5 sm:py-4 dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div>
-            <p className="text-xs font-bold tracking-[0.16em] text-[#006768] uppercase dark:text-cyan-400">
+            <p className="text-[10px] font-bold tracking-[0.16em] text-[#006768] uppercase dark:text-cyan-400">
               Sincronizado com o Calendário Acadêmico
             </p>
             <h2
               id="task-form-title"
-              className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-slate-50"
+              className="mt-1 text-[20px] leading-tight font-black tracking-tight text-[#0d3950] dark:text-slate-50"
             >
               {title}
             </h2>
@@ -237,22 +237,22 @@ export function TaskFormModal({
           <button
             type="button"
             onClick={onClose}
-            className="grid size-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:text-slate-400 dark:hover:bg-[#040f17] dark:hover:text-slate-100 dark:focus-visible:outline-[#006768]"
+            className="grid size-9 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:text-slate-400 dark:hover:bg-[#040f17] dark:hover:text-slate-100 dark:focus-visible:outline-[#006768]"
             aria-label="Fechar modal"
           >
-            <X size={18} aria-hidden="true" />
+            <X size={16} aria-hidden="true" />
           </button>
         </header>
 
         <form className="flex min-h-0 flex-1 flex-col overflow-hidden" onSubmit={handleSubmit}>
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-5 sm:p-6">
+          <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto overscroll-contain p-4 sm:p-5">
             {error ? (
               <div className="mb-4">
                 <Alert>{error}</Alert>
               </div>
             ) : null}
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Select
                 label="Disciplina ou área"
                 value={values.student_subject}
@@ -311,7 +311,7 @@ export function TaskFormModal({
             />
 
             <label className="block">
-              <span className="mb-2 block text-sm font-bold text-slate-800 dark:text-slate-200">
+              <span className="mb-1.5 block text-[13px] font-bold text-slate-800 dark:text-slate-200">
                 Descrição | Observações (opcional)
               </span>
               <textarea
@@ -325,7 +325,7 @@ export function TaskFormModal({
               />
             </label>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-3">
               <Input
                 label="Data no Calendário | Prazo"
                 name="due_date"
@@ -360,7 +360,7 @@ export function TaskFormModal({
               </Select>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-3">
               <Input
                 label="Sala | Local (opcional)"
                 name="room"
@@ -395,11 +395,11 @@ export function TaskFormModal({
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/80 px-5 py-4 backdrop-blur-xs sm:flex-row sm:justify-end sm:px-6 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+          <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/80 px-4 py-3 backdrop-blur-xs sm:flex-row sm:justify-end sm:px-5 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 px-5 text-base font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
+              className="inline-flex min-h-9 items-center justify-center rounded-xl border border-slate-300 px-3.5 text-[13px] font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
             >
               Cancelar
             </button>

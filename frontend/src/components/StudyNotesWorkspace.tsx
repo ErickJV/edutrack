@@ -776,10 +776,10 @@ export function StudyNotesWorkspace({
   return (
     <section
       aria-label="Bloco de Anotações de Estudo"
-      className="flex min-h-[calc(100dvh-135px)] w-full flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
+      className="flex min-h-[calc(100dvh-135px)] w-full flex-col overflow-hidden rounded-[18px] border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
     >
       {/* Barra Superior Compacta do Bloco de Anotações */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/70 px-3 py-2.5 sm:px-5 dark:border-[#005063]/30 dark:bg-[#041019]/60">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/70 px-3 py-2 sm:px-4 dark:border-[#005063]/30 dark:bg-[#041019]/60">
         <div className="flex items-center gap-2.5">
           <button
             type="button"
@@ -1507,7 +1507,7 @@ export function StudyNotesWorkspace({
                 </div>
 
               {/* FOLHA DE CADERNO REAL ALINHADA (Ocupando o máximo da altura e largura da tela) */}
-              <div className="mt-2.5 flex flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-[#fcfbf7] shadow-inner dark:border-[#005063]/40 dark:bg-[#05131d]">
+              <div className="mt-2.5 flex flex-1 flex-col overflow-hidden rounded-[18px] border border-slate-200/90 bg-[#fcfbf7] shadow-inner dark:border-[#005063]/40 dark:bg-[#05131d]">
                 {/* Cabeçalho da Folha (Título) */}
                 <div
                   className={`border-b-2 border-rose-400/35 pt-3.5 pb-2 dark:border-cyan-500/30 ${
@@ -1525,7 +1525,7 @@ export function StudyNotesWorkspace({
                     placeholder="Título da sua anotação..."
                     aria-label="Título da anotação"
                     style={{ fontFamily: activeFontOption.fontFamilyCss }}
-                    className={`w-full border-0 bg-transparent p-0 text-xl font-black tracking-tight text-[#0d3950] placeholder:text-slate-400 focus:ring-0 focus:outline-hidden sm:text-2xl dark:text-white ${activeFontOption.className}`}
+                    className={`w-full border-0 bg-transparent p-0 text-lg font-black tracking-tight text-[#0d3950] placeholder:text-slate-400 focus:ring-0 focus:outline-hidden sm:text-xl dark:text-white ${activeFontOption.className}`}
                   />
                 </div>
 
@@ -1614,17 +1614,17 @@ export function StudyNotesWorkspace({
           ) : (
             <div className="flex h-full flex-col items-center justify-center py-24 text-center">
               <span className="text-5xl">📒</span>
-              <h4 className="mt-4 text-xl font-black text-[#0d3950] dark:text-slate-100">
+              <h4 className="mt-3 text-base font-black text-[#0d3950] dark:text-slate-100">
                 Seu Bloco de Anotações
               </h4>
-              <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 max-w-md text-[11px] text-slate-500 dark:text-slate-400">
                 Crie páginas de anotação por disciplina e escolha a fonte no menu suspenso da barra
                 de personalização.
               </p>
               <button
                 type="button"
                 onClick={() => void handleCreateNote()}
-                className="mt-5 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-5 text-xs font-bold text-white shadow-sm hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
+                className="mt-4 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-3 text-[11px] font-bold text-white shadow-sm hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
               >
                 <Plus className="size-4" aria-hidden="true" />
                 Criar primeira página de anotação
@@ -1643,10 +1643,10 @@ export function StudyNotesWorkspace({
           aria-labelledby="folder-modal-title"
           className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
         >
-          <div className="modal-dialog w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
+          <div className="modal-dialog w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-4 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
             <h3
               id="folder-modal-title"
-              className="text-base font-black text-[#0d3950] dark:text-slate-50"
+              className="text-[15px] font-black text-[#0d3950] dark:text-slate-50"
             >
               {editingFolderId ? 'Editar Pasta' : 'Nova Pasta de Anotações'}
             </h3>

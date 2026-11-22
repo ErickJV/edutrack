@@ -89,22 +89,22 @@ export function SubjectsPage() {
         <PageLoader />
       </MotionPresence>
 
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mx-auto max-w-7xl px-4 pt-1 pb-6 sm:px-5 lg:px-5">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-[#0d3950] sm:text-3xl dark:text-white">
+            <h1 className="text-[20px] leading-tight font-black tracking-tight text-[#0d3950] sm:text-[22px] dark:text-white">
               Minhas disciplinas
             </h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            <p className="mt-1 text-[12px] leading-5 text-slate-600 dark:text-slate-300">
               Matérias matriculadas neste semestre, com progresso e carga horária.
             </p>
           </div>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+            className="press inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl bg-accent px-3 text-[12px] font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
           >
-            <Plus size={18} aria-hidden="true" />
+            <Plus size={16} aria-hidden="true" />
             Configurar semestre
           </button>
         </div>
@@ -154,103 +154,103 @@ export function SubjectsPage() {
         ) : null}
 
         {error ? (
-          <div className="mt-6">
+          <div className="mt-4">
             <Alert tone="error">{error}</Alert>
           </div>
         ) : null}
 
         {successMessage ? (
-          <div className="mt-6">
+          <div className="mt-4">
             <Alert tone="success">{successMessage}</Alert>
           </div>
         ) : null}
 
-        <section className={`${activeSubjects.length > 0 ? 'mt-6' : ''} grid gap-4 sm:grid-cols-3`}>
+        <section className={`${activeSubjects.length > 0 ? 'mt-4' : ''} grid gap-3 sm:grid-cols-3`}>
           <article
-            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            className="stagger-item card-lift rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
             style={{ animationDelay: '0ms' }}
           >
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Disciplinas ativas</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={activeSubjects.length} /></p>
+            <p className="text-[10px] font-semibold tracking-[0.03em] text-slate-500 uppercase dark:text-slate-400">Disciplinas ativas</p>
+            <p className="mt-2 text-[25px] leading-[1.1] font-black text-[#0d3950] dark:text-white"><MetricValue value={activeSubjects.length} /></p>
           </article>
           <article
-            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            className="stagger-item card-lift rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
             style={{ animationDelay: '45ms' }}
           >
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Média de progresso</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={progressAverage} suffix="%" /></p>
+            <p className="text-[10px] font-semibold tracking-[0.03em] text-slate-500 uppercase dark:text-slate-400">Média de progresso</p>
+            <p className="mt-2 text-[25px] leading-[1.1] font-black text-[#0d3950] dark:text-white"><MetricValue value={progressAverage} suffix="%" /></p>
           </article>
           <article
-            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            className="stagger-item card-lift rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
             style={{ animationDelay: '90ms' }}
           >
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Carga horária ativa</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={totalHours} suffix="h" /></p>
+            <p className="text-[10px] font-semibold tracking-[0.03em] text-slate-500 uppercase dark:text-slate-400">Carga horária ativa</p>
+            <p className="mt-2 text-[25px] leading-[1.1] font-black text-[#0d3950] dark:text-white"><MetricValue value={totalHours} suffix="h" /></p>
           </article>
         </section>
 
-        <section className="mt-8 rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]">
+        <section className="mt-4 rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">
                 Disciplinas ativas
               </p>
-              <h2 className="mt-1 text-2xl font-black tracking-tight text-[#0d3950] dark:text-white">
+              <h2 className="mt-1 text-[17px] font-black tracking-tight text-[#0d3950] dark:text-white">
                 Progresso por matéria
               </h2>
             </div>
             <button
               type="button"
               onClick={() => setModalOpen(true)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#005063]/30 px-4 text-sm font-bold text-[#005063] transition hover:bg-[#005063]/10 dark:border-[#005063]/50 dark:text-[#a8d5e5] dark:hover:bg-[#005063]/30"
+              className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-[#005063]/30 px-3 text-[11px] font-bold text-[#005063] transition hover:bg-[#005063]/10 dark:border-[#005063]/50 dark:text-[#a8d5e5] dark:hover:bg-[#005063]/30"
             >
-              <ClipboardList size={17} aria-hidden="true" />
+              <ClipboardList size={15} aria-hidden="true" />
               Ajustar seleção
             </button>
           </div>
 
           {activeSubjects.length === 0 ? (
-            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-8 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
+            <div className="mt-4 rounded-[18px] border border-dashed border-slate-300 bg-slate-50/80 p-6 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
               <LoaderCircle
                 className="mx-auto text-slate-400 dark:text-slate-500"
-                size={28}
+                size={24}
                 aria-hidden="true"
               />
-              <p className="mt-4 text-lg font-black text-[#0d3950] dark:text-white">
+              <p className="mt-3 text-[15px] font-black text-[#0d3950] dark:text-white">
                 Nenhuma disciplina ativa ainda
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              <p className="mt-2 text-[13px] leading-5 text-slate-600 dark:text-slate-300">
                 Configure seu semestre para visualizar o progresso e começar a acompanhar sua
                 rotina.
               </p>
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="press mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 text-sm font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
+                className="press mt-3 inline-flex min-h-9 items-center gap-2 rounded-xl bg-[#0d3950] px-3 text-[12px] font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
               >
-                <Plus size={17} aria-hidden="true" />
+                <Plus size={15} aria-hidden="true" />
                 Selecionar matérias
               </button>
             </div>
           ) : (
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
               {activeSubjects.map((item, index) => (
                 <article
                   key={item.id}
-                  className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]"
+                  className="stagger-item card-lift rounded-[18px] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-[#005063]/20 dark:bg-[#041019]"
                   style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
                         {toSemesterLabel(item.subject.semester)}
                       </p>
-                      <h3 className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-white">
+                      <h3 className="mt-1 text-[13px] leading-[1.25] font-black tracking-tight text-[#0d3950] dark:text-white">
                         {item.subject.name}
                       </h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                         {item.progress_percent}%
                       </span>
                       <button
@@ -272,10 +272,10 @@ export function SubjectsPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true">
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true">
                     <div className="bar-grow h-full rounded-full bg-[#006768] dark:bg-[#005063]" style={{ width: `${item.progress_percent}%` }} />
                   </div>
-                  <dl className="mt-4 grid gap-3 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
+                  <dl className="mt-3 grid gap-2.5 text-[13px] text-slate-600 dark:text-slate-300 sm:grid-cols-2">
                     <div>
                       <dt className="font-semibold text-slate-500 dark:text-slate-400">
                         Carga horária
@@ -316,28 +316,28 @@ export function SubjectsPage() {
             aria-modal="true"
             aria-labelledby="delete-subject-modal-title"
             aria-describedby="delete-subject-modal-desc"
-            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]"
+            className="w-full max-w-md rounded-[18px] border border-slate-200 bg-white p-4 shadow-2xl sm:p-5 dark:border-[#005063]/40 dark:bg-[#081a26]"
             onClick={(event) => event.stopPropagation()}
           >
             <h3
               id="delete-subject-modal-title"
-              className="text-lg font-black tracking-tight text-[#0d3950] dark:text-white"
+              className="text-[17px] font-black tracking-tight text-[#0d3950] dark:text-white"
             >
               Excluir disciplina?
             </h3>
             <p
               id="delete-subject-modal-desc"
-              className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300"
+              className="mt-2 text-[13px] leading-5 text-slate-600 dark:text-slate-300"
             >
               Tem certeza de que deseja excluir esta disciplina? Essa ação poderá afetar os
               registros e acompanhamentos vinculados a ela.
             </p>
-            <div className="mt-6 flex items-center justify-end gap-3">
+            <div className="mt-4 flex items-center justify-end gap-3">
               <button
                 type="button"
                 disabled={deleting}
                 onClick={() => setSubjectToDelete(null)}
-                className="min-h-10 rounded-xl border border-slate-300 px-4 text-xs font-bold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#041019]"
+                className="min-h-9 rounded-xl border border-slate-300 px-3 text-[11px] font-bold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#041019]"
               >
                 Cancelar
               </button>
@@ -345,7 +345,7 @@ export function SubjectsPage() {
                 type="button"
                 disabled={deleting}
                 onClick={() => void handleConfirmDeleteSubject()}
-                className="inline-flex min-h-10 items-center justify-center rounded-xl bg-rose-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+                className="inline-flex min-h-9 items-center justify-center rounded-xl bg-rose-600 px-3 text-[11px] font-bold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
               >
                 {deleting ? 'Excluindo...' : 'Excluir disciplina'}
               </button>

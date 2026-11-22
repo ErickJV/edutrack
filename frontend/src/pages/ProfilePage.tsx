@@ -140,61 +140,61 @@ export function ProfilePage() {
   return (
     <div>
 
-      <div className="mx-auto max-w-6xl space-y-6 px-5 py-9 sm:px-8 sm:py-14">
+      <div className="mx-auto max-w-6xl space-y-4 px-4 pt-1 pb-6 sm:px-5 lg:px-5">
         <section
-          className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]"
+          className="rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]"
           aria-labelledby="academic-profile"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#005063] dark:text-[#a8d5e5]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#005063] dark:text-[#a8d5e5]">
                 Perfil
               </p>
-              <h1 id="academic-profile" className="mt-2 text-2xl font-black text-[#0d3950] dark:text-white">
+              <h1 id="academic-profile" className="mt-2 text-[20px] leading-tight font-black text-[#0d3950] dark:text-white">
                 Informações pessoais e acadêmicas
               </h1>
             </div>
-            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
-              <GraduationCap size={24} aria-hidden="true" />
+            <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
+              <GraduationCap size={18} aria-hidden="true" />
             </span>
           </div>
 
-          <dl className="mt-7 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
-              <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                <UserIcon size={15} aria-hidden="true" />
+          <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 dark:border-[#005063]/20 dark:bg-[#041019]">
+              <dt className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <UserIcon size={13} aria-hidden="true" />
                 Nome do aluno
               </dt>
-              <dd className="mt-2 text-lg font-bold text-[#0d3950] dark:text-white">
+              <dd className="mt-1.5 text-[13px] font-bold text-[#0d3950] dark:text-white">
                 {user?.full_name || 'Não informado'}
               </dd>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
-              <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                <Mail size={15} aria-hidden="true" />
+            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 dark:border-[#005063]/20 dark:bg-[#041019]">
+              <dt className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <Mail size={13} aria-hidden="true" />
                 E-mail cadastrado
               </dt>
-              <dd className="mt-2 break-all text-base font-bold text-[#0d3950] dark:text-white">
+              <dd className="mt-1.5 break-all text-[13px] font-bold text-[#0d3950] dark:text-white">
                 {user?.email || 'Não informado'}
               </dd>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
-              <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                <GraduationCap size={15} aria-hidden="true" />
+            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 dark:border-[#005063]/20 dark:bg-[#041019]">
+              <dt className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <GraduationCap size={13} aria-hidden="true" />
                 Nome do curso
               </dt>
-              <dd className="mt-2 text-lg font-bold leading-6 text-[#0d3950] dark:text-white">
+              <dd className="mt-1.5 text-[13px] font-bold leading-5 text-[#0d3950] dark:text-white">
                 {user?.course_offering?.course_name || 'Não selecionado'}
               </dd>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]">
-              <dt className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 dark:border-[#005063]/20 dark:bg-[#041019]">
+              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Modalidade
               </dt>
-              <dd className="mt-2 text-lg font-bold text-[#0d3950] dark:text-white">
+              <dd className="mt-1.5 text-[13px] font-bold text-[#0d3950] dark:text-white">
                 {user?.course_offering?.modality_label || '—'}
               </dd>
             </div>
@@ -202,28 +202,28 @@ export function ProfilePage() {
         </section>
 
         <section
-          className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]"
+          className="rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]"
           aria-labelledby="edit-profile-heading"
         >
           <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-2xl bg-[#006768]/10 text-[#006768] dark:bg-[#006768]/30 dark:text-[#a8d5e5]">
-              <RefreshCw size={20} aria-hidden="true" />
+            <div className="grid size-9 place-items-center rounded-2xl bg-[#006768]/10 text-[#006768] dark:bg-[#006768]/30 dark:text-[#a8d5e5]">
+              <RefreshCw size={17} aria-hidden="true" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#006768] dark:text-[#a8d5e5]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#006768] dark:text-[#a8d5e5]">
                 Editar dados
               </p>
-              <h2 id="edit-profile-heading" className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-white">
+              <h2 id="edit-profile-heading" className="mt-1 text-[17px] font-black tracking-tight text-[#0d3950] dark:text-white">
                 Alterar informações do perfil
               </h2>
             </div>
           </div>
 
-          <form className="mt-6 space-y-5" onSubmit={handleSaveProfile}>
+          <form className="mt-4 space-y-4" onSubmit={handleSaveProfile}>
             {error ? <Alert tone="error">{error}</Alert> : null}
             {successMessage ? <Alert tone="success">{successMessage}</Alert> : null}
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Input
                 label="Nome do aluno"
                 name="full_name"

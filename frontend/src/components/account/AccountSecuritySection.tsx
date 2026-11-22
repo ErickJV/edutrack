@@ -222,34 +222,34 @@ export function AccountSecuritySection() {
 
   return (
     <section
-      className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]"
+      className="rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]"
       aria-labelledby="account-security-heading"
     >
       <div className="flex items-center gap-3">
-        <div className="grid size-11 place-items-center rounded-2xl bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
-          <ShieldCheck size={20} aria-hidden="true" />
+        <div className="grid size-9 place-items-center rounded-2xl bg-[#005063]/10 text-[#005063] dark:bg-[#005063]/30 dark:text-[#a8d5e5]">
+          <ShieldCheck size={17} aria-hidden="true" />
         </div>
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#005063] dark:text-[#a8d5e5]">
             Segurança
           </p>
           <h2
             id="account-security-heading"
-            className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-white"
+            className="mt-1 text-[17px] font-black tracking-tight text-[#0d3950] dark:text-white"
           >
             Conta e segurança
           </h2>
         </div>
       </div>
 
-      <div className="mt-7 grid gap-8 lg:grid-cols-2">
-        <div className="space-y-5">
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <div className="space-y-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               E-mail de acesso
             </p>
-            <p className="mt-1 flex items-center gap-2 break-all text-base font-bold text-[#0d3950] dark:text-white">
-              <Mail size={16} aria-hidden="true" className="shrink-0 text-[#005063]" />
+            <p className="mt-1 flex items-center gap-2 break-all text-[13px] font-bold text-[#0d3950] dark:text-white">
+              <Mail size={14} aria-hidden="true" className="shrink-0 text-[#005063]" />
               {currentEmail}
             </p>
           </div>
@@ -259,7 +259,7 @@ export function AccountSecuritySection() {
 
           {pendingEmail ? (
             <div className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
-              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              <p className="text-[13px] font-semibold text-amber-900 dark:text-amber-200">
                 Alteração pendente para <span className="break-all">{pendingEmail}</span>
               </p>
               {codeByEmail ? (
@@ -294,7 +294,7 @@ export function AccountSecuritySection() {
                   type="button"
                   onClick={() => void resend()}
                   disabled={busy !== ''}
-                  className="min-h-10 rounded-lg px-2 text-sm font-bold text-[#005063] underline transition hover:text-[#0d3950] disabled:opacity-50 dark:text-[#a8d5e5]"
+                  className="min-h-9 rounded-lg px-2 text-[11px] font-bold text-[#005063] underline transition hover:text-[#0d3950] disabled:opacity-50 dark:text-[#a8d5e5]"
                 >
                   Reenviar verificação
                 </button>
@@ -302,7 +302,7 @@ export function AccountSecuritySection() {
                   type="button"
                   onClick={() => void cancelChange()}
                   disabled={busy !== ''}
-                  className="min-h-10 rounded-lg px-2 text-sm font-bold text-rose-700 underline transition hover:text-rose-900 disabled:opacity-50 dark:text-rose-300"
+                  className="min-h-9 rounded-lg px-2 text-[11px] font-bold text-rose-700 underline transition hover:text-rose-900 disabled:opacity-50 dark:text-rose-300"
                 >
                   Cancelar alteração
                 </button>
@@ -332,7 +332,7 @@ export function AccountSecuritySection() {
                     setEmailError('')
                     setEmailMessage('')
                   }}
-                  className="min-h-11 rounded-xl px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#041019]"
+                  className="min-h-9 rounded-xl px-3 text-[11px] font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#041019]"
                 >
                   Voltar
                 </button>
@@ -346,34 +346,34 @@ export function AccountSecuritySection() {
                 setEmailError('')
                 setEmailMessage('')
               }}
-              className="min-h-11 rounded-xl border border-[#005063]/30 px-4 text-sm font-bold text-[#005063] transition hover:bg-[#005063]/10 dark:border-[#005063]/50 dark:text-[#a8d5e5]"
+              className="min-h-9 rounded-xl border border-[#005063]/30 px-3 text-[11px] font-bold text-[#005063] transition hover:bg-[#005063]/10 dark:border-[#005063]/50 dark:text-[#a8d5e5]"
             >
               Alterar e-mail
             </button>
           )}
 
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-[#005063]/20 dark:bg-[#041019]">
-            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              <KeyRound size={15} aria-hidden="true" />
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 dark:border-[#005063]/20 dark:bg-[#041019]">
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <KeyRound size={13} aria-hidden="true" />
               Conta Google
             </p>
-            <p className="mt-2 text-sm font-bold text-[#0d3950] dark:text-white">
+            <p className="mt-1.5 text-[13px] font-bold text-[#0d3950] dark:text-white">
               {googleAccount ? `Conectada · ${googleAccount.display}` : 'Não vinculada'}
             </p>
           </div>
         </div>
 
         <div>
-          <h3 className="text-base font-black text-[#0d3950] dark:text-white">
+          <h3 className="text-[15px] font-black text-[#0d3950] dark:text-white">
             {user?.has_usable_password ? 'Alterar senha' : 'Definir senha de acesso'}
           </h3>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
             {user?.has_usable_password
               ? 'Informe a senha atual e escolha uma nova com pelo menos 12 caracteres.'
               : 'Sua conta foi criada com o Google. Defina uma senha para entrar também por e-mail.'}
           </p>
 
-          <form className="mt-5 space-y-5" onSubmit={submitPassword}>
+          <form className="mt-4 space-y-4" onSubmit={submitPassword}>
             {passwordError ? <Alert tone="error">{passwordError}</Alert> : null}
             {passwordMessage ? <Alert tone="success">{passwordMessage}</Alert> : null}
 

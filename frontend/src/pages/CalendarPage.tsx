@@ -663,15 +663,15 @@ export function CalendarPage() {
   return (
     <div className="min-h-full">
 
-      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-10">
+      <div className="mx-auto w-full max-w-7xl space-y-4 px-4 pt-1 pb-6 sm:px-5 lg:px-5">
         {/* 1. BLOCO PRINCIPAL: CALENDÁRIO ACADÊMICO */}
-        <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+        <section className="w-full rounded-[18px] border border-slate-200/80 bg-white/95 p-4 shadow-xl shadow-[#0d3950]/5 sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]/90">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-2xl">
-              <h1 className="text-2xl font-black tracking-tight text-[#0d3950] sm:text-3xl dark:text-white">
+              <h1 className="text-[20px] leading-tight font-black tracking-tight text-[#0d3950] sm:text-[22px] dark:text-white">
                 Calendário Acadêmico
               </h1>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              <p className="mt-1 text-[12px] leading-5 text-slate-600 dark:text-slate-300">
                 Todos os dias do mês e compromissos sincronizados em tempo real com{' '}
                 <strong>Disciplinas</strong> (aulas), <strong>Tarefas</strong> (trabalhos e entregas) e{' '}
                 <strong>Anotações</strong> (metas e leituras).
@@ -683,7 +683,7 @@ export function CalendarPage() {
               <button
                 type="button"
                 onClick={() => openNewEventForDate(selectedDateKey)}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0d3950] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#0d3950]/20 transition hover:bg-[#005063] focus:outline-none focus:ring-2 focus:ring-[#0d3950]/40 dark:bg-[#005063] dark:hover:bg-[#006b85]"
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-[#0d3950] px-3 text-[12px] font-bold text-white shadow-md shadow-[#0d3950]/20 transition hover:bg-[#005063] focus:outline-none focus:ring-2 focus:ring-[#0d3950]/40 dark:bg-[#005063] dark:hover:bg-[#006b85]"
               >
                 <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span>Nova Tarefa | Evento</span>
@@ -694,7 +694,7 @@ export function CalendarPage() {
                 <button
                   type="button"
                   onClick={openPdfUploadModal}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 shadow-2xs transition hover:border-slate-400 hover:bg-slate-50 hover:text-[#0d3950] focus:outline-none focus:ring-2 focus:ring-[#006768]/30 dark:border-[#005063]/50 dark:bg-[#041019] dark:text-slate-200 dark:hover:border-cyan-400 dark:hover:bg-[#081a26] dark:hover:text-cyan-300"
+                  className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-[12px] font-semibold text-slate-700 shadow-2xs transition hover:border-slate-400 hover:bg-slate-50 hover:text-[#0d3950] focus:outline-none focus:ring-2 focus:ring-[#006768]/30 dark:border-[#005063]/50 dark:bg-[#041019] dark:text-slate-200 dark:hover:border-cyan-400 dark:hover:bg-[#081a26] dark:hover:text-cyan-300"
                   title="Importar calendário acadêmico (.pdf, .docx)"
                   aria-label="Importar Calendário Acadêmico em PDF ou Word"
                 >
@@ -706,7 +706,7 @@ export function CalendarPage() {
                   type="button"
                   onClick={() => void loadCalendarData()}
                   disabled={loading}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-2xs transition hover:border-slate-400 hover:bg-slate-50 hover:text-[#0d3950] focus:outline-none focus:ring-2 focus:ring-[#006768]/30 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#005063]/50 dark:bg-[#041019] dark:text-slate-200 dark:hover:border-cyan-400 dark:hover:bg-[#081a26] dark:hover:text-cyan-300"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-2xs transition hover:border-slate-400 hover:bg-slate-50 hover:text-[#0d3950] focus:outline-none focus:ring-2 focus:ring-[#006768]/30 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#005063]/50 dark:bg-[#041019] dark:text-slate-200 dark:hover:border-cyan-400 dark:hover:bg-[#081a26] dark:hover:text-cyan-300"
                   title="Atualizar dados do calendário"
                   aria-label="Atualizar dados do calendário"
                 >
@@ -721,58 +721,58 @@ export function CalendarPage() {
           </div>
 
           {/* Indicadores do Mês */}
-          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4">
-              <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-3.5">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
                 <GraduationCap className="h-4 w-4 shrink-0" />
                 Aulas no mês (Disciplinas)
               </div>
-              <p className="mt-1 text-2xl font-black text-emerald-950 dark:text-white">
+              <p className="mt-1 text-[22px] leading-[1.1] font-black text-emerald-950 dark:text-white">
                 {monthSummary.classes}
               </p>
             </div>
-            <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4">
-              <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
+            <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-3.5">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-amber-800 dark:text-amber-300">
                 <ListTodo className="h-4 w-4 shrink-0" />
                 Tarefas & Trabalhos
               </div>
-              <p className="mt-1 text-2xl font-black text-amber-950 dark:text-white">
+              <p className="mt-1 text-[22px] leading-[1.1] font-black text-amber-950 dark:text-white">
                 {monthSummary.tasks}
               </p>
             </div>
-            <div className="rounded-2xl border border-cyan-500/25 bg-cyan-500/10 p-4">
-              <div className="flex items-center gap-2 text-xs font-bold text-cyan-800 dark:text-cyan-300">
+            <div className="rounded-2xl border border-cyan-500/25 bg-cyan-500/10 p-3.5">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-cyan-800 dark:text-cyan-300">
                 <BookOpen className="h-4 w-4 shrink-0" />
                 Leituras & Metas (Anotações)
               </div>
-              <p className="mt-1 text-2xl font-black text-cyan-950 dark:text-white">
+              <p className="mt-1 text-[22px] leading-[1.1] font-black text-cyan-950 dark:text-white">
                 {monthSummary.readings}
               </p>
             </div>
-            <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 p-4">
-              <div className="flex items-center gap-2 text-xs font-bold text-rose-800 dark:text-rose-300">
+            <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 p-3.5">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-rose-800 dark:text-rose-300">
                 <Sparkles className="h-4 w-4 shrink-0" />
                 Provas & Avaliações
               </div>
-              <p className="mt-1 text-2xl font-black text-rose-950 dark:text-white">
+              <p className="mt-1 text-[22px] leading-[1.1] font-black text-rose-950 dark:text-white">
                 {monthSummary.events}
               </p>
             </div>
           </div>
 
           {/* Barra de Navegação do Mês e Filtros */}
-          <div className="mt-6 flex flex-col gap-4 border-t border-slate-200/70 pt-5 lg:flex-row lg:items-end lg:justify-between dark:border-[#005063]/30">
+          <div className="mt-4 flex flex-col gap-4 border-t border-slate-200/70 pt-4 lg:flex-row lg:items-end lg:justify-between dark:border-[#005063]/30">
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={handlePrevMonth}
                 aria-label="Mês anterior"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-100"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-100"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <div className="min-w-52 px-2 text-center">
-                <h2 className="text-xl font-black text-[#0d3950] dark:text-white">
+                <h2 className="text-[17px] font-black text-[#0d3950] dark:text-white">
                   {MONTH_NAMES[currentMonth.getMonth()]} de {currentMonth.getFullYear()}
                 </h2>
               </div>
@@ -780,14 +780,14 @@ export function CalendarPage() {
                 type="button"
                 onClick={handleNextMonth}
                 aria-label="Próximo mês"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-100"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-100"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
               <button
                 type="button"
                 onClick={handleJumpToToday}
-                className="inline-flex min-h-11 items-center rounded-xl border border-slate-200/80 bg-slate-100/80 px-4 text-xs font-extrabold text-[#0d3950] transition hover:bg-slate-200/70 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-cyan-300"
+                className="inline-flex min-h-9 items-center rounded-xl border border-slate-200/80 bg-slate-100/80 px-3 text-[11px] font-extrabold text-[#0d3950] transition hover:bg-slate-200/70 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-cyan-300"
               >
                 Ir para Hoje
               </button>
@@ -840,13 +840,13 @@ export function CalendarPage() {
         ) : null}
 
         {/* 2. SEÇÃO SUPERIOR: DETALHES E AÇÕES RÁPIDAS DA SEMANA (Logo abaixo do bloco Calendário Acadêmico) */}
-        <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+        <section className="w-full rounded-[18px] border border-slate-200/80 bg-white/95 p-4 shadow-xl shadow-[#0d3950]/5 sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]/90">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4 dark:border-[#005063]/30">
             <div>
-              <p className="text-xs font-extrabold tracking-wider text-[#005063] uppercase dark:text-cyan-300">
+              <p className="text-[10px] font-extrabold tracking-wider text-[#005063] uppercase dark:text-cyan-300">
                 Programação Semanal ({selectedWeekRangeLabel})
               </p>
-              <h3 className="mt-1 text-xl font-black text-[#0d3950] dark:text-white">
+              <h3 className="mt-1 text-[17px] font-black text-[#0d3950] dark:text-white">
                 Detalhes e Ações Rápidas da Semana ({selectedWeekTotalItems}{' '}
                 {selectedWeekTotalItems === 1 ? 'compromisso' : 'compromissos'})
               </h3>
@@ -856,7 +856,7 @@ export function CalendarPage() {
               <button
                 type="button"
                 onClick={() => handleShiftWeek(-7)}
-                className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
+                className="inline-flex min-h-9 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Semana anterior
@@ -864,7 +864,7 @@ export function CalendarPage() {
               <button
                 type="button"
                 onClick={() => handleShiftWeek(7)}
-                className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
+                className="inline-flex min-h-9 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
               >
                 Próxima semana
                 <ChevronRight className="h-4 w-4" />
@@ -872,7 +872,7 @@ export function CalendarPage() {
               <button
                 type="button"
                 onClick={() => openNewEventForDate(selectedDateKey)}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3.5 text-xs font-extrabold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3 text-[11px] font-extrabold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
               >
                 <Plus className="h-4 w-4" />
                 Adicionar na Semana
@@ -901,7 +901,7 @@ export function CalendarPage() {
                       <span className="block truncate text-[10px] font-extrabold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                         {day.weekdayFull}
                       </span>
-                      <span className="block truncate text-sm font-black text-[#0d3950] dark:text-white">
+                      <span className="block truncate text-[13px] font-black text-[#0d3950] dark:text-white">
                         {day.date.toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: '2-digit',
@@ -959,7 +959,7 @@ export function CalendarPage() {
 
                             {/* Linha 3: Disciplina */}
                             {item.student_subject_id && item.subject_name && !item.subject_name.includes('Interdisciplinar') ? (
-                              <p className="mt-0.5 line-clamp-2 break-words text-[11px] leading-tight font-semibold text-slate-600 dark:text-slate-300">
+                              <p className="mt-0.5 line-clamp-2 break-words text-[10px] leading-tight font-semibold text-slate-600 dark:text-slate-300">
                                 {item.subject_name}
                               </p>
                             ) : null}
@@ -1086,8 +1086,8 @@ export function CalendarPage() {
         </section>
 
         {/* 3. GRADE MENSAL EM LARGURA TOTAL */}
-        <section className="w-full rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-xl shadow-[#0d3950]/5 sm:p-6 lg:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 pb-4 text-xs font-bold text-slate-600 dark:border-[#005063]/30 dark:text-slate-300">
+        <section className="w-full rounded-[18px] border border-slate-200/80 bg-white/95 p-4 shadow-xl shadow-[#0d3950]/5 sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 pb-4 text-[11px] font-bold text-slate-600 dark:border-[#005063]/30 dark:text-slate-300">
             <div className="flex flex-wrap items-center gap-4">
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-full bg-emerald-500" />
@@ -1117,7 +1117,7 @@ export function CalendarPage() {
 
           {/* GRADE MENSAL COMPLETA DE 7 COLUNAS (Tablet & Desktop >= 640px) */}
           <div className="hidden sm:block">
-            <div className="grid grid-cols-7 gap-2 pb-2 text-center text-xs font-black tracking-wider text-[#0d3950] uppercase dark:text-cyan-300">
+            <div className="grid grid-cols-7 gap-2 pb-2 text-center text-[10px] font-black tracking-wider text-[#0d3950] uppercase dark:text-cyan-300">
               {WEEKDAYS_FULL.map((day, idx) => (
                 <div
                   key={day}
@@ -1156,7 +1156,7 @@ export function CalendarPage() {
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex min-w-0 items-center gap-1.5">
                         <span
-                          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black ${
+                          className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-[13px] font-black ${
                             cell.isToday
                               ? 'bg-[#0d3950] text-white shadow-xs dark:bg-cyan-400 dark:text-slate-950'
                               : 'text-[#0d3950] dark:text-slate-100'
@@ -1302,7 +1302,7 @@ export function CalendarPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`inline-flex h-8 w-8 items-center justify-center rounded-xl text-sm font-black ${
+                          className={`inline-flex h-7 w-7 items-center justify-center rounded-xl text-[13px] font-black ${
                             cell.isToday
                               ? 'bg-[#0d3950] text-white dark:bg-cyan-400 dark:text-slate-950'
                               : 'bg-slate-100 text-[#0d3950] dark:bg-slate-800 dark:text-white'
@@ -1310,7 +1310,7 @@ export function CalendarPage() {
                         >
                           {cell.date.getDate()}
                         </span>
-                        <span className="text-sm font-extrabold text-[#0d3950] dark:text-white">
+                        <span className="text-[13px] font-extrabold text-[#0d3950] dark:text-white">
                           {cell.weekdayShort}
                           {cell.isToday ? ' · Hoje' : ''}
                         </span>
@@ -1358,7 +1358,7 @@ export function CalendarPage() {
                                   )}
                                 </div>
                               </div>
-                              <p className="mt-1 text-sm font-black">{it.title}</p>
+                              <p className="mt-1 text-[13px] font-black">{it.title}</p>
                               {it.student_subject_id && it.subject_name && !it.subject_name.includes('Interdisciplinar') ? (
                                 <p className="mt-0.5 text-xs font-semibold opacity-85">
                                   Disciplina: {it.subject_name}
@@ -1385,7 +1385,7 @@ export function CalendarPage() {
           aria-modal="true"
           aria-labelledby="modal-new-event-title"
         >
-          <div className="modal-dialog w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+          <div className="modal-dialog w-full max-w-lg rounded-[18px] border border-slate-200 bg-white p-4 shadow-2xl sm:p-[17px] dark:border-[#005063]/40 dark:bg-[#081a26]">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-[#005063]/30">
               <div>
                 <p className="text-[11px] font-extrabold tracking-wider text-[#006768] uppercase dark:text-cyan-400">
@@ -1393,7 +1393,7 @@ export function CalendarPage() {
                 </p>
                 <h2
                   id="modal-new-event-title"
-                  className="text-lg font-black text-[#0d3950] dark:text-white"
+                  className="text-[17px] font-black text-[#0d3950] dark:text-white"
                 >
                   {editingItem
                     ? 'Editar Data | Avaliação no Calendário'
@@ -1517,7 +1517,7 @@ export function CalendarPage() {
                 <button
                   type="button"
                   onClick={() => setShowNewEventModal(false)}
-                  className="min-h-11 rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 dark:border-[#005063]/40 dark:text-slate-300 dark:hover:bg-[#041019]"
+                  className="min-h-9 rounded-xl border border-slate-200 px-3 text-[12px] font-bold text-slate-600 hover:bg-slate-100 dark:border-[#005063]/40 dark:text-slate-300 dark:hover:bg-[#041019]"
                 >
                   Cancelar
                 </button>
@@ -1542,10 +1542,10 @@ export function CalendarPage() {
           aria-modal="true"
           aria-labelledby="modal-pdf-calendar-title"
         >
-          <div className="modal-dialog flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-[#005063]/30">
+          <div className="modal-dialog flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3.5 dark:border-[#005063]/30">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#006768]/15 text-[#006768] dark:bg-cyan-400/15 dark:text-cyan-300">
+                <div className="flex size-9 items-center justify-center rounded-2xl bg-[#006768]/15 text-[#006768] dark:bg-cyan-400/15 dark:text-cyan-300">
                   <FileUp className="h-5 w-5" />
                 </div>
                 <div>
@@ -1554,7 +1554,7 @@ export function CalendarPage() {
                   </p>
                   <h2
                     id="modal-pdf-calendar-title"
-                    className="text-lg font-black text-[#0d3950] dark:text-white"
+                    className="text-[17px] font-black text-[#0d3950] dark:text-white"
                   >
                     Importar Calendário Acadêmico (PDF ou Word)
                   </h2>
@@ -1570,7 +1570,7 @@ export function CalendarPage() {
               </button>
             </div>
 
-            <div className="flex-1 space-y-5 overflow-y-auto p-6">
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-[17px]">
               {pdfError ? <Alert tone="error">{pdfError}</Alert> : null}
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1581,7 +1581,7 @@ export function CalendarPage() {
                   <select
                     value={pdfSubjectId}
                     onChange={(e) => handlePdfSubjectChange(e.target.value)}
-                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                    className="min-h-9 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
                   >
                     <option value="">Selecione a disciplina...</option>
                     {subjects.map((sub) => (
@@ -1600,15 +1600,15 @@ export function CalendarPage() {
                     type="file"
                     accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     onChange={handlePdfFileChange}
-                    className="block min-h-11 w-full cursor-pointer rounded-xl border border-dashed border-[#005063]/40 bg-slate-50 px-3 py-2 text-xs font-bold text-[#0d3950] file:mr-3 file:rounded-lg file:border-0 file:bg-[#0d3950] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:bg-slate-100 dark:border-cyan-400/40 dark:bg-[#040f17] dark:text-slate-200 dark:file:bg-[#005063]"
+                    className="block min-h-9 w-full cursor-pointer rounded-xl border border-dashed border-[#005063]/40 bg-slate-50 px-3 py-2 text-xs font-bold text-[#0d3950] file:mr-3 file:rounded-lg file:border-0 file:bg-[#0d3950] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:bg-slate-100 dark:border-cyan-400/40 dark:bg-[#040f17] dark:text-slate-200 dark:file:bg-[#005063]"
                   />
                 </label>
               </div>
 
               {extractingPdf ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center dark:border-slate-800 dark:bg-[#041019]">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center dark:border-slate-800 dark:bg-[#041019]">
                   <RefreshCw className="mx-auto h-7 w-7 animate-spin text-[#006768] dark:text-cyan-400" />
-                  <p className="mt-2 text-sm font-bold text-[#0d3950] dark:text-white">
+                  <p className="mt-2 text-[13px] font-bold text-[#0d3950] dark:text-white">
                     Lendo o arquivo e identificando datas de avaliações...
                   </p>
                 </div>
@@ -1634,7 +1634,7 @@ export function CalendarPage() {
                   {/* Cabeçalho das avaliações extraídas */}
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <h3 className="text-sm font-black text-[#0d3950] dark:text-white">
+                      <h3 className="text-[15px] font-black text-[#0d3950] dark:text-white">
                         Avaliações Identificadas ({editableExtractedItems.length})
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -1780,11 +1780,11 @@ export function CalendarPage() {
               ) : null}
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4 dark:border-[#005063]/30">
+            <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-4 py-3 dark:border-[#005063]/30">
               <button
                 type="button"
                 onClick={() => setShowPdfModal(false)}
-                className="min-h-11 rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 dark:border-[#005063]/40 dark:text-slate-300 dark:hover:bg-[#041019]"
+                className="min-h-9 rounded-xl border border-slate-200 px-3 text-[12px] font-bold text-slate-600 hover:bg-slate-100 dark:border-[#005063]/40 dark:text-slate-300 dark:hover:bg-[#041019]"
               >
                 Cancelar
               </button>

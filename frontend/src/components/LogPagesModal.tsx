@@ -70,8 +70,8 @@ export function LogPagesModal({
       className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
       data-presence={presence.closing ? 'closed' : 'open'}
     >
-      <div className="modal-dialog w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
-        <h3 id="log-pages-modal-title" className="text-base font-black text-[#0d3950] dark:text-slate-50">
+      <div className="modal-dialog w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-4 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]">
+        <h3 id="log-pages-modal-title" className="text-[15px] font-black text-[#0d3950] dark:text-slate-50">
           Registrar Leitura
         </h3>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">

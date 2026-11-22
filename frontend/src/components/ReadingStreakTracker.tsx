@@ -30,17 +30,17 @@ export function ReadingStreakTracker({ summary }: ReadingStreakTrackerProps) {
   return (
     <section
       aria-label="Acompanhamento de Sequência e Meta de Leitura"
-      className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26] sm:p-5"
+      className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
     >
       {/* Top Banner: Streak & Today Goal */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4 dark:border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
-            <Flame className="size-6" aria-hidden="true" />
+          <div className="flex size-9 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
+            <Flame className="size-5" aria-hidden="true" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xl font-black text-[#0d3950] dark:text-white sm:text-2xl">
+              <span className="text-[22px] leading-[1.1] font-black text-[#0d3950] dark:text-white">
                 {summary.active_streak} {summary.active_streak === 1 ? 'dia' : 'dias'}
               </span>
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-800 dark:bg-amber-950 dark:text-amber-300">

@@ -286,19 +286,19 @@ export function FlashcardsPage() {
   return (
     <div className="min-h-full">
 
-      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-10">
+      <div className="mx-auto w-full max-w-7xl space-y-4 px-4 pt-1 pb-6 sm:px-5 lg:px-5">
         {/* Cabeçalho Principal Alinhado */}
-        <section className="rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-xl shadow-[#0d3950]/5 sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+        <section className="rounded-[18px] border border-slate-200/80 bg-white/95 p-4 shadow-xl shadow-[#0d3950]/5 sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]/90">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-[#005063]/20 bg-[#0d3950]/5 px-3 py-1 text-xs font-extrabold tracking-wide text-[#0d3950] uppercase dark:border-cyan-400/20 dark:bg-cyan-400/10 dark:text-cyan-300">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#005063]/20 bg-[#0d3950]/5 px-3 py-1 text-[10px] font-extrabold tracking-wide text-[#0d3950] uppercase dark:border-cyan-400/20 dark:bg-cyan-400/10 dark:text-cyan-300">
                 <Brain className="h-3.5 w-3.5" />
                 Repetição Espaçada
               </span>
-              <h1 className="mt-2 text-2xl font-black tracking-tight text-[#0d3950] sm:text-3xl dark:text-white">
+              <h1 className="mt-2 text-[20px] leading-tight font-black tracking-tight text-[#0d3950] sm:text-[22px] dark:text-white">
                 Flashcards
               </h1>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              <p className="mt-1 text-[12px] leading-5 text-slate-600 dark:text-slate-300">
                 Selecione um filtro em Cards à esquerda, clique no card para girá-lo em 3D (Flip) e gerencie seus cards.
               </p>
             </div>
@@ -307,7 +307,7 @@ export function FlashcardsPage() {
               <button
                 type="button"
                 onClick={() => setShowManageList((prev) => !prev)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-extrabold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
+                className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[11px] font-extrabold text-[#0d3950] transition hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#041019] dark:text-slate-200"
               >
                 <Layers className="h-4 w-4 text-[#005063] dark:text-cyan-400" />
                 {showManageList ? 'Ocultar Lista de Cards' : `Todos os Cards (${cards.length})`}
@@ -316,7 +316,7 @@ export function FlashcardsPage() {
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#0d3950]/20 transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
+                className="inline-flex min-h-9 items-center gap-2 rounded-xl bg-[#0d3950] px-3 text-[12px] font-bold text-white shadow-md shadow-[#0d3950]/20 transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
               >
                 <Plus className="h-4 w-4" />
                 Novo Card
@@ -341,19 +341,19 @@ export function FlashcardsPage() {
         ) : null}
 
         {/* LAYOUT EM 2 COLUNAS ALINHADAS: CARDS (ESQUERDA) + CARTÃO 3D FLIP (DIREITA) */}
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
           {/* COLUNA ESQUERDA: CARDS E RESUMO */}
-          <aside className="space-y-4 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-[#0d3950]/5 lg:col-span-4 sm:p-6 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+          <aside className="space-y-4 rounded-[18px] border border-slate-200/80 bg-white/95 p-4 shadow-xl shadow-[#0d3950]/5 lg:col-span-4 dark:border-[#005063]/30 dark:bg-[#081a26]/90">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-black text-[#0d3950] dark:text-white">
+                <h2 className="text-[17px] font-black text-[#0d3950] dark:text-white">
                   Cards
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Clique em uma disciplina ou grupo para filtrar os cards
                 </p>
               </div>
-              <span className="rounded-full bg-[#0d3950]/10 px-2.5 py-1 text-xs font-extrabold text-[#0d3950] dark:bg-cyan-400/15 dark:text-cyan-300">
+              <span className="rounded-full bg-[#0d3950]/10 px-2.5 py-1 text-[10px] font-extrabold text-[#0d3950] dark:bg-cyan-400/15 dark:text-cyan-300">
                 {cards.length} {cards.length === 1 ? 'card' : 'cards'}
               </span>
             </div>
@@ -364,7 +364,7 @@ export function FlashcardsPage() {
                 <span className="block text-[10px] font-extrabold tracking-wider text-sky-700 uppercase dark:text-sky-300">
                   Novos
                 </span>
-                <span className="mt-0.5 block text-xl font-black text-sky-900 dark:text-white">
+                <span className="mt-0.5 block text-lg font-black text-sky-900 dark:text-white">
                   {deckStats.newCount}
                 </span>
               </div>
@@ -372,7 +372,7 @@ export function FlashcardsPage() {
                 <span className="block text-[10px] font-extrabold tracking-wider text-amber-700 uppercase dark:text-amber-300">
                   Aprender
                 </span>
-                <span className="mt-0.5 block text-xl font-black text-amber-900 dark:text-white">
+                <span className="mt-0.5 block text-lg font-black text-amber-900 dark:text-white">
                   {deckStats.learningCount}
                 </span>
               </div>
@@ -380,7 +380,7 @@ export function FlashcardsPage() {
                 <span className="block text-[10px] font-extrabold tracking-wider text-emerald-700 uppercase dark:text-emerald-300">
                   Revisar
                 </span>
-                <span className="mt-0.5 block text-xl font-black text-emerald-900 dark:text-white">
+                <span className="mt-0.5 block text-lg font-black text-emerald-900 dark:text-white">
                   {deckStats.reviewDueCount}
                 </span>
               </div>
@@ -396,7 +396,7 @@ export function FlashcardsPage() {
                   setIsFlipped(false)
                   setShowHint(false)
                 }}
-                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
+                className={`flex w-full items-center justify-between rounded-2xl border px-3 py-2.5 text-left transition ${
                   selectedDeck === 'ALL'
                     ? 'border-[#006768] bg-[#0d3950] text-white shadow-md dark:border-cyan-400/50 dark:bg-[#005063]'
                     : 'border-slate-200 bg-slate-50/80 text-[#0d3950] hover:bg-slate-100 dark:border-slate-800 dark:bg-[#041019] dark:text-slate-100 dark:hover:bg-slate-900'
@@ -428,7 +428,7 @@ export function FlashcardsPage() {
                       setShowHint(false)
                     }}
                     style={{ animationDelay: `${Math.min(index, 10) * 30}ms` }}
-                    className={`stagger-item card-lift flex w-full flex-col gap-2 rounded-2xl border px-4 py-3 text-left transition ${
+                    className={`stagger-item card-lift flex w-full flex-col gap-2 rounded-2xl border px-3 py-2.5 text-left transition ${
                       isSelected
                         ? 'border-[#006768] bg-[#0d3950] text-white shadow-md dark:border-cyan-400/50 dark:bg-[#005063]'
                         : 'border-slate-200 bg-white text-[#0d3950] hover:bg-slate-50 dark:border-slate-800 dark:bg-[#041019]/70 dark:text-slate-100 dark:hover:bg-[#041019]'
@@ -473,19 +473,19 @@ export function FlashcardsPage() {
           {/* COLUNA DIREITA: ÁREA DE ESTUDO COM ANIMAÇÃO 3D FLIPPING */}
           <section className="lg:col-span-8">
             {cards.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-slate-300 bg-white/95 p-12 text-center shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]/90">
-                <Brain className="mx-auto h-12 w-12 text-[#005063] dark:text-cyan-400" />
-                <h2 className="mt-4 text-xl font-black text-[#0d3950] dark:text-white">
+              <div className="rounded-[18px] border border-dashed border-slate-300 bg-white/95 p-8 text-center shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+                <Brain className="mx-auto h-10 w-10 text-[#005063] dark:text-cyan-400" />
+                <h2 className="mt-3 text-[17px] font-black text-[#0d3950] dark:text-white">
                   Nenhum card cadastrado ainda
                 </h2>
-                <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-300">
+                <p className="mx-auto mt-2 max-w-md text-[13px] text-slate-600 dark:text-slate-300">
                   Crie seus próprios cards para iniciar suas sessões de revisão com repetição espaçada.
                 </p>
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                   <button
                     type="button"
                     onClick={openCreateModal}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#005063] dark:bg-[#005063]"
+                    className="inline-flex min-h-9 items-center gap-2 rounded-xl bg-[#0d3950] px-3 text-[12px] font-bold text-white shadow-md transition hover:bg-[#005063] dark:bg-[#005063]"
                   >
                     <Plus className="h-4 w-4" />
                     Criar Card
@@ -493,16 +493,16 @@ export function FlashcardsPage() {
                 </div>
               </div>
             ) : !activeCard ? (
-              <div className="rounded-3xl border border-emerald-500/30 bg-white/95 p-12 text-center shadow-xl dark:bg-[#081a26]/90">
-                <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-500" />
-                <h2 className="mt-4 text-2xl font-black text-[#0d3950] dark:text-white">
+              <div className="rounded-[18px] border border-emerald-500/30 bg-white/95 p-8 text-center shadow-xl dark:bg-[#081a26]/90">
+                <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+                <h2 className="mt-3 text-[17px] font-black text-[#0d3950] dark:text-white">
                   Parabéns! Você concluiu as revisões pendentes destes cards hoje!
                 </h2>
-                <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-300">
+                <p className="mx-auto mt-2 max-w-md text-[13px] text-slate-600 dark:text-slate-300">
                   Todos os cards foram agendados para seus próximos intervalos ótimos. Você pode
                   praticar todos os cards novamente quando desejar.
                 </p>
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -510,7 +510,7 @@ export function FlashcardsPage() {
                       setCurrentIndex(0)
                       setIsFlipped(false)
                     }}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#0d3950] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063]"
+                    className="inline-flex min-h-9 items-center gap-2 rounded-xl bg-[#0d3950] px-3 text-[12px] font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063]"
                   >
                     <RotateCw className="h-4 w-4" />
                     Praticar Todos os Cards ({deckCards.length})
@@ -520,7 +520,7 @@ export function FlashcardsPage() {
             ) : (
               <div className="space-y-4">
                 {/* Barra de Topo do Cartão Atual */}
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 text-xs font-bold shadow-xs dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200/80 bg-white/90 px-3 py-2 text-[11px] font-bold shadow-xs dark:border-[#005063]/30 dark:bg-[#081a26]/90">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <span className="rounded-xl bg-[#0d3950] px-3 py-1 text-white dark:bg-[#005063]">
                       {activeCard.subject_name || activeCard.deck_name || 'Geral'}
@@ -694,12 +694,12 @@ export function FlashcardsPage() {
                 </div>
 
                 {/* DOCK DE AÇÃO INFERIOR */}
-                <div className="rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-lg dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+                <div className="rounded-[18px] border border-slate-200/80 bg-white/95 p-3.5 shadow-lg dark:border-[#005063]/30 dark:bg-[#081a26]/90">
                   {!isFlipped ? (
                     <button
                       type="button"
                       onClick={() => setIsFlipped(true)}
-                      className="flex min-h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-[#0d3950] px-6 py-3.5 text-base font-black text-white shadow-md transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
+                      className="flex min-h-11 w-full items-center justify-center gap-2.5 rounded-2xl bg-[#0d3950] px-4 text-[13px] font-black text-white shadow-md transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006b85]"
                     >
                       <RotateCw className="h-5 w-5" />
                       Mostrar Resposta (Virar Cartão 3D)
@@ -710,7 +710,7 @@ export function FlashcardsPage() {
                         type="button"
                         disabled={reviewing}
                         onClick={() => void handleRating('again')}
-                        className="flex min-h-14 flex-col items-center justify-center rounded-2xl border-2 border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-center transition hover:bg-rose-500/20 disabled:opacity-50"
+                        className="flex min-h-11 flex-col items-center justify-center rounded-2xl border-2 border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-center transition hover:bg-rose-500/20 disabled:opacity-50"
                       >
                         <span className="text-[11px] font-extrabold text-rose-700 dark:text-rose-300">
                           {predictNextIntervalLabel(activeCard, 'again')}
@@ -724,7 +724,7 @@ export function FlashcardsPage() {
                         type="button"
                         disabled={reviewing}
                         onClick={() => void handleRating('hard')}
-                        className="flex min-h-14 flex-col items-center justify-center rounded-2xl border-2 border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-center transition hover:bg-amber-500/20 disabled:opacity-50"
+                        className="flex min-h-11 flex-col items-center justify-center rounded-2xl border-2 border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-center transition hover:bg-amber-500/20 disabled:opacity-50"
                       >
                         <span className="text-[11px] font-extrabold text-amber-700 dark:text-amber-300">
                           {predictNextIntervalLabel(activeCard, 'hard')}
@@ -738,7 +738,7 @@ export function FlashcardsPage() {
                         type="button"
                         disabled={reviewing}
                         onClick={() => void handleRating('good')}
-                        className="flex min-h-14 flex-col items-center justify-center rounded-2xl border-2 border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 text-center transition hover:bg-emerald-500/20 disabled:opacity-50"
+                        className="flex min-h-11 flex-col items-center justify-center rounded-2xl border-2 border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 text-center transition hover:bg-emerald-500/20 disabled:opacity-50"
                       >
                         <span className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300">
                           {predictNextIntervalLabel(activeCard, 'good')}
@@ -752,7 +752,7 @@ export function FlashcardsPage() {
                         type="button"
                         disabled={reviewing}
                         onClick={() => void handleRating('easy')}
-                        className="flex min-h-14 flex-col items-center justify-center rounded-2xl border-2 border-cyan-500/40 bg-cyan-500/10 px-3 py-2.5 text-center transition hover:bg-cyan-500/20 disabled:opacity-50"
+                        className="flex min-h-11 flex-col items-center justify-center rounded-2xl border-2 border-cyan-500/40 bg-cyan-500/10 px-3 py-2.5 text-center transition hover:bg-cyan-500/20 disabled:opacity-50"
                       >
                         <span className="text-[11px] font-extrabold text-cyan-700 dark:text-cyan-300">
                           {predictNextIntervalLabel(activeCard, 'easy')}
@@ -771,22 +771,22 @@ export function FlashcardsPage() {
 
         {/* SEÇÃO DE GERENCIAMENTO: CONSULTAR, CRIAR, EDITAR E EXCLUIR CARDS */}
         {showManageList && (
-          <section className="rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+          <section className="rounded-[18px] border border-slate-200/80 bg-white/95 p-4 shadow-xl dark:border-[#005063]/30 dark:bg-[#081a26]/90">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-black text-[#0d3950] dark:text-white">
+                <h2 className="text-[17px] font-black text-[#0d3950] dark:text-white">
                   {selectedDeck === 'ALL'
                     ? `Todos os Cards (${deckCards.length})`
                     : `Cards — ${selectedDeck} (${deckCards.length})`}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Visualize, edite ou exclua qualquer card individualmente
                 </p>
               </div>
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063]"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3 text-[11px] font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063]"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Adicionar Card
@@ -794,11 +794,11 @@ export function FlashcardsPage() {
             </div>
 
             {deckCards.length === 0 ? (
-              <p className="mt-4 rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+              <p className="mt-4 rounded-2xl border border-dashed border-slate-200 p-6 text-center text-[13px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
                 Nenhum card encontrado para o filtro selecionado.
               </p>
             ) : (
-              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                 {deckCards.map((c, index) => (
                   <article
                     key={c.id}
@@ -861,11 +861,11 @@ export function FlashcardsPage() {
           aria-modal="true"
           aria-labelledby="flashcard-modal-title"
         >
-          <div className="modal-dialog w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-[#005063]/30">
+          <div className="modal-dialog w-full max-w-xl rounded-[18px] border border-slate-200 bg-white p-5 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-[#005063]/30">
               <h2
                 id="flashcard-modal-title"
-                className="text-lg font-black text-[#0d3950] dark:text-white"
+                className="text-[17px] font-black text-[#0d3950] dark:text-white"
               >
                 {editingCard ? 'Editar Card' : 'Novo Card'}
               </h2>
@@ -879,7 +879,7 @@ export function FlashcardsPage() {
             </div>
 
             <form onSubmit={(e) => void handleSaveCard(e)} className="mt-4 space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
                     Disciplina vinculada
@@ -892,7 +892,7 @@ export function FlashcardsPage() {
                       const found = subjects.find((s) => s.id === id)
                       if (found) setFormDeckName(found.subject.name)
                     }}
-                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                    className="min-h-9 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
                   >
                     <option value="">(Geral | Sem disciplina específica)</option>
                     {subjects.map((s) => (
@@ -912,7 +912,7 @@ export function FlashcardsPage() {
                     placeholder="Ex: Banco de Dados, P1..."
                     value={formDeckName}
                     onChange={(e) => setFormDeckName(e.target.value)}
-                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                    className="min-h-9 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
                   />
                 </label>
               </div>
@@ -945,7 +945,7 @@ export function FlashcardsPage() {
                 />
               </label>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-extrabold tracking-wider text-[#0d3950] uppercase dark:text-slate-200">
                     Dica opcional (Frente)
@@ -955,7 +955,7 @@ export function FlashcardsPage() {
                     placeholder="Ex: Lembre-se da regra LIFO..."
                     value={formHint}
                     onChange={(e) => setFormHint(e.target.value)}
-                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                    className="min-h-9 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
                   />
                 </label>
 
@@ -968,7 +968,7 @@ export function FlashcardsPage() {
                     placeholder="Ex: prova-p1, sql"
                     value={formTags}
                     onChange={(e) => setFormTags(e.target.value)}
-                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
+                    className="min-h-9 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 text-sm font-semibold text-[#0d3950] focus:border-[#005063] focus:bg-white focus:outline-hidden dark:border-[#005063]/40 dark:bg-[#040f17] dark:text-white"
                   />
                 </label>
               </div>
@@ -977,14 +977,14 @@ export function FlashcardsPage() {
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="min-h-11 rounded-xl border border-slate-200 px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 dark:border-[#005063]/40 dark:text-slate-300 dark:hover:bg-[#041019]"
+                  className="min-h-9 rounded-xl border border-slate-200 px-3.5 text-[13px] font-bold text-slate-600 hover:bg-slate-100 dark:border-[#005063]/40 dark:text-slate-300 dark:hover:bg-[#041019]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={savingCard}
-                  className="min-h-11 rounded-xl bg-[#0d3950] px-6 py-2 text-sm font-bold text-white shadow-md transition hover:bg-[#005063] disabled:opacity-50 dark:bg-[#005063] dark:hover:bg-[#006768]"
+                  className="min-h-9 rounded-xl bg-[#0d3950] px-3.5 text-[13px] font-bold text-white shadow-md transition hover:bg-[#005063] disabled:opacity-50 dark:bg-[#005063] dark:hover:bg-[#006768]"
                 >
                   {savingCard ? 'Salvando...' : editingCard ? 'Salvar Alterações' : 'Salvar Card'}
                 </button>

@@ -224,13 +224,13 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
       {/* Cabeçalho Padrão Limpo (igual às demais telas) */}
 
       {/* Container Full-Width e Full-Height para Anotações ocuparem o máximo possível da tela */}
-      <div className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-4 px-2 py-3 sm:px-4 sm:py-4">
+      <div className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-3 px-4 pt-1 pb-6 sm:px-5 lg:px-5">
         {error ? <Alert tone="error">{error}</Alert> : null}
 
         {(activeTab === 'workspace' || activeTab === 'documents') && (
-          <div className="flex flex-1 flex-col gap-4">
+          <div className="flex flex-1 flex-col gap-3">
             {showFocusTools && (
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
                 <div className="lg:col-span-5">
                   <PomodoroTimer activeTask={activeTask} onSyncMinutes={handleSyncMinutes} />
                 </div>
@@ -267,14 +267,14 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
 
         {/* ABA 2: PAINEL DE LEITURA ACADÊMICA */}
         {activeTab === 'readings' && (
-          <div className="space-y-6 rounded-3xl border border-slate-200/90 bg-white p-5 shadow-lg dark:border-[#005063]/30 dark:bg-[#081a26]">
+          <div className="space-y-4 rounded-[18px] border border-slate-200/90 bg-white p-4 shadow-lg dark:border-[#005063]/30 dark:bg-[#081a26]">
             {/* Barra de Topo com o Alternador Anotações | Leituras | Documentos & IA */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-[#005063]/30">
               <div>
-                <h3 className="text-lg font-black text-[#0d3950] dark:text-white">
+                <h3 className="text-[17px] font-black text-[#0d3950] dark:text-white">
                   Leituras e Livros Vinculados a Provas
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Acompanhe seu ritmo de páginas por dia para cobrir as leituras até as avaliações
                 </p>
               </div>
@@ -334,9 +334,9 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
             <ReadingStreakTracker summary={readingSummary} />
 
             {readings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50/50 py-16 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
+              <div className="flex flex-col items-center justify-center rounded-[18px] border border-dashed border-slate-300 bg-slate-50/50 py-10 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
                 <span className="text-4xl">📚</span>
-                <h4 className="mt-3 text-base font-black text-[#0d3950] dark:text-white">
+                <h4 className="mt-3 text-[15px] font-black text-[#0d3950] dark:text-white">
                   Nenhuma leitura cadastrada
                 </h4>
                 <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
@@ -356,7 +356,7 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {readings.map((reading) => (
                   <ReadingCard
                     key={reading.id}

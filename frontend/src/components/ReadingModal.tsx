@@ -122,8 +122,8 @@ export function ReadingModal({
       className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs overflow-y-auto"
       data-presence={presence.closing ? 'closed' : 'open'}
     >
-      <div className="modal-dialog w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-900 my-8">
-        <h3 id="reading-modal-title" className="text-lg font-black text-slate-950 dark:text-slate-50">
+      <div className="modal-dialog w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-slate-900 my-8">
+        <h3 id="reading-modal-title" className="text-[17px] font-black text-slate-950 dark:text-slate-50">
           {reading ? 'Editar Leitura Acadêmica' : 'Nova Leitura Acadêmica'}
         </h3>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">

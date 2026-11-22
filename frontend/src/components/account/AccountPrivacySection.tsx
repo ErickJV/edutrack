@@ -125,29 +125,29 @@ export function AccountPrivacySection() {
 
   return (
     <section
-      className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]"
+      className="rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]"
       aria-labelledby="account-privacy-heading"
     >
       <div className="flex items-center gap-3">
-        <div className="grid size-11 place-items-center rounded-2xl bg-[#006768]/10 text-[#006768] dark:bg-[#006768]/30 dark:text-[#a8d5e5]">
-          <Laptop size={20} aria-hidden="true" />
+        <div className="grid size-9 place-items-center rounded-2xl bg-[#006768]/10 text-[#006768] dark:bg-[#006768]/30 dark:text-[#a8d5e5]">
+          <Laptop size={17} aria-hidden="true" />
         </div>
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#006768] dark:text-[#a8d5e5]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#006768] dark:text-[#a8d5e5]">
             Privacidade
           </p>
           <h2
             id="account-privacy-heading"
-            className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-white"
+            className="mt-1 text-[17px] font-black tracking-tight text-[#0d3950] dark:text-white"
           >
             Privacidade e sessões
           </h2>
         </div>
       </div>
 
-      <div className="mt-7 space-y-8">
+      <div className="mt-5 space-y-5">
         <div>
-          <h3 className="text-base font-black text-[#0d3950] dark:text-white">Sessões ativas</h3>
+          <h3 className="text-[15px] font-black text-[#0d3950] dark:text-white">Sessões ativas</h3>
           {sessionsError ? (
             <div className="mt-3">
               <Alert tone="error">{sessionsError}</Alert>
@@ -160,21 +160,21 @@ export function AccountPrivacySection() {
           ) : null}
           <ul className="mt-4 space-y-3">
             {sessions.length === 0 ? (
-              <li className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 text-sm font-semibold text-slate-500 dark:border-[#005063]/20 dark:bg-[#041019] dark:text-slate-400">
+              <li className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 text-[13px] font-semibold text-slate-500 dark:border-[#005063]/20 dark:bg-[#041019] dark:text-slate-400">
                 Nenhuma sessão registrada.
               </li>
             ) : (
               sessions.map((item) => (
                 <li
                   key={item.id}
-                  className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-[#005063]/20 dark:bg-[#041019]"
+                  className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 dark:border-[#005063]/20 dark:bg-[#041019]"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-bold text-[#0d3950] dark:text-white">
+                    <p className="text-[13px] font-bold text-[#0d3950] dark:text-white">
                       {item.is_current ? 'Este dispositivo' : 'Outro dispositivo'}
                     </p>
                     {item.is_current ? (
-                      <span className="rounded-full bg-[#006768]/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[#005063] dark:bg-[#006768]/30 dark:text-[#a8d5e5]">
+                      <span className="rounded-full bg-[#006768]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#005063] dark:bg-[#006768]/30 dark:text-[#a8d5e5]">
                         Sessão atual
                       </span>
                     ) : null}
@@ -201,11 +201,11 @@ export function AccountPrivacySection() {
           </div>
         </div>
 
-        <div className="border-t border-slate-200/80 pt-6 dark:border-[#005063]/20">
-          <h3 className="text-base font-black text-[#0d3950] dark:text-white">
+        <div className="border-t border-slate-200/80 pt-5 dark:border-[#005063]/20">
+          <h3 className="text-[15px] font-black text-[#0d3950] dark:text-white">
             Exportar meus dados
           </h3>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
             Baixe um arquivo JSON com sua conta, disciplinas, tarefas, anotações, flashcards e
             metadados dos documentos.
           </p>
@@ -227,14 +227,14 @@ export function AccountPrivacySection() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-5 dark:border-rose-500/30 dark:bg-rose-500/10">
+        <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-4 dark:border-rose-500/30 dark:bg-rose-500/10">
           <div className="flex items-center gap-2">
-            <Trash2 size={18} aria-hidden="true" className="text-rose-700 dark:text-rose-300" />
-            <h3 className="text-base font-black text-rose-800 dark:text-rose-200">
+            <Trash2 size={16} aria-hidden="true" className="text-rose-700 dark:text-rose-300" />
+            <h3 className="text-[15px] font-black text-rose-800 dark:text-rose-200">
               Zona de perigo
             </h3>
           </div>
-          <p className="mt-2 text-sm font-medium text-rose-800/80 dark:text-rose-200/80">
+          <p className="mt-2 text-[13px] font-medium text-rose-800/80 dark:text-rose-200/80">
             A exclusão é permanente: apaga seu perfil, disciplinas, tarefas, anotações,
             flashcards e documentos. Não há como desfazer.
           </p>

@@ -211,31 +211,31 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
         role="dialog"
         aria-modal="true"
         aria-labelledby="subject-edit-title"
-        className="modal-dialog relative flex flex-col w-full max-w-lg max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-950/20 dark:bg-slate-900 dark:border dark:border-slate-800"
+        className="modal-dialog relative flex flex-col w-full max-w-lg max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl sm:rounded-[18px] bg-white shadow-2xl shadow-slate-950/20 dark:bg-slate-900 dark:border dark:border-slate-800"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="shrink-0 flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6 bg-white z-10 dark:border-[#005063]/30 dark:bg-[#081a26]">
+        <header className="shrink-0 flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-5 bg-white z-10 dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#006768] dark:text-[#005063]">Personalização</p>
-            <h2 id="subject-edit-title" className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-slate-50">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#006768] dark:text-[#005063]">Personalização</p>
+            <h2 id="subject-edit-title" className="mt-1 text-[17px] font-black tracking-tight text-[#0d3950] dark:text-slate-50">
               Editar disciplina
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid size-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:text-slate-400 dark:hover:bg-[#040f17] dark:hover:text-slate-100 dark:focus-visible:outline-[#006768]"
+            className="grid size-9 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005063] dark:text-slate-400 dark:hover:bg-[#040f17] dark:hover:text-slate-100 dark:focus-visible:outline-[#006768]"
             aria-label="Fechar modal"
           >
-            <X size={18} aria-hidden="true" />
+            <X size={16} aria-hidden="true" />
           </button>
         </header>
 
         <form className="flex flex-col flex-1 min-h-0 overflow-hidden" onSubmit={submit}>
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-3.5">
             {error ? <Alert>{error}</Alert> : null}
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-[#005063]/30 dark:bg-[#040f17] space-y-2">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-[#005063]/30 dark:bg-[#040f17] space-y-2">
               <Input
                 label="Nome da disciplina"
                 name="subject_name"
@@ -243,7 +243,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
                 onChange={(e) => setSubjectName(e.target.value)}
                 required
               />
-              <p className="mt-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                 {current.subject.code || 'Sem código'} · Matriz oficial: {current.subject.workload_hours}h
               </p>
             </div>
@@ -251,12 +251,12 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
             {!isCreatingNew ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Professor responsável</span>
+                  <span className="text-[13px] font-bold text-slate-800 dark:text-slate-200">Professor responsável</span>
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => setIsCreatingNew(true)}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#006768] hover:underline dark:text-[#a8d5e5]"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#006768] hover:underline dark:text-[#a8d5e5]"
                     >
                       <Plus size={14} aria-hidden="true" /> Cadastrar novo
                     </button>
@@ -264,7 +264,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
                       <button
                         type="button"
                         onClick={openEditProfessorPopup}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-[#0d3950] hover:underline dark:text-slate-300"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0d3950] hover:underline dark:text-slate-300"
                       >
                         <Edit2 size={13} aria-hidden="true" /> Editar
                       </button>
@@ -298,13 +298,13 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
             ) : (
               <div className="rounded-xl border border-[#005063]/20 bg-[#dce6ef]/40 p-3.5 dark:border-[#005063]/40 dark:bg-[#040f17] space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-extrabold uppercase tracking-wide text-[#0d3950] dark:text-slate-200">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wide text-[#0d3950] dark:text-slate-200">
                     Novo professor
                   </span>
                   <button
                     type="button"
                     onClick={() => setIsCreatingNew(false)}
-                    className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                    className="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
                   >
                     Cancelar cadastro inline
                   </button>
@@ -345,7 +345,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
                         setProfActionSaving(false)
                       }
                     }}
-                    className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-[#006768] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#005063] disabled:opacity-50"
+                    className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-[#006768] px-3 text-[11px] font-bold text-white shadow-sm transition hover:bg-[#005063] disabled:opacity-50"
                   >
                     {profActionSaving ? 'Salvando…' : 'Cadastrar'}
                   </button>
@@ -372,11 +372,11 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
             />
           </div>
 
-          <div className="shrink-0 border-t border-slate-200 bg-slate-50/80 backdrop-blur-xs px-5 py-4 sm:px-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end dark:border-[#005063]/30 dark:bg-[#081a26]/90">
+          <div className="shrink-0 border-t border-slate-200 bg-slate-50/80 backdrop-blur-xs px-4 py-3 sm:px-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end dark:border-[#005063]/30 dark:bg-[#081a26]/90">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-11 rounded-xl border border-slate-300 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
+              className="min-h-9 rounded-xl border border-slate-300 px-3 text-[13px] font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
             >
               Cancelar
             </button>
@@ -396,15 +396,15 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
               role="dialog"
               aria-modal="true"
               aria-labelledby="prof-popup-title"
-              className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-[#005063]/40 dark:bg-[#081a26]"
+              className="w-full max-w-md rounded-[18px] border border-slate-200 bg-white p-4 shadow-2xl dark:border-[#005063]/40 dark:bg-[#081a26]"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#006768] dark:text-[#a8d5e5]">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#006768] dark:text-[#a8d5e5]">
                     Gerenciar professor
                   </p>
-                  <h3 id="prof-popup-title" className="mt-1 text-lg font-black text-[#0d3950] dark:text-white">
+                  <h3 id="prof-popup-title" className="mt-1 text-[15px] font-black text-[#0d3950] dark:text-white">
                     Editar ou remover professor
                   </h3>
                 </div>
@@ -448,7 +448,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
                     type="button"
                     disabled={profActionSaving || !editingProfId}
                     onClick={() => void handleDeleteProfessor()}
-                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/70"
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 text-[11px] font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/70"
                   >
                     <Trash2 size={14} aria-hidden="true" />
                     Remover
@@ -458,7 +458,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
                     <button
                       type="button"
                       onClick={() => setProfPopupOpen(false)}
-                      className="min-h-10 rounded-xl border border-slate-300 px-4 text-xs font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#041019]"
+                      className="min-h-9 rounded-xl border border-slate-300 px-3 text-[11px] font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#041019]"
                     >
                       Cancelar
                     </button>
@@ -466,7 +466,7 @@ export function SubjectEditModal({ open, enrollment, onClose, onSaved }: Subject
                       type="button"
                       disabled={profActionSaving || !editingProfName.trim()}
                       onClick={() => void handleUpdateProfessor()}
-                      className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[#006768] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#005063] disabled:opacity-50"
+                      className="inline-flex min-h-9 items-center justify-center rounded-xl bg-[#006768] px-3 text-[11px] font-bold text-white shadow-sm transition hover:bg-[#005063] disabled:opacity-50"
                     >
                       {profActionSaving ? 'Salvando…' : 'Salvar nome'}
                     </button>

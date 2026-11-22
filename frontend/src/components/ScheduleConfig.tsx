@@ -249,7 +249,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                     type="button"
                     onClick={linkTerm}
                     disabled={!selectedTermId}
-                    className="mt-7 min-h-12 rounded-xl bg-[#0d3950] px-4 text-sm font-bold text-white transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#0d3950] disabled:opacity-50 dark:bg-[#005063] dark:hover:bg-[#006768]"
+                    className="mt-7 min-h-9 rounded-xl bg-[#0d3950] px-3 text-[12px] font-bold text-white transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#0d3950] disabled:opacity-50 dark:bg-[#005063] dark:hover:bg-[#006768]"
                   >
                     Vincular
                   </button>
@@ -301,7 +301,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                     <button
                       type="button"
                       onClick={() => setCreatingTerm(false)}
-                      className="min-h-11 rounded-xl border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
+                      className="min-h-9 rounded-xl border border-slate-300 px-3 text-[12px] font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
                     >
                       Cancelar
                     </button>
@@ -430,7 +430,7 @@ export function ScheduleConfig({ enrollmentId, termId, onTermLinked }: ScheduleC
                   <button
                     type="button"
                     onClick={() => setCreatingSchedule(false)}
-                    className="min-h-11 rounded-xl border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
+                    className="min-h-9 rounded-xl border border-slate-300 px-3 text-[12px] font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-[#040f17]"
                   >
                     Cancelar
                   </button>

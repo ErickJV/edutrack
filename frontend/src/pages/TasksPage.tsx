@@ -312,20 +312,20 @@ export function TasksPage() {
         <PageLoader />
       </MotionPresence>
 
-      <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mx-auto max-w-7xl px-4 pt-1 pb-6 sm:px-5 lg:px-5">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-[#0d3950] sm:text-3xl dark:text-white">
+            <h1 className="text-[20px] leading-tight font-black tracking-tight text-[#0d3950] sm:text-[22px] dark:text-white">
               Tarefas e entregas
             </h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            <p className="mt-1 text-[12px] leading-5 text-slate-600 dark:text-slate-300">
               Cadastre, acompanhe e conclua suas entregas acadêmicas.
             </p>
           </div>
           <button
             type="button"
             onClick={openCreate}
-            className="press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+            className="press inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl bg-accent px-3 text-[12px] font-bold text-accent-ink transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
           >
             <Plus size={16} aria-hidden="true" />
             Nova tarefa
@@ -333,19 +333,19 @@ export function TasksPage() {
         </div>
 
         {error ? (
-          <div className="mb-6">
+          <div className="mb-4">
             <Alert>{error}</Alert>
           </div>
         ) : null}
 
         {/* BLOCO DE CADASTRO RÁPIDO DE TAREFA (DISCIPLINAS E AFINS) */}
-        <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-md sm:p-6 dark:border-[#005063]/30 dark:bg-[#081a26]">
+        <section className="rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-md sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-3 dark:border-[#005063]/30">
             <div>
-              <h2 className="text-base font-black text-[#0d3950] dark:text-white">
+              <h2 className="text-[17px] leading-[1.2] font-black text-[#0d3950] dark:text-white">
                 Cadastro de Tarefas e Entregas
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Cadastre por disciplina ou geral — alocado automaticamente no seu Calendário Acadêmico.
               </p>
             </div>
@@ -360,7 +360,7 @@ export function TasksPage() {
 
           <form
             onSubmit={(e) => void handleQuickCreate(e)}
-            className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-[1.4fr_1.1fr_0.85fr_0.75fr_0.6fr_auto]"
+            className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-[1.4fr_1.1fr_0.85fr_0.75fr_0.6fr_auto]"
           >
             <Input
               label="Título da tarefa | entrega"
@@ -427,7 +427,7 @@ export function TasksPage() {
               <button
                 type="submit"
                 disabled={quickSaving}
-                className="press group inline-flex min-h-12 w-full items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-5 text-sm font-black text-white shadow-md transition hover:bg-[#005063] disabled:opacity-50 dark:bg-[#006768] dark:hover:bg-[#005063]"
+                className="press group inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-3 text-[12px] font-black text-white shadow-md transition hover:bg-[#005063] disabled:opacity-50 dark:bg-[#006768] dark:hover:bg-[#005063]"
               >
                 <Plus size={16} className="transition-transform duration-300 group-hover:rotate-90" />
                 <span>{quickSaving ? 'Salvando...' : 'Adicionar'}</span>
@@ -436,31 +436,31 @@ export function TasksPage() {
           </form>
         </section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-3">
+        <section className="mt-4 grid gap-3 sm:grid-cols-3">
           <article
-            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            className="stagger-item card-lift rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
             style={{ animationDelay: '0ms' }}
           >
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Tarefas filtradas</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={totalTasks} /></p>
+            <p className="text-[10px] font-semibold tracking-[0.03em] text-slate-500 uppercase dark:text-slate-400">Tarefas filtradas</p>
+            <p className="mt-2 text-[25px] leading-[1.1] font-black text-[#0d3950] dark:text-white"><MetricValue value={totalTasks} /></p>
           </article>
           <article
-            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            className="stagger-item card-lift rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
             style={{ animationDelay: '45ms' }}
           >
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Pendentes</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={pendingTasks} /></p>
+            <p className="text-[10px] font-semibold tracking-[0.03em] text-slate-500 uppercase dark:text-slate-400">Pendentes</p>
+            <p className="mt-2 text-[25px] leading-[1.1] font-black text-[#0d3950] dark:text-white"><MetricValue value={pendingTasks} /></p>
           </article>
           <article
-            className="stagger-item card-lift rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+            className="stagger-item card-lift rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
             style={{ animationDelay: '90ms' }}
           >
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Concluídas</p>
-            <p className="mt-2 text-3xl font-black text-[#0d3950] dark:text-white"><MetricValue value={completedTasks} /></p>
+            <p className="text-[10px] font-semibold tracking-[0.03em] text-slate-500 uppercase dark:text-slate-400">Concluídas</p>
+            <p className="mt-2 text-[25px] leading-[1.1] font-black text-[#0d3950] dark:text-white"><MetricValue value={completedTasks} /></p>
           </article>
         </section>
 
-        <section className="mt-6 rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-[#005063]/30 dark:bg-[#081a26]">
+        <section className="mt-4 rounded-[18px] border border-slate-200/80 bg-white p-4 shadow-sm sm:p-[17px] dark:border-[#005063]/30 dark:bg-[#081a26]">
           <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <Select
               label="Filtrar por disciplina ou área"
@@ -489,7 +489,7 @@ export function TasksPage() {
             </Select>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                 <Clock3 size={14} aria-hidden="true" /> Ordem por prazo e título
@@ -512,7 +512,7 @@ export function TasksPage() {
             <button
               type="button"
               onClick={openCreate}
-              className="press group inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#0d3950] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
+              className="press group inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3 text-[11px] font-bold text-white transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
             >
               <Plus size={14} className="transition-transform duration-300 group-hover:rotate-90" />
               Nova Tarefa Detalhada
@@ -526,70 +526,70 @@ export function TasksPage() {
           ) : null}
 
           {tasks.length === 0 ? (
-            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-8 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
-              <LoaderCircle className="mx-auto text-slate-400 dark:text-slate-500" size={28} aria-hidden="true" />
-              <p className="mt-4 text-lg font-black text-[#0d3950] dark:text-white">
+            <div className="mt-4 rounded-[18px] border border-dashed border-slate-300 bg-slate-50/80 p-6 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
+              <LoaderCircle className="mx-auto text-slate-400 dark:text-slate-500" size={24} aria-hidden="true" />
+              <p className="mt-3 text-[15px] font-black text-[#0d3950] dark:text-white">
                 Ainda não há tarefas cadastradas
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              <p className="mt-2 text-[13px] leading-5 text-slate-600 dark:text-slate-300">
                 Use a barra de cadastro rápido acima ou clique no botão abaixo para criar tarefas de disciplinas ou atividades gerais.
               </p>
               <button
                 type="button"
                 onClick={openCreate}
-                className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#006768] px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#005063]"
+                className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-xl bg-[#006768] px-3 text-[12px] font-bold text-white shadow-md transition hover:bg-[#005063]"
               >
                 <Plus size={16} />
                 Cadastrar Primeira Tarefa
               </button>
             </div>
           ) : filteredTasks.length === 0 ? (
-            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-8 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
-              <LoaderCircle className="mx-auto text-slate-400 dark:text-slate-500" size={28} aria-hidden="true" />
-              <p className="mt-4 text-lg font-black text-[#0d3950] dark:text-white">
+            <div className="mt-4 rounded-[18px] border border-dashed border-slate-300 bg-slate-50/80 p-6 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
+              <LoaderCircle className="mx-auto text-slate-400 dark:text-slate-500" size={24} aria-hidden="true" />
+              <p className="mt-3 text-[15px] font-black text-[#0d3950] dark:text-white">
                 Nenhuma tarefa corresponde aos filtros
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              <p className="mt-2 text-[13px] leading-5 text-slate-600 dark:text-slate-300">
                 Ajuste a disciplina ou o status selecionado para visualizar outra combinação de resultados.
               </p>
             </div>
           ) : (
-            <div className="mt-6 space-y-6">
+            <div className="mt-4 space-y-4">
               {STATUS_ORDER.map((status) => {
                 const group = groupedTasks[status]
                 if (statusFilter !== 'all' && statusFilter !== status) return null
                 return (
                   <section
                     key={status}
-                    className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-[#005063]/20 dark:bg-[#041019]"
+                    className="rounded-[18px] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-[#005063]/20 dark:bg-[#041019]"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-xs font-bold tracking-[0.16em] text-[#005063] uppercase dark:text-[#a8d5e5]">
+                        <p className="text-[10px] font-bold tracking-[0.16em] text-[#005063] uppercase dark:text-[#a8d5e5]">
                           {STATUS_LABELS[status]}
                         </p>
-                        <h2 className="mt-1 text-xl font-black tracking-tight text-[#0d3950] dark:text-white">
+                        <h2 className="mt-1 text-[17px] leading-[1.2] font-black tracking-tight text-[#0d3950] dark:text-white">
                           {statusDescription(status)}
                         </h2>
                       </div>
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-bold ${statusBadgeClass(status)}`}
+                        className={`rounded-full px-3 py-1 text-[10px] font-bold ${statusBadgeClass(status)}`}
                       >
                         {group.length}
                       </span>
                     </div>
 
                     {group.length === 0 ? (
-                      <p className="mt-4 text-sm text-slate-500">Nenhuma tarefa nesta categoria.</p>
+                      <p className="mt-3 text-[13px] text-slate-500">Nenhuma tarefa nesta categoria.</p>
                     ) : (
-                      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                      <div className="mt-3 grid gap-3 lg:grid-cols-2">
                         {group.map((task, index) => {
                           const catMeta =
                             CATEGORY_LABELS[task.category || 'task'] || CATEGORY_LABELS.task
                           return (
                             <article
                               key={task.id}
-                              className="stagger-item card-lift rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
+                              className="stagger-item card-lift rounded-[14px] border border-slate-200/80 bg-white p-4 shadow-sm dark:border-[#005063]/30 dark:bg-[#081a26]"
                               style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                             >
                               <div className="flex items-start justify-between gap-4">
@@ -613,21 +613,21 @@ export function TasksPage() {
                                       >
                                         {catMeta.label}
                                       </span>
-                                      <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                                      <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                                         {task.subject_name}
                                         {task.subject_semester
                                           ? ` · ${task.subject_semester}º sem`
                                           : ''}
                                       </span>
                                     </div>
-                                    <h3 className="mt-1.5 text-xl font-black tracking-tight text-[#0d3950] dark:text-white">
+                                    <h3 className="mt-1.5 text-[13px] leading-[1.25] font-black tracking-tight text-[#0d3950] dark:text-white">
                                       {task.title}
                                     </h3>
                                   </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
                                   <span
-                                    className={`rounded-full px-3 py-1 text-xs font-bold ${statusBadgeClass(task.status)}`}
+                                    className={`rounded-full px-3 py-1 text-[10px] font-bold ${statusBadgeClass(task.status)}`}
                                   >
                                     {STATUS_LABELS[task.status]}
                                   </span>
@@ -653,12 +653,12 @@ export function TasksPage() {
                               </div>
 
                               {task.description ? (
-                                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                                <p className="mt-2.5 text-[13px] leading-5 text-slate-600 dark:text-slate-300">
                                   {task.description}
                                 </p>
                               ) : null}
 
-                              <dl className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2 dark:text-slate-300">
+                              <dl className="mt-3 grid gap-2.5 text-[13px] text-slate-600 sm:grid-cols-2 dark:text-slate-300">
                                 <div>
                                   <dt className="font-semibold text-slate-500 dark:text-slate-400">
                                     Data no Calendário | Prazo
@@ -699,13 +699,13 @@ export function TasksPage() {
                                 </div>
                               </dl>
 
-                              <div className="mt-4 rounded-2xl border border-[#005063]/20 bg-[#005063]/5 p-4 dark:border-[#005063]/30 dark:bg-[#041019]">
+                              <div className="mt-3 rounded-[14px] border border-[#005063]/20 bg-[#005063]/5 p-3.5 dark:border-[#005063]/30 dark:bg-[#041019]">
                                 <div className="flex items-center justify-between gap-3">
                                   <div>
-                                    <p className="text-xs font-bold tracking-[0.16em] text-[#005063] uppercase dark:text-[#a8d5e5]">
+                                    <p className="text-[10px] font-bold tracking-[0.16em] text-[#005063] uppercase dark:text-[#a8d5e5]">
                                       Sessão de Estudo & Anotações
                                     </p>
-                                    <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+                                    <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
                                       {task.actual_minutes > 0
                                         ? `${task.actual_minutes} min realizados`
                                         : 'Nenhuma sessão iniciada ainda'}
@@ -713,7 +713,7 @@ export function TasksPage() {
                                   </div>
                                   <Link
                                     to={`/estudo?taskId=${task.id}`}
-                                    className="press inline-flex min-h-10 items-center rounded-xl bg-[#006768] px-4 text-xs font-bold text-white shadow-md shadow-[#006768]/20 transition hover:bg-[#005063]"
+                                    className="press inline-flex min-h-9 items-center rounded-xl bg-[#006768] px-3 text-[11px] font-bold text-white shadow-md shadow-[#006768]/20 transition hover:bg-[#005063]"
                                   >
                                     Iniciar estudo →
                                   </Link>
