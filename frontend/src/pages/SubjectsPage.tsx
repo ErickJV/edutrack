@@ -114,9 +114,9 @@ export function SubjectsPage() {
             aria-label="Livros das disciplinas ativas"
             className="w-full"
           >
-            <div className="books-scroll-container w-full py-4">
+            <div className="books-scroll-container w-full py-7">
               <div
-                className={`flex min-w-full items-center gap-6 px-2 sm:gap-8 lg:gap-10 ${
+                className={`flex min-w-full items-center gap-6 px-3 sm:gap-8 lg:gap-10 ${
                   activeSubjects.length === 1
                     ? 'justify-start'
                     : 'justify-between'
