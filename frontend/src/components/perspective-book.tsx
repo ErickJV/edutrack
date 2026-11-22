@@ -30,14 +30,14 @@ export function PerspectiveBook({
 
   return (
     <div
-      className={`z-10 group [perspective:900px] w-min h-min`}
+      className="perspective-book-scene z-10 group [perspective:900px] w-min h-min"
     >
       <div
         style={{
           width: sizeMap[size].width,
           borderRadius: "6px 4px 4px 6px",
         }}
-        className={`transition-transform duration-300 ease-out relative [transform-style:preserve-3d] [transform:rotateY(0deg)] group-hover:[transform:rotateY(-20deg)] group-hover:scale-[1.066] group-hover:-translate-x-1 aspect-[49/60]`}
+        className="perspective-book-object transition-transform duration-300 ease-out relative [transform-style:preserve-3d] [transform:rotateY(0deg)] group-hover:[transform:rotateY(-20deg)] group-hover:scale-[1.066] group-hover:-translate-x-1 aspect-[49/60]"
       >
         {/* Front Side */}
         <div

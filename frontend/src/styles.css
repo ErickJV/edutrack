@@ -1089,8 +1089,28 @@ html.dark .hero-grid {
 }
 
 /* ==========================================================================
-   SCROLLBAR MINIMALISTA — COLEÇÃO DE LIVROS EM PERSPECTIVA
+   SCROLLBAR MINIMALISTA E ANIMAÇÃO 3D — COLEÇÃO DE LIVROS EM PERSPECTIVA
    ========================================================================== */
+.perspective-book-scene {
+  perspective: 900px;
+  -webkit-perspective: 900px;
+}
+
+.perspective-book-object {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transform: rotateY(0deg);
+  transition:
+    transform 300ms ease-out,
+    scale 300ms ease-out,
+    translate 300ms ease-out !important;
+}
+
+.perspective-book-scene:hover .perspective-book-object,
+.perspective-book-scene:focus-within .perspective-book-object {
+  transform: rotateY(-20deg) scale(1.066) translateX(-4px);
+}
+
 .books-scroll-container {
   overflow-x: auto;
   scrollbar-width: thin;
