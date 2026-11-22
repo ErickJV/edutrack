@@ -39,17 +39,17 @@ const wrap = (m: number) => ((m % DAY) + DAY) % DAY
 
 /* ── a digit that rolls, through a window that fades ──────── */
 function Digit({ d }: { d: string }) {
-  const prev = useRef(d)
-  const flip = useRef<boolean | null>(null)
-  if (prev.current !== d) {
-    prev.current = d
-    flip.current = !flip.current
+  const [prevDigit, setPrevDigit] = useState(d)
+  const [flip, setFlip] = useState<boolean | null>(null)
+  if (prevDigit !== d) {
+    setPrevDigit(d)
+    setFlip((current) => (current === null ? true : !current))
   }
   return (
     <span className="tms-col">
       <span
         className="tms-strip"
-        data-flip={flip.current === null ? undefined : flip.current ? 'a' : 'b'}
+        data-flip={flip === null ? undefined : flip ? 'a' : 'b'}
         style={{ transform: `translateY(${-Number(d) * 1.5}em)` }}
       >
         {'0123456789'.split('').map((n) => (
@@ -96,7 +96,9 @@ export function Scrub({
   const p = useRef({ x: start, v: 0, to: start })
   const raf = useRef(0)
   const knobs = useRef({ step: Number(step) || 1, momentum })
-  knobs.current = { step: Number(step) || 1, momentum }
+  useEffect(() => {
+    knobs.current = { step: Number(step) || 1, momentum }
+  }, [step, momentum])
   const ruler = useRef<HTMLDivElement>(null)
   const lastStep = useRef(Math.floor(start / (Number(step) || 1)))
 

@@ -147,7 +147,9 @@ export function CalendarPage() {
   }, [])
 
   useEffect(() => {
-    void loadCalendarData()
+    // Agenda a carga para fora da fase síncrona do efeito, evitando renders em
+    // cascata quando o loader atualiza loading/error logo na primeira linha.
+    void Promise.resolve().then(() => loadCalendarData())
   }, [loadCalendarData])
 
   const enrolledSubjectIds = useMemo(

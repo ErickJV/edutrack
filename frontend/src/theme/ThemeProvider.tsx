@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   applyTheme,
@@ -35,12 +35,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     applyTheme(resolvedTheme)
   }, [resolvedTheme])
 
-  const setPreference = (newPref: ThemePreference) => {
-    const nextResolved = newPref === 'system' ? getSystemTheme() : newPref
-    if (nextResolved !== resolvedTheme) startThemeTransition()
-    setPrefState(newPref)
-    setStoredPreference(newPref)
-  }
+  const setPreference = useCallback(
+    (newPref: ThemePreference) => {
+      const nextResolved = newPref === 'system' ? getSystemTheme() : newPref
+      if (nextResolved !== resolvedTheme) startThemeTransition()
+      setPrefState(newPref)
+      setStoredPreference(newPref)
+    },
+    [resolvedTheme],
+  )
 
   const value = useMemo(
     () => ({
@@ -48,7 +51,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       resolvedTheme,
       setPreference,
     }),
-    [preference, resolvedTheme],
+    [preference, resolvedTheme, setPreference],
   )
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

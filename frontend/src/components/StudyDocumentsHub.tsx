@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   FileText,
   Upload,
@@ -107,10 +107,17 @@ export function StudyDocumentsHub({
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const loadDocuments = async () => {
+  // A busca vive num ref para o loader não depender do texto digitado
+  // (evitando recarregar a lista a cada tecla).
+  const searchRef = useRef(searchQuery)
+  useEffect(() => {
+    searchRef.current = searchQuery
+  }, [searchQuery])
+
+  const loadDocuments = useCallback(async () => {
     try {
       setLoading(true)
-      const safeSearch = searchQuery.trim()
+      const safeSearch = searchRef.current.trim()
       if (safeSearch && SQLI_PATTERN.test(safeSearch)) {
         setMessage({ type: 'error', text: 'Termo de busca contém caracteres ou expressões inválidas.' })
         setLoading(false)
@@ -122,28 +129,35 @@ export function StudyDocumentsHub({
       })
       const list = Array.isArray(data) ? data : []
       setDocuments(list)
-      if (list.length > 0 && !selectedDocId) {
-        setSelectedDocId(list[0].id)
+      if (list.length > 0) {
+        setSelectedDocId((current) => current ?? list[0].id)
       }
     } catch {
       setMessage({ type: 'error', text: 'Não foi possível carregar os arquivos enviados.' })
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    void loadDocuments()
   }, [selectedSubjectId])
 
   useEffect(() => {
+    // Fora da fase síncrona do efeito: o loader seta loading na primeira linha.
+    void Promise.resolve().then(loadDocuments)
+  }, [loadDocuments])
+
+  // Limpa a seleção derivada quando nenhum arquivo está selecionado (ajuste no render).
+  const [syncedDocId, setSyncedDocId] = useState<string | null>(selectedDocId)
+  if (syncedDocId !== selectedDocId) {
+    setSyncedDocId(selectedDocId)
     if (!selectedDocId) {
       setSelectedDoc(null)
       setAnalysis(null)
       setCurrentQuiz(null)
       setQuizResult(null)
-      return
     }
+  }
+
+  useEffect(() => {
+    if (!selectedDocId) return
 
     const fetchDetail = async () => {
       try {

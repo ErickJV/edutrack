@@ -23,15 +23,16 @@ export function ProfilePage() {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
-  useEffect(() => {
+  // Reajusta o formulário quando o perfil carregado muda (padrão "adjusting state
+  // when props change"): feito durante o render, sem efeito nem render em cascata.
+  const profileKey = `${user?.full_name || ''}|${user?.course_offering?.course_slug || ''}|${user?.course_offering?.modality || ''}`
+  const [syncedProfileKey, setSyncedProfileKey] = useState(profileKey)
+  if (syncedProfileKey !== profileKey) {
+    setSyncedProfileKey(profileKey)
     setFullName(user?.full_name || '')
     setSelectedCourseSlug(user?.course_offering?.course_slug || '')
     setSelectedModality(user?.course_offering?.modality || '')
-  }, [
-    user?.full_name,
-    user?.course_offering?.course_slug,
-    user?.course_offering?.modality,
-  ])
+  }
 
   useEffect(() => {
     let alive = true
