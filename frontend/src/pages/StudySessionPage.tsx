@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BookOpen, FileText, Plus, Sparkles } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import {
   createAcademicReading,
@@ -30,15 +30,17 @@ import { ReadingCard } from '../components/ReadingCard'
 import { ReadingModal } from '../components/ReadingModal'
 import { ReadingStreakTracker } from '../components/ReadingStreakTracker'
 import { StudyNotesWorkspace } from '../components/StudyNotesWorkspace'
+import { StudySectionHeader, type StudyTab } from '../components/StudySectionHeader'
 import { calculateReadingSummary } from '../utils/readingStats'
+import { useTabTransition } from '../utils/useTabTransition'
 
 export function StudySessionPage() {
   const params = useParams<{ taskId?: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const taskIdFromQuery = params.taskId || searchParams.get('taskId') || ''
-  const tabFromQuery = (searchParams.get('tab') as 'workspace' | 'readings' | 'documents') || 'workspace'
+  const tabFromQuery = (searchParams.get('tab') as StudyTab) || 'workspace'
 
-  const [activeTab, setActiveTab] = useState<'workspace' | 'readings' | 'documents'>(tabFromQuery)
+  const [activeTab, setActiveTab] = useState<StudyTab>(tabFromQuery)
   const [showFocusTools, setShowFocusTools] = useState(false)
   const [tasks, setTasks] = useState<AcademicTask[]>([])
   const [subjects, setSubjects] = useState<StudentSubject[]>([])
@@ -139,7 +141,7 @@ export function StudySessionPage() {
     }
   }
 
-  const switchTab = (tab: 'workspace' | 'readings' | 'documents') => {
+  const switchTab = (tab: StudyTab) => {
     setActiveTab(tab)
     if (selectedTaskId) {
       setSearchParams({ taskId: selectedTaskId, tab })
@@ -219,32 +221,31 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
     setActiveTab('workspace')
   }
 
+  const tabPanelRef = useTabTransition<HTMLDivElement>(activeTab)
+
   return (
     <div className="flex flex-1 flex-col">
-      {/* Cabeçalho Padrão Limpo (igual às demais telas) */}
-
       {/* Container Full-Width e Full-Height para Anotações ocuparem o máximo possível da tela */}
       <div className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-3 px-4 pt-1 pb-6 sm:px-5 lg:px-5">
         {error ? <Alert tone="error">{error}</Alert> : null}
 
-        {(activeTab === 'workspace' || activeTab === 'documents') && (
-          <div className="flex flex-1 flex-col gap-3">
-            {showFocusTools && (
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-                <div className="lg:col-span-5">
-                  <PomodoroTimer activeTask={activeTask} onSyncMinutes={handleSyncMinutes} />
-                </div>
-                <div className="lg:col-span-7">
-                  <MethodologySelector
-                    selectedMethodology={selectedMethodology}
-                    onSelectMethodology={setSelectedMethodology}
-                    onInsertTemplate={handleInsertTemplate}
-                  />
-                </div>
+        <div ref={tabPanelRef} className="flex flex-1 flex-col gap-3">
+          {showFocusTools ? (
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+              <div className="lg:col-span-5">
+                <PomodoroTimer activeTask={activeTask} onSyncMinutes={handleSyncMinutes} />
               </div>
-            )}
+              <div className="lg:col-span-7">
+                <MethodologySelector
+                  selectedMethodology={selectedMethodology}
+                  onSelectMethodology={setSelectedMethodology}
+                  onInsertTemplate={handleInsertTemplate}
+                />
+              </div>
+            </div>
+          ) : null}
 
-            {/* Bloco de Anotações Ocupando o Máximo Possível da Tela com Documentos & IA Integrados */}
+          {(activeTab === 'workspace' || activeTab === 'documents') ? (
             <div className="flex flex-1 flex-col">
               <StudyNotesWorkspace
                 activeSubject={activeSubject}
@@ -262,122 +263,85 @@ ${reading.exam_name ? `> **Vínculo**: ${reading.exam_name} (${reading.exam_ques
                 onTaskChange={handleTaskChange}
               />
             </div>
-          </div>
-        )}
+          ) : null}
 
-        {/* ABA 2: PAINEL DE LEITURA ACADÊMICA */}
-        {activeTab === 'readings' && (
-          <div className="space-y-4 rounded-[18px] border border-slate-200/90 bg-white p-4 shadow-lg dark:border-[#005063]/30 dark:bg-[#081a26]">
-            {/* Barra de Topo com o Alternador Anotações | Leituras | Documentos & IA */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-[#005063]/30">
-              <div>
-                <h3 className="text-[17px] font-black text-[#0d3950] dark:text-white">
-                  Leituras e Livros Vinculados a Provas
-                </h3>
+          {activeTab === 'readings' ? (
+            <section
+              aria-label="Leituras e Livros Vinculados a Provas"
+              className="flex min-h-[calc(100dvh-135px)] w-full flex-col overflow-hidden rounded-[18px] border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
+            >
+              <StudySectionHeader
+                activeTab={activeTab}
+                onSwitchTab={switchTab}
+                readingsCount={readings.length}
+                title="Leituras e Livros Vinculados a Provas"
+                variant="readings"
+                showFocusTools={showFocusTools}
+                onToggleFocusTools={() => setShowFocusTools((prev) => !prev)}
+                tasks={tasks}
+                selectedTaskId={selectedTaskId}
+                onTaskChange={handleTaskChange}
+                primaryLabel="Nova Leitura"
+                onPrimaryAction={() => {
+                  setEditingReading(null)
+                  setReadingModalOpen(true)
+                }}
+              />
+
+              <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-3 sm:p-4">
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Acompanhe seu ritmo de páginas por dia para cobrir as leituras até as avaliações
                 </p>
-              </div>
 
-              <div className="flex flex-wrap items-center gap-2.5">
-                <div
-                  role="tablist"
-                  aria-label="Seção de Anotações"
-                  className="flex flex-wrap rounded-xl border border-slate-200 bg-slate-100/80 p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
-                >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={false}
-                    onClick={() => switchTab('workspace')}
-                    className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-extrabold text-slate-600 transition hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white"
-                  >
-                    <FileText className="size-3.5" aria-hidden="true" />
-                    Anotações
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={true}
-                    onClick={() => switchTab('readings')}
-                    className="inline-flex min-h-8 items-center gap-1.5 rounded-lg bg-[#0d3950] px-3 text-xs font-extrabold text-white shadow-xs dark:bg-[#005063]"
-                  >
-                    <BookOpen className="size-3.5" aria-hidden="true" />
-                    Leituras ({readings.length})
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={false}
-                    onClick={() => switchTab('documents')}
-                    className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-extrabold text-slate-600 transition hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white"
-                  >
-                    <Sparkles className="size-3.5 text-amber-500" aria-hidden="true" />
-                    Upload de arquivos
-                  </button>
-                </div>
+                <ReadingStreakTracker summary={readingSummary} />
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingReading(null)
-                    setReadingModalOpen(true)
-                  }}
-                  className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-[#0d3950] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#005063] focus-visible:outline-2 focus-visible:outline-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
-                >
-                  <Plus className="size-4" aria-hidden="true" />
-                  Nova Leitura
-                </button>
+                {readings.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-[18px] border border-dashed border-slate-300 bg-slate-50/50 py-10 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
+                    <span className="text-4xl">📚</span>
+                    <h4 className="mt-3 text-[15px] font-black text-[#0d3950] dark:text-white">
+                      Nenhuma leitura cadastrada
+                    </h4>
+                    <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+                      Cadastre seus livros, artigos e apostilas para calcular o ritmo diário até as
+                      provas P1/P2/P3.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingReading(null)
+                        setReadingModalOpen(true)
+                      }}
+                      className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0d3950] px-4 text-xs font-bold text-white hover:bg-[#005063] dark:bg-[#005063]"
+                    >
+                      <Plus className="size-3.5" aria-hidden="true" />
+                      Cadastrar primeira leitura
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {readings.map((reading) => (
+                      <ReadingCard
+                        key={reading.id}
+                        reading={reading}
+                        onQuickLog10={handleQuickLog10}
+                        onLogCustomPages={(r) => {
+                          setLoggingReading(r)
+                          setLogModalOpen(true)
+                        }}
+                        onEdit={(r) => {
+                          setEditingReading(r)
+                          setReadingModalOpen(true)
+                        }}
+                        onDelete={handleDeleteReading}
+                        onCreateNote={handleCreateNoteFromReading}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-
-            <ReadingStreakTracker summary={readingSummary} />
-
-            {readings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-[18px] border border-dashed border-slate-300 bg-slate-50/50 py-10 text-center dark:border-[#005063]/30 dark:bg-[#041019]">
-                <span className="text-4xl">📚</span>
-                <h4 className="mt-3 text-[15px] font-black text-[#0d3950] dark:text-white">
-                  Nenhuma leitura cadastrada
-                </h4>
-                <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-                  Cadastre seus livros, artigos e apostilas para calcular o ritmo diário até as
-                  provas P1/P2/P3.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingReading(null)
-                    setReadingModalOpen(true)
-                  }}
-                  className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0d3950] px-4 text-xs font-bold text-white hover:bg-[#005063] dark:bg-[#005063]"
-                >
-                  <Plus className="size-3.5" aria-hidden="true" />
-                  Cadastrar primeira leitura
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {readings.map((reading) => (
-                  <ReadingCard
-                    key={reading.id}
-                    reading={reading}
-                    onQuickLog10={handleQuickLog10}
-                    onLogCustomPages={(r) => {
-                      setLoggingReading(r)
-                      setLogModalOpen(true)
-                    }}
-                    onEdit={(r) => {
-                      setEditingReading(r)
-                      setReadingModalOpen(true)
-                    }}
-                    onDelete={handleDeleteReading}
-                    onCreateNote={handleCreateNoteFromReading}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+            </section>
+          ) : null}
+        </div>
       </div>
 
       <ReadingModal

@@ -52,7 +52,7 @@ export function Sidebar({
           compact ? 'flex-col items-center gap-3' : 'items-center justify-between gap-2'
         }`}
       >
-        <Brand light showMark />
+        {compact ? null : <Brand light />}
         {mobile ? (
           <button
             type="button"

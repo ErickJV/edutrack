@@ -2,12 +2,10 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   Bold,
-  BookOpen,
   Check,
   CheckSquare,
   ChevronDown,
   Eraser,
-  FileText,
   FolderPlus,
   Heading1,
   Heading2,
@@ -21,12 +19,9 @@ import {
   Plus,
   Quote,
   Search,
-  SidebarClose,
-  SidebarOpen,
   Sparkles,
   Strikethrough,
   Table as TableIcon,
-  Timer,
   Trash2,
   Type,
   Underline,
@@ -51,6 +46,7 @@ import {
 } from '../api/client'
 import { StudyDocumentsHub } from './StudyDocumentsHub'
 import { MotionPresence } from './MotionPresence'
+import { StudySectionHeader, type StudyTab } from './StudySectionHeader'
 
 const FOLDER_COLORS = [
   { label: 'Azul Profundo', value: 'navy', bg: 'bg-[#0d3950]' },
@@ -165,8 +161,8 @@ export type StudyNotesWorkspaceProps = {
   readings?: AcademicReading[]
   externalTemplate?: string | null
   onClearExternalTemplate?: () => void
-  activeTab?: 'workspace' | 'readings' | 'documents'
-  onSwitchTab?: (tab: 'workspace' | 'readings' | 'documents') => void
+  activeTab?: StudyTab
+  onSwitchTab?: (tab: StudyTab) => void
   showFocusTools?: boolean
   onToggleFocusTools?: () => void
   selectedTaskId?: string
@@ -778,142 +774,26 @@ export function StudyNotesWorkspace({
       aria-label="Bloco de Anotações de Estudo"
       className="flex min-h-[calc(100dvh-135px)] w-full flex-col overflow-hidden rounded-[18px] border border-slate-200/90 bg-white shadow-lg shadow-[#0d3950]/5 transition dark:border-[#005063]/30 dark:bg-[#081a26]"
     >
-      {/* Barra Superior Compacta do Bloco de Anotações */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50/70 px-3 py-2 sm:px-4 dark:border-[#005063]/30 dark:bg-[#041019]/60">
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen((prev) => !prev)}
-            aria-label={sidebarOpen ? 'Recolher menu de pastas' : 'Expandir menu de pastas'}
-            className="inline-flex min-h-8 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-[#005063] dark:border-slate-800 dark:bg-[#081a26] dark:text-slate-200 dark:hover:bg-[#040f17]"
-          >
-            {sidebarOpen ? (
-              <>
-                <SidebarClose className="size-3.5 text-[#005063] dark:text-[#006768]" />
-                <span className="hidden sm:inline">Tela Cheia (Ocultar Menu)</span>
-              </>
-            ) : (
-              <>
-                <SidebarOpen className="size-3.5 text-[#005063] dark:text-[#006768]" />
-                <span>Cadernos ({notes.length})</span>
-              </>
-            )}
-          </button>
-
-          <div className="flex items-center gap-1.5">
-            <FileText className="size-4 text-[#006768] dark:text-cyan-400" />
-            <h3 className="text-sm font-black tracking-tight text-[#0d3950] dark:text-slate-50">
-              Bloco de Anotações
-            </h3>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Alternador Anotações | Leituras dentro do Bloco de Anotações */}
-          {onSwitchTab && (
-            <div
-              role="tablist"
-              aria-label="Seção de Anotações"
-              className="flex rounded-xl border border-slate-200 bg-white p-0.5 dark:border-[#005063]/40 dark:bg-[#041019]"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === 'workspace'}
-                onClick={() => onSwitchTab('workspace')}
-                className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold transition ${
-                  activeTab === 'workspace'
-                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
-                    : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                <FileText className="size-3.5" aria-hidden="true" />
-                Anotações
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === 'readings'}
-                onClick={() => onSwitchTab('readings')}
-                className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold transition ${
-                  activeTab === 'readings'
-                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
-                    : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                <BookOpen className="size-3.5" aria-hidden="true" />
-                Leituras ({readings.length})
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === 'documents'}
-                onClick={() => onSwitchTab('documents')}
-                className={`inline-flex min-h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold transition ${
-                  activeTab === 'documents'
-                    ? 'bg-[#0d3950] text-white shadow-xs dark:bg-[#005063]'
-                    : 'text-slate-600 hover:text-[#0d3950] dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
-                <Sparkles className="size-3.5 text-amber-500" aria-hidden="true" />
-                Upload de arquivos
-              </button>
-            </div>
-          )}
-
-          {/* Botão Pomodoro & Metodologias dentro do Bloco de Anotações */}
-          {onToggleFocusTools && (
-            <button
-              type="button"
-              onClick={onToggleFocusTools}
-              className={`inline-flex min-h-8 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
-                showFocusTools
-                  ? 'border-[#006768] bg-[#0d3950] text-white dark:bg-[#005063]'
-                  : 'border-slate-200 bg-white text-[#0d3950] hover:bg-slate-100 dark:border-[#005063]/40 dark:bg-[#081a26] dark:text-slate-200'
-              }`}
-            >
-              <Timer className="size-3.5" />
-              <span>{showFocusTools ? 'Ocultar Pomodoro' : 'Pomodoro & Metodologias'}</span>
-            </button>
-          )}
-
-          {/* Seletor de Foco dentro do Bloco de Anotações (Sem truncamento) */}
-          {onTaskChange && (
-            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1 dark:border-[#005063]/30 dark:bg-[#081a26]">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                Foco:
-              </span>
-              <select
-                aria-label="Foco da sessão"
-                value={selectedTaskId}
-                onChange={(e) => onTaskChange(e.target.value)}
-                className="w-auto min-w-fit max-w-full bg-transparent pr-2 text-xs font-bold text-[#0d3950] focus:outline-hidden dark:text-slate-100"
-              >
-                <option value="">(Anotação Livre)</option>
-                {currentSemesterTasks.map((task) => (
-                  <option key={task.id} value={task.id}>
-                    {task.title} ({task.subject_name})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => {
-              if (activeTab === 'documents' && onSwitchTab) {
-                onSwitchTab('workspace')
-              }
-              void handleCreateNote()
-            }}
-            className="inline-flex min-h-8 items-center gap-1.5 rounded-xl bg-[#0d3950] px-3 text-xs font-bold text-white shadow-xs transition hover:bg-[#005063] dark:bg-[#005063] dark:hover:bg-[#006768]"
-          >
-            <Plus className="size-3.5" aria-hidden="true" />
-            <span>Nova Página</span>
-          </button>
-        </div>
-      </div>
+      <StudySectionHeader
+        activeTab={activeTab}
+        onSwitchTab={onSwitchTab ?? (() => {})}
+        readingsCount={readings.length}
+        title="Bloco de Anotações"
+        variant="notes"
+        notesCount={notes.length}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+        showFocusTools={showFocusTools}
+        onToggleFocusTools={onToggleFocusTools}
+        tasks={currentSemesterTasks}
+        selectedTaskId={selectedTaskId}
+        onTaskChange={onTaskChange}
+        primaryLabel="Nova Página"
+        onPrimaryAction={() => {
+          if (activeTab === 'documents') onSwitchTab?.('workspace')
+          void handleCreateNote()
+        }}
+      />
 
       {error ? (
         <div className="mx-4 mt-3 rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs font-semibold text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
