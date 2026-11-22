@@ -25,19 +25,35 @@ export function PerspectiveBook({
   children,
   textured = false,
 }: PerspectiveBookProps) {
+  const [hovered, setHovered] = React.useState(false);
   const defaultColorClasses =
     'bg-neutral-100 dark:bg-[#1f1f1f] dark:before:content-[""] dark:before:bg-gradient-to-b dark:before:from-[#ffffff1a] dark:before:to-transparent dark:before:absolute dark:before:inset-0 dark:before:rounded-[inherit] text-primary';
 
   return (
     <div
-      className="perspective-book-scene z-10 group [perspective:900px] w-min h-min"
+      className="perspective-book-scene z-10 group w-min h-min"
+      style={{
+        perspective: "900px",
+        WebkitPerspective: "900px",
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
     >
       <div
         style={{
           width: sizeMap[size].width,
           borderRadius: "6px 4px 4px 6px",
+          transformStyle: "preserve-3d",
+          WebkitTransformStyle: "preserve-3d",
+          transform: hovered
+            ? "rotateY(-20deg) scale(1.066) translateX(-4px)"
+            : "rotateY(0deg) scale(1) translateX(0px)",
+          transition: "transform 300ms cubic-bezier(0.16, 1, 0.3, 1)",
+          willChange: "transform",
         }}
-        className="perspective-book-object transition-transform duration-300 ease-out relative [transform-style:preserve-3d] [transform:rotateY(0deg)] group-hover:[transform:rotateY(-20deg)] group-hover:scale-[1.066] group-hover:-translate-x-1 aspect-[49/60]"
+        className="perspective-book-object relative aspect-[49/60]"
       >
         {/* Front Side */}
         <div
