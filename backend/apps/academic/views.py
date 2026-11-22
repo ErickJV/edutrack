@@ -415,7 +415,7 @@ class DashboardSummaryView(AcademicTaskMixin, generics.GenericAPIView):
         user = cast(User, request.user)
         student_subjects = list(
             StudentSubject.objects.select_related("subject")
-            .filter(user=user)
+            .filter(user=user, status=StudentSubject.Status.ACTIVE)
             .order_by("subject__semester", "subject__name")
         )
         now = timezone.now()
