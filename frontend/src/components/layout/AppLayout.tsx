@@ -27,16 +27,20 @@ export function AppLayout() {
 
   const close = useCallback(() => setMobileOpen(false), [])
 
-  useEffect(() => {
+  // Fecha o drawer quando a rota muda, ajustando o estado durante o render.
+  const [syncedPath, setSyncedPath] = useState(pathname)
+  if (syncedPath !== pathname) {
+    setSyncedPath(pathname)
     setMobileOpen(false)
-  }, [pathname])
+  }
 
   useEffect(() => {
     if (!mobileOpen) return
     openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    contentRef.current?.setAttribute('inert', '')
+    const content = contentRef.current
+    content?.setAttribute('inert', '')
 
     // O drawer só entra no DOM depois que usePresence marca como montado, então
     // o painel não existe no commit deste efeito: consultamos o diálogo vivo.
@@ -82,7 +86,7 @@ export function AppLayout() {
       cancelAnimationFrame(secondFrame)
       document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = previousOverflow
-      contentRef.current?.removeAttribute('inert')
+      content?.removeAttribute('inert')
       openerRef.current?.focus()
     }
   }, [mobileOpen])

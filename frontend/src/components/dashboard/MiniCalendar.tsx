@@ -30,7 +30,9 @@ export function MiniCalendar({
     return new Date(base.getFullYear(), base.getMonth(), 1)
   })
 
-  // Sincroniza o mês exibido se a data selecionada vier de outro componente (ex: gráfico da semana)
+  // Sincroniza o mês exibido se a data selecionada vier de outro componente (ex: gráfico
+  // da semana). A atualização é agendada fora da fase síncrona do efeito para não gerar
+  // renders em cascata; no próximo render `viewMonth` já é o mês sincronizado.
   useEffect(() => {
     const parsed = parseDateKey(selectedDateKey)
     if (
@@ -38,8 +40,10 @@ export function MiniCalendar({
       parsed.getMonth() !== viewMonth.getMonth()
     ) {
       const next = new Date(parsed.getFullYear(), parsed.getMonth(), 1)
-      setViewMonth(next)
-      onMonthChange?.(next)
+      void Promise.resolve().then(() => {
+        setViewMonth(next)
+        onMonthChange?.(next)
+      })
     }
   }, [selectedDateKey, viewMonth, onMonthChange])
 

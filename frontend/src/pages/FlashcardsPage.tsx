@@ -96,7 +96,9 @@ export function FlashcardsPage() {
   }, [])
 
   useEffect(() => {
-    void loadData()
+    // Agenda a carga fora da fase síncrona do efeito (o loader seta loading/error
+    // na primeira linha) para não disparar renders em cascata.
+    void Promise.resolve().then(loadData)
   }, [loadData])
 
   // Agrupamento de Baralhos (Decks)
