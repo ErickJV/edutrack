@@ -19,7 +19,7 @@ dev = [
   "django-stubs==6.1.2",
   "djangorestframework-stubs==3.18.2",
   "mypy==2.4.1",
-  "ruff==0.17.5",
+  "ruff==0.17.6",
 ]
 
 [tool.uv]
